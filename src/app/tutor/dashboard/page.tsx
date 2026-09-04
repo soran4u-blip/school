@@ -32,24 +32,34 @@ export default function TutorDashboardPage() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
-      const tokenResult = await user.getIdTokenResult();
-      const id = tokenResult.claims.tutorId as string | undefined;
-      if (!id) {
+      // No client-side session (never signed in, or the browser lost it while
+      // the server-side cookie survived) — stop loading and show the fallback
+      // rather than hanging on the spinner forever.
+      if (!user) {
         setLoading(false);
         return;
       }
-      setTutorId(id);
-      const [tutorDoc, tutorBookings] = await Promise.all([
-        MasterDataService.getTutorById(id),
-        MasterDataService.getTutorBookings(id),
-      ]);
-      setTutor(tutorDoc);
-      setAvailability(tutorDoc?.availability || []);
-      setBookings(tutorBookings);
-      setLoading(false);
+      setLoading(true);
+      try {
+        const tokenResult = await user.getIdTokenResult();
+        const id = tokenResult.claims.tutorId as string | undefined;
+        if (!id) return;
+        setTutorId(id);
+        const [tutorDoc, tutorBookings] = await Promise.all([
+          MasterDataService.getTutorById(id),
+          MasterDataService.getTutorBookings(id),
+        ]);
+        setTutor(tutorDoc);
+        setAvailability(tutorDoc?.availability || []);
+        setBookings(tutorBookings);
+      } catch {
+        setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
+      } finally {
+        setLoading(false);
+      }
     });
     return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addSlot = (dayOfWeek: number) => {
