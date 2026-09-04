@@ -90,6 +90,11 @@ Live at **https://school--school-4bcd6.us-east4.hosted.app** via Firebase App Ho
 - [x] Verified end-to-end **directly against the live production API** (not just "build succeeded"): individual booking → succeeds with correct price; group booking (1 student, full pot) → second student joins → price splits correctly (70,000 → 35,000 each); one participant cancels → remaining student's price correctly reverts to the full pot (70,000); `/api/tutors/[id]/slots` never exposes other participants' names/phones. All test bookings cleaned up afterward.
 - [x] Confirmed the timezone fix from Phase 7 generalizes correctly under a *different* server timezone than local dev (Cloud Run vs. this machine's UTC+3) — calendar day labels matched real calendar weekdays on production too.
 
+### Post-deploy tutor walkthrough on the *live* production URL — found and fixed one more real bug
+
+- [x] **Bug found and fixed: `/tutor/dashboard` hung forever on "Loading..." whenever the client-side Firebase Auth session was missing** (server session cookie valid, but the browser's client SDK never signed in — e.g. cleared site data, a fresh cross-device session, or just this session's verification method which only ever sets the server cookie). `onAuthStateChanged`'s callback returned early on `user === null` without ever calling `setLoading(false)`. Same bug class already fixed on the admin reviews page and the public tutor profile page earlier this session, just not yet applied here. Fixed, and wrapped the data fetch in try/catch so a Firestore error surfaces a message instead of hanging too. Verified live: the page now resolves to a clear "not linked" message instead of spinning forever.
+- [x] Verified the tutor dashboard's actual data operations directly against production Firestore (same signed-in-as-tutor technique used throughout this session): view own bookings, confirm a booking's status, edit and revert weekly availability — all correct.
+
 ---
 
 ## ✅ PHASE 1: Project Scaffolding — COMPLETE
