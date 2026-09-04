@@ -60,6 +60,4 @@ env:
   # Server-only secret — create it first with `firebase apphosting:secrets:set`.
   - variable: FIREBASE_SERVICE_ACCOUNT_KEY
     secret: firebase-service-account-key
-    availability: [ RUNTIME ]
-  - variable: X_SCHOOL_001
-    secret: firebase-service-account-key
+    availability: [RUNTIME]
