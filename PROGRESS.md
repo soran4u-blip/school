@@ -1,9 +1,10 @@
 # Eduraq — Iraq Education Directory
 ## Session Continuity Progress Ledger
-**Last Updated:** 2026-09-04 (Session 3 — Phase 5 + Post-Launch Hardening + Tutor Booking System + Workflow Enhancements Complete) | **Stack:** Next.js 16.3.4 + Firebase + Tailwind CSS v4 + TypeScript  
+**Last Updated:** 2026-09-04 (Session 3 — Phase 5 + Post-Launch Hardening + Tutor Booking System + Workflow Enhancements + Production Deploy Complete) | **Stack:** Next.js 16.3.4 + Firebase + Tailwind CSS v4 + TypeScript  
 **Build Status:** ✅ `npm run build` PASSED — 28/28 routes compiled (0 TypeScript errors) | ✅ `npm test` — 7/7 passing  
-**Dev Server:** Running on `http://localhost:3000`  
-**Live Firebase:** `firestore.rules` (now covers tutor reviews too) + `storage.rules` + `bookings` composite index deployed to project `school-4bcd6`. Anonymous Auth is now enabled (confirmed working) — still missing: a real production hosting deploy
+**Live Site:** ✅ **https://school--school-4bcd6.us-east4.hosted.app** — deployed via Firebase App Hosting, auto-deploys on push to `main`/`master` (kept in sync, see Phase 9)  
+**Live Firebase:** `firestore.rules` (covers tutor reviews too) + `storage.rules` + `bookings` composite index deployed to project `school-4bcd6`. Anonymous Auth confirmed enabled and working.  
+**GitHub:** https://github.com/soran4u-blip/school (branches `main` and `master` — kept identical; App Hosting backend "school" in `us-east4` watches this repo)
 
 ---
 
@@ -66,6 +67,22 @@ All six flagged workflow gaps were then addressed — see Phase 8 below.
 - [x] **Booking subject capture** — `Booking.subjectId` (optional). The booking modal on the tutor profile page only shows a subject dropdown when the tutor actually teaches more than one subject (single-subject tutors don't need to ask); shown in both the tutor dashboard and admin bookings list.
 - [x] **`/tutors` listing filters** — added subject, delivery-mode (online/in-person/hybrid), and sort-by (rating/price) alongside the existing governorate filter.
 - [x] **Slot-status polling** — the tutor profile page now refetches `/api/tutors/[id]/slots` every 20s while open, so a slot another student just filled doesn't sit visibly stale (the server-side transaction was already safe against actual double-booking; this closes the *appearance* gap, not a data-integrity one).
+
+---
+
+## ✅ PHASE 9: Production Deployment — COMPLETE
+
+Live at **https://school--school-4bcd6.us-east4.hosted.app** via Firebase App Hosting, auto-deploying on push.
+
+- [x] Repo pushed to `https://github.com/soran4u-blip/school` (`master`), then connected to Firebase App Hosting via the console (which requires a real Google/GitHub identity in a browser — done by the user; API automation isn't possible for this step).
+- [x] **IAM**: the deploy service account (`firebase-adminsdk-fbsvc@school-4bcd6.iam.gserviceaccount.com`) needed `roles/firebaseapphosting.admin` and `roles/secretmanager.admin` granted (one-time console action by the user) before status/build-log inspection via API was possible.
+- [x] **Bug found and fixed: build failures on the App Hosting build server.** Root cause was a real `npm install` peer-dependency conflict (`vitest@5` wants `@types/node@^22`, project pins `^20`) that only "worked" locally because of a `--legacy-peer-deps` flag typed at the CLI — which never reached the build server's own `npm ci`. Fixed properly with a committed `.npmrc` (`legacy-peer-deps=true`), verified locally with a from-scratch `npm ci` before pushing.
+- [x] **Cleaned up `X_SCHOOL_001`**, a stray env-var artifact from the App Hosting console's secret-linking UI, unrelated to anything the app reads.
+- [x] **Branch divergence found and reconciled**: the App Hosting console's GitHub connection flow created a `main` branch independently of the `master` branch already pushed, and a direct edit landed on `main` (correctly authored by the user, not lost). Fast-forwarded both `main` and `master` to the same final commit — no history rewritten, no force-push used.
+- [x] Verified live, not just "build succeeded": homepage, `/sitemap.xml`, `/tutors`, `/admin/login` all return 200; `/admin` correctly 307-redirects an unauthenticated request — the proxy auth guard is active in production.
+- [x] Updated `NEXT_PUBLIC_SITE_URL` in `apphosting.yaml` to the real deployed URL once known, for correct SEO metadata/sitemap output.
+- [ ] Custom domain not set up (still on the `*.hosted.app` default).
+- [ ] `firestore.indexes.json`'s existing 3 non-booking indexes (institutions×2, tutors×1) were never explicitly deployed via CLI — not currently blocking anything since no live query needs them yet, but worth doing before adding filters that would.
 
 ---
 
