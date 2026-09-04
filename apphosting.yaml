@@ -52,9 +52,8 @@ env:
     value: "true"
     availability: [ BUILD, RUNTIME ]
 
-  # Set the real deployed URL after the first deploy (used for SEO metadata + sitemap).
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://school-4bcd6.web.app
+    value: https://school--school-4bcd6.us-east4.hosted.app
     availability: [ BUILD, RUNTIME ]
 
   # Server-only secret — create it first with `firebase apphosting:secrets:set`.
