@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.role == 'superadmin';
+    }
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /institutions/{institutionId}/{fileName} {
+      allow read: if true;
+      allow write: if isSuperAdmin() && isValidImage();
+    }
+
+    match /tutors/{tutorId}/{fileName} {
+      allow read: if true;
+      allow write: if isSuperAdmin() && isValidImage();
+    }
+  }
+}

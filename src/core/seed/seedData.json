@@ -1,0 +1,723 @@
+{
+  "governorates": [
+    {
+      "id": "baghdad",
+      "code": "BG",
+      "name": { "ar": "بغداد", "en": "Baghdad", "ku": "بەغدا" },
+      "region": "CENTRAL",
+      "lat": 33.3152,
+      "lng": 44.3661,
+      "isActive": true,
+      "displayOrder": 1,
+      "institutionsCount": 540
+    },
+    {
+      "id": "erbil",
+      "code": "ER",
+      "name": { "ar": "أربيل", "en": "Erbil", "ku": "هەولێر" },
+      "region": "KURDISTAN",
+      "lat": 36.1901,
+      "lng": 44.0091,
+      "isActive": true,
+      "displayOrder": 2,
+      "institutionsCount": 210
+    },
+    {
+      "id": "basra",
+      "code": "BS",
+      "name": { "ar": "البصرة", "en": "Basra", "ku": "بەسرە" },
+      "region": "SOUTH",
+      "lat": 30.5081,
+      "lng": 47.7835,
+      "isActive": true,
+      "displayOrder": 3,
+      "institutionsCount": 180
+    },
+    {
+      "id": "najaf",
+      "code": "NJ",
+      "name": { "ar": "النجف الأشرف", "en": "Najaf", "ku": "نەجەف" },
+      "region": "CENTRAL",
+      "lat": 32.0000,
+      "lng": 44.3333,
+      "isActive": true,
+      "displayOrder": 4,
+      "institutionsCount": 95
+    },
+    {
+      "id": "nineveh",
+      "code": "NN",
+      "name": { "ar": "نينوى (الموصل)", "en": "Nineveh (Mosul)", "ku": "نەینەوا" },
+      "region": "NORTH",
+      "lat": 36.3489,
+      "lng": 43.1577,
+      "isActive": true,
+      "displayOrder": 5,
+      "institutionsCount": 115
+    },
+    {
+      "id": "sulaymaniyah",
+      "code": "SU",
+      "name": { "ar": "السليمانية", "en": "Sulaymaniyah", "ku": "سلێمانی" },
+      "region": "KURDISTAN",
+      "lat": 35.5558,
+      "lng": 45.4351,
+      "isActive": true,
+      "displayOrder": 6,
+      "institutionsCount": 130
+    },
+    {
+      "id": "karbala",
+      "code": "KB",
+      "name": { "ar": "كربلاء المقدسة", "en": "Karbala", "ku": "کەربەلا" },
+      "region": "CENTRAL",
+      "lat": 32.6160,
+      "lng": 44.0249,
+      "isActive": true,
+      "displayOrder": 7,
+      "institutionsCount": 80
+    },
+    {
+      "id": "kirkuk",
+      "code": "KI",
+      "name": { "ar": "كركوك", "en": "Kirkuk", "ku": "کەرکووک" },
+      "region": "NORTH",
+      "lat": 35.4681,
+      "lng": 44.3922,
+      "isActive": true,
+      "displayOrder": 8,
+      "institutionsCount": 65
+    },
+    {
+      "id": "babil",
+      "code": "BB",
+      "name": { "ar": "بابل (الحلة)", "en": "Babil (Hillah)", "ku": "بابل" },
+      "region": "CENTRAL",
+      "lat": 32.4833,
+      "lng": 44.4333,
+      "isActive": true,
+      "displayOrder": 9,
+      "institutionsCount": 75
+    },
+    {
+      "id": "anbar",
+      "code": "AN",
+      "name": { "ar": "الأنبار (الرمادي)", "en": "Anbar (Ramadi)", "ku": "ئەنبار" },
+      "region": "WEST",
+      "lat": 33.4333,
+      "lng": 43.3000,
+      "isActive": true,
+      "displayOrder": 10,
+      "institutionsCount": 55
+    },
+    {
+      "id": "diyala",
+      "code": "DI",
+      "name": { "ar": "ديالى (بعقوبة)", "en": "Diyala (Baqubah)", "ku": "دیالە" },
+      "region": "CENTRAL",
+      "lat": 33.7500,
+      "lng": 44.6500,
+      "isActive": true,
+      "displayOrder": 11,
+      "institutionsCount": 45
+    },
+    {
+      "id": "wasit",
+      "code": "WA",
+      "name": { "ar": "واسط (الكوت)", "en": "Wasit (Kut)", "ku": "واسیت" },
+      "region": "SOUTH",
+      "lat": 32.5000,
+      "lng": 45.8167,
+      "isActive": true,
+      "displayOrder": 12,
+      "institutionsCount": 40
+    },
+    {
+      "id": "maysan",
+      "code": "MY",
+      "name": { "ar": "ميسان (العمارة)", "en": "Maysan (Amarah)", "ku": "مەیسان" },
+      "region": "SOUTH",
+      "lat": 31.8333,
+      "lng": 47.1500,
+      "isActive": true,
+      "displayOrder": 13,
+      "institutionsCount": 35
+    },
+    {
+      "id": "dhi-qar",
+      "code": "DQ",
+      "name": { "ar": "ذي قار (الناصرية)", "en": "Dhi Qar (Nasiriyah)", "ku": "زیقار" },
+      "region": "SOUTH",
+      "lat": 31.0500,
+      "lng": 46.2500,
+      "isActive": true,
+      "displayOrder": 14,
+      "institutionsCount": 50
+    },
+    {
+      "id": "muthanna",
+      "code": "MU",
+      "name": { "ar": "المثنى (السماوة)", "en": "Muthanna (Samawah)", "ku": "موسەنا" },
+      "region": "SOUTH",
+      "lat": 31.3167,
+      "lng": 45.2833,
+      "isActive": true,
+      "displayOrder": 15,
+      "institutionsCount": 30
+    },
+    {
+      "id": "qadisiyyah",
+      "code": "QA",
+      "name": { "ar": "القادسية (الديوانية)", "en": "Qadisiyyah (Diwaniyah)", "ku": "قادسیە" },
+      "region": "CENTRAL",
+      "lat": 31.9833,
+      "lng": 44.9167,
+      "isActive": true,
+      "displayOrder": 16,
+      "institutionsCount": 40
+    },
+    {
+      "id": "saladin",
+      "code": "SA",
+      "name": { "ar": "صلاح الدين (تكريت)", "en": "Saladin (Tikrit)", "ku": "سەلاحەدین" },
+      "region": "CENTRAL",
+      "lat": 34.6000,
+      "lng": 43.6833,
+      "isActive": true,
+      "displayOrder": 17,
+      "institutionsCount": 45
+    },
+    {
+      "id": "dohuk",
+      "code": "DA",
+      "name": { "ar": "دهوك", "en": "Dohuk", "ku": "دهۆک" },
+      "region": "KURDISTAN",
+      "lat": 36.8667,
+      "lng": 42.9833,
+      "isActive": true,
+      "displayOrder": 18,
+      "institutionsCount": 60
+    }
+  ],
+  "cities": [
+    {
+      "id": "baghdad-karkh",
+      "governorateId": "baghdad",
+      "name": { "ar": "بغداد - الكرخ", "en": "Baghdad - Karkh" },
+      "slug": "baghdad-karkh",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "baghdad-rusafa",
+      "governorateId": "baghdad",
+      "name": { "ar": "بغداد - الرصافة", "en": "Baghdad - Rusafa" },
+      "slug": "baghdad-rusafa",
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "erbil-center",
+      "governorateId": "erbil",
+      "name": { "ar": "أربيل المركز", "en": "Erbil Center" },
+      "slug": "erbil-center",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "basra-center",
+      "governorateId": "basra",
+      "name": { "ar": "البصرة المركز", "en": "Basra Center" },
+      "slug": "basra-center",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "najaf-center",
+      "governorateId": "najaf",
+      "name": { "ar": "النجف المركز", "en": "Najaf Center" },
+      "slug": "najaf-center",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "mosul-center",
+      "governorateId": "nineveh",
+      "name": { "ar": "الموصل المركز", "en": "Mosul Center" },
+      "slug": "mosul-center",
+      "isActive": true,
+      "displayOrder": 1
+    }
+  ],
+  "categories": [
+    {
+      "id": "universities",
+      "slug": "universities",
+      "name": { "ar": "جامعات وكليات", "en": "Universities & Colleges" },
+      "iconName": "GraduationCap",
+      "description": { "ar": "الجامعات الحكومية والأهلية والكليات التقنية المعتمدة في العراق", "en": "Public and private accredited universities across Iraq" },
+      "isActive": true,
+      "displayOrder": 1,
+      "institutionsCount": 148
+    },
+    {
+      "id": "schools",
+      "slug": "schools",
+      "name": { "ar": "مدارس ورياض أطفال", "en": "K-12 Schools" },
+      "iconName": "School",
+      "description": { "ar": "المدارس الدولية والأهلية والنموذجية ورياض الأطفال", "en": "Private, international, and model primary and secondary schools" },
+      "isActive": true,
+      "displayOrder": 2,
+      "institutionsCount": 520
+    },
+    {
+      "id": "institutes",
+      "slug": "institutes",
+      "name": { "ar": "معاهد تخصصية ولغات", "en": "Institutes & Academies" },
+      "iconName": "BookOpen",
+      "description": { "ar": "معاهد اللغات الأجنبية والبرمجة والدبلومات المهنية المعتمدة", "en": "Language, coding, and specialized technical institutes" },
+      "isActive": true,
+      "displayOrder": 3,
+      "institutionsCount": 175
+    },
+    {
+      "id": "training_centers",
+      "slug": "training_centers",
+      "name": { "ar": "مراكز تدريب وتطوير مهني", "en": "Training Centers" },
+      "iconName": "Award",
+      "description": { "ar": "مراكز التدريب الاحترافي وإعداد الكوادر وإدارة الأعمال", "en": "Professional development and career vocational academies" },
+      "isActive": true,
+      "displayOrder": 4,
+      "institutionsCount": 210
+    },
+    {
+      "id": "ngos",
+      "slug": "ngos",
+      "name": { "ar": "برامج منظمات ومنح تعليمية", "en": "NGO & Funded Programs" },
+      "iconName": "HeartHandshake",
+      "description": { "ar": "مبادرات المنظمات الدولية والمحلية والمنح التعليمية المجانية", "en": "Humanitarian education, scholarships, and international aid programs" },
+      "isActive": true,
+      "displayOrder": 5,
+      "institutionsCount": 85
+    },
+    {
+      "id": "tutors",
+      "slug": "tutors",
+      "name": { "ar": "أساتذة تدريس خصوصي", "en": "Certified Private Tutors" },
+      "iconName": "UserCheck",
+      "description": { "ar": "نخبة الأساتذة المعتمدين لشهادة البكالوريا والمراحل الجامعية", "en": "Vetted private tutors for 6th Preparatory (Wazari) and college" },
+      "isActive": true,
+      "displayOrder": 6,
+      "institutionsCount": 890
+    }
+  ],
+  "taxonomies": [
+    {
+      "id": "acc-mohesr",
+      "type": "ACCREDITATION",
+      "code": "MOHESR",
+      "name": { "ar": "معتمد من وزارة التعليم العالي (MoHESR)", "en": "MoHESR Accredited" },
+      "badgeStyle": "emerald",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "acc-moe",
+      "type": "ACCREDITATION",
+      "code": "MOE",
+      "name": { "ar": "معتمد من وزارة التربية العراقية (MoE)", "en": "Ministry of Education Accredited" },
+      "badgeStyle": "emerald",
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "acc-ib",
+      "type": "ACCREDITATION",
+      "code": "IB",
+      "name": { "ar": "اعتماد البكالوريا الدولية (IB World)", "en": "IB World School" },
+      "badgeStyle": "blue",
+      "isActive": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "acc-cambridge",
+      "type": "ACCREDITATION",
+      "code": "CAMBRIDGE",
+      "name": { "ar": "مركز كامبريدج الدولي المعتمد", "en": "Cambridge International" },
+      "badgeStyle": "blue",
+      "isActive": true,
+      "displayOrder": 4
+    },
+    {
+      "id": "curr-iraqi",
+      "type": "CURRICULUM",
+      "code": "IRAQI_NATIONAL",
+      "name": { "ar": "المنهج الوزاري العراقي", "en": "Iraqi National Curriculum" },
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "curr-british",
+      "type": "CURRICULUM",
+      "code": "BRITISH_IGCSE",
+      "name": { "ar": "المنهج البريطاني (IGCSE / A-Level)", "en": "British IGCSE / A-Level" },
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "curr-american",
+      "type": "CURRICULUM",
+      "code": "AMERICAN_DIPLOMA",
+      "name": { "ar": "الدبلومة الأمريكية (SAT / AP)", "en": "American High School Diploma" },
+      "isActive": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "sub-physics-wazari",
+      "type": "SUBJECT",
+      "code": "PHYSICS_6TH",
+      "name": { "ar": "فيزياء السادس الإعدادي (علمي)", "en": "6th Prep Physics (Wazari)" },
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "sub-math-wazari",
+      "type": "SUBJECT",
+      "code": "MATH_6TH",
+      "name": { "ar": "رياضيات السادس الإعدادي", "en": "6th Prep Mathematics" },
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "sub-chemistry-wazari",
+      "type": "SUBJECT",
+      "code": "CHEMISTRY_6TH",
+      "name": { "ar": "كيمياء السادس العلمي", "en": "6th Prep Chemistry" },
+      "isActive": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "sub-english-ielts",
+      "type": "SUBJECT",
+      "code": "ENGLISH_IELTS",
+      "name": { "ar": "اللغة الإنجليزية وتحضير آيلتس (IELTS)", "en": "English & IELTS Preparation" },
+      "isActive": true,
+      "displayOrder": 4
+    }
+  ],
+  "quickSearchTags": [
+    {
+      "id": "tag-1",
+      "label": { "ar": "مدارس الكرخ الأهلية", "en": "Karkh Private Schools" },
+      "categoryId": "schools",
+      "governorateId": "baghdad",
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "tag-2",
+      "label": { "ar": "كليات الطب والصيدلة", "en": "Medical Universities" },
+      "categoryId": "universities",
+      "keyword": "Medicine",
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "tag-3",
+      "label": { "ar": "أساتذة السادس العلمي (وزاري)", "en": "Wazari 6th Prep Tutors" },
+      "categoryId": "tutors",
+      "isActive": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "tag-4",
+      "label": { "ar": "دورات تقنية مجانية (منظمات)", "en": "Free NGO Tech Bootcamps" },
+      "categoryId": "ngos",
+      "isActive": true,
+      "displayOrder": 4
+    }
+  ],
+  "institutions": [
+    {
+      "id": "aub-baghdad",
+      "slug": "american-university-of-baghdad",
+      "name": { "ar": "جامعة بغداد الأمريكية", "en": "American University of Baghdad (AUB)" },
+      "categoryId": "universities",
+      "governorateId": "baghdad",
+      "cityId": "baghdad-karkh",
+      "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAaRHyWXneS0DajYgPHaBz91j2iZpDEqRkj_dMhAt6xB-WzCbiAxadSNiEq5x-jZOCz2-WQ3PqgfRMuyN9PpH9-uhNR2UUJSNv7v1LAYtxZm9NRX7W89iIx_1qadx5gUesbadb8TlJFzRvhMqDTGJ3WxWKSg-9uUODQAWgLo_YZc9JvlzjuSTP7t0NyWPFQusL9CqjhnhL9QV6tYuz7JFf50R7Xywp6M41BSP0Ougv1-oTfl7xdqECj2YKtmIFCblJlpG11EPtnH-Q",
+      "coverImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBep0jhgAeLT6eyfrLWVl0B4UIOUN1xK2egIzr_eUlnJVvR48KvndHagnPjzE0C2360u7V6P7k4FsSsjR7NZv-QPHPcn16McR1bqxKbTkLB42pFcggXm87y80mwS5cY3GmUjl0UIIc5BFaLYLwAnMBwTSob4_49mRLo0OQ5MlcEsZXE26YRWcr3MQNnYT2ELAUIu6LGo2Wv1OSZ00VALLUx17UMdMhxsCRsXNCOcM7XjuxCvO0G9w31j1OzH2sYztSnaPNb7-v3Pi8",
+      "tagline": { "ar": "تعليم أمريكي متميز في قلب بغداد التاريخية", "en": "American-style liberal arts excellence in Baghdad" },
+      "description": { 
+        "ar": "جامعة بغداد الأمريكية (AUB) هي صرح تعليمي رائد يقدم تعليماً جامعياً عالمي المعايير وفق النظام الأمريكي، مع التركيز على البحث العلمي والابتكار وإعداد قادة المستقبل.",
+        "en": "The American University of Baghdad (AUB) is a premier institution dedicated to American-style liberal arts education in Iraq with world-class faculty and campus."
+      },
+      "address": { "ar": "بغداد - الجادرية - مجمع القصور الرئاسية سابقاً", "en": "Al-Jadriya, Baghdad, Iraq" },
+      "contact": {
+        "phonePrimary": "+964 780 123 4567",
+        "whatsappNumber": "9647801234567",
+        "email": "admissions@aub.edu.iq",
+        "website": "https://aub.edu.iq",
+        "workingHours": { "ar": "الأحد - الخميس: 8:00 صباحاً - 4:00 مساءً", "en": "Sun - Thu: 8:00 AM - 4:00 PM" }
+      },
+      "establishedYear": 2018,
+      "genderPolicy": "CO_ED",
+      "languagesOfInstruction": ["EN"],
+      "tuition": {
+        "min": 6000,
+        "max": 12000,
+        "currency": "USD",
+        "period": "YEAR",
+        "tierLabel": "$$$$"
+      },
+      "taxonomyIds": ["acc-mohesr", "curr-american"],
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "معتمد من وزارة التعليم العالي", "en": "MoHESR Accredited" },
+      "status": "ACTIVE",
+      "isFeatured": true,
+      "metrics": {
+        "ratingAvg": 4.9,
+        "reviewCount": 310,
+        "studentsCount": 4200,
+        "graduateEmploymentRate": 94
+      },
+      "programs": [
+        {
+          "id": "prog-1",
+          "name": { "ar": "طب عام وجراحة", "en": "General Medicine & Surgery" },
+          "facultyName": { "ar": "كلية الطب البشري", "en": "College of Medicine" },
+          "degreeLevelId": "bachelor",
+          "tuitionAnnual": { "amount": 12000, "currency": "USD" },
+          "durationYears": 6,
+          "minBaccalaureateScore": 95,
+          "isActive": true
+        },
+        {
+          "id": "prog-2",
+          "name": { "ar": "هندسة البرمجيات والذكاء الاصطناعي", "en": "Software Engineering & AI" },
+          "facultyName": { "ar": "كلية الهندسة والتقنيات الرقمية", "en": "College of Engineering" },
+          "degreeLevelId": "bachelor",
+          "tuitionAnnual": { "amount": 7500, "currency": "USD" },
+          "durationYears": 4,
+          "minBaccalaureateScore": 82,
+          "isActive": true
+        }
+      ],
+      "facilities": ["مكتبات رقمية حديثة", "مختبرات محاكاة طبية", "مجمع رياضي متكامل", "سكن طلابي مجهز"],
+      "createdAt": "2024-01-15T00:00:00Z",
+      "updatedAt": "2024-08-20T00:00:00Z"
+    },
+    {
+      "id": "baghdad-int-academy",
+      "slug": "baghdad-international-academy",
+      "name": { "ar": "أكاديمية بغداد الدولية", "en": "Baghdad International Academy" },
+      "categoryId": "schools",
+      "governorateId": "baghdad",
+      "cityId": "baghdad-karkh",
+      "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDNyC5WQR8RBJXt4IDMOpqThhHkn-g2PXf0A67VQNIN2i2fnr3_JTNzvSvJgSEMY4dlmEotTgSyXw0NoknP8IOOe8VedTWfyaHZA9pnFLAMLLDr763XT2nVebRJsRDBvDCli0W7a5rNzwUalaUfR8M-Du8WPxrY16MpZx0GhxM76iawDJwFEYBGRPoJyJwDPl9DoePpB2EG7GaBfyZo58H2UgFacl_OLk7GxuFSmQG8LbrHTGSrR6rPbK69a83igO1uyjDWC67-6kM",
+      "coverImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDNyC5WQR8RBJXt4IDMOpqThhHkn-g2PXf0A67VQNIN2i2fnr3_JTNzvSvJgSEMY4dlmEotTgSyXw0NoknP8IOOe8VedTWfyaHZA9pnFLAMLLDr763XT2nVebRJsRDBvDCli0W7a5rNzwUalaUfR8M-Du8WPxrY16MpZx0GhxM76iawDJwFEYBGRPoJyJwDPl9DoePpB2EG7GaBfyZo58H2UgFacl_OLk7GxuFSmQG8LbrHTGSrR6rPbK69a83igO1uyjDWC67-6kM",
+      "tagline": { "ar": "التعليم البريطاني والبكالوريا الدولية من الروضة حتى الثانوي", "en": "British and IB curriculum from Kindergarten to Grade 12" },
+      "description": { 
+        "ar": "مدرسة دولية رائدة في حي المنصور ببغداد تطبق أعلى معايير جودة التعليم الدولي والبريطاني مع الحفاظ على الهوية والقيم الوطنية.",
+        "en": "A premier international K-12 school in Mansour, Baghdad offering IB and Cambridge curriculums."
+      },
+      "address": { "ar": "بغداد - حي المنصور - شارع الأميرات", "en": "Al-Amirat St, Al-Mansour, Baghdad" },
+      "contact": {
+        "phonePrimary": "+964 771 987 6543",
+        "whatsappNumber": "9647719876543",
+        "email": "info@bia-baghdad.com",
+        "workingHours": { "ar": "الأحد - الخميس: 7:30 صباحاً - 3:00 مساءً", "en": "Sun - Thu: 7:30 AM - 3:00 PM" }
+      },
+      "establishedYear": 2012,
+      "genderPolicy": "CO_ED",
+      "languagesOfInstruction": ["EN", "AR"],
+      "tuition": {
+        "min": 3500,
+        "max": 6500,
+        "currency": "USD",
+        "period": "YEAR",
+        "tierLabel": "$$$"
+      },
+      "taxonomyIds": ["acc-moe", "acc-ib", "curr-british"],
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "مرخصة وزارياً + معتمدة دولياً", "en": "Ministry Licensed & IB Accredited" },
+      "status": "ACTIVE",
+      "isFeatured": true,
+      "metrics": {
+        "ratingAvg": 4.8,
+        "reviewCount": 145,
+        "studentsCount": 1200
+      },
+      "facilities": ["ملاعب رياضية معشبة", "مختبرات روبوتكس وذكاء اصطناعي", "مسرح مدرسي", "أسطول نقل حديث"],
+      "createdAt": "2024-02-01T00:00:00Z",
+      "updatedAt": "2024-08-15T00:00:00Z"
+    },
+    {
+      "id": "erbil-tech-institute",
+      "slug": "erbil-institute-of-technology",
+      "name": { "ar": "معهد أربيل للتكنولوجيا والذكاء الاصطناعي", "en": "Erbil Institute of Technology & AI" },
+      "categoryId": "institutes",
+      "governorateId": "erbil",
+      "cityId": "erbil-center",
+      "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBep0jhgAeLT6eyfrLWVl0B4UIOUN1xK2egIzr_eUlnJVvR48KvndHagnPjzE0C2360u7V6P7k4FsSsjR7NZv-QPHPcn16McR1bqxKbTkLB42pFcggXm87y80mwS5cY3GmUjl0UIIc5BFaLYLwAnMBwTSob4_49mRLo0OQ5MlcEsZXE26YRWcr3MQNnYT2ELAUIu6LGo2Wv1OSZ00VALLUx17UMdMhxsCRsXNCOcM7XjuxCvO0G9w31j1OzH2sYztSnaPNb7-v3Pi8",
+      "coverImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCswnAE52Ek4vWW6SErhzeDopYknc5PAvg9FEJC2hvrdsrfagQhSgexUg4ti_V6WPa0xdlcS8MfT1QVzEyFY_6h-CJwbH7v7Q8LQ-1L4AxQFdV_v9ixPo-7ua5IEnSg_E2IHd84FUGUXNuvgIxB523oSF3mz44D5mOkU8K8ZN2E2liQTLNe51DxC8BK9q8uFLNVSXjecER391gOiN7ds_lsGYtTvaytsnoOesh-enYUVYtcWVwaGUB6btqZcCPk5PUmJYovj8Bvv1w",
+      "tagline": { "ar": "دبلومات تقنية معتمدة في علوم الحاسوب والذكاء الاصطناعي", "en": "Accredited technical diplomas in AI and Computing" },
+      "description": { 
+        "ar": "معهد متخصص يقدم دبلومات مهنية معتمدة من وزارة التعليم العالي في إقليم كوردستان والعراق الاتحادي في تخصصات البرمجيات، الأمن السيبراني، والتصميم الرقمي.",
+        "en": "Specialized institute offering accredited professional computing and engineering diplomas."
+      },
+      "address": { "ar": "أربيل - طريق 100 متري - قرب عينكاوة", "en": "100m Road, near Ankawa, Erbil" },
+      "contact": {
+        "phonePrimary": "+964 750 456 7890",
+        "whatsappNumber": "9647504567890",
+        "email": "contact@eit-erbil.edu.krd"
+      },
+      "establishedYear": 2019,
+      "genderPolicy": "CO_ED",
+      "languagesOfInstruction": ["EN", "KU", "AR"],
+      "tuition": {
+        "min": 1800000,
+        "max": 3500000,
+        "currency": "IQD",
+        "period": "YEAR",
+        "tierLabel": "$$"
+      },
+      "taxonomyIds": ["acc-mohesr"],
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "معتمد وزارياً - إقليم كوردستان والعراق", "en": "Government Accredited" },
+      "status": "ACTIVE",
+      "isFeatured": false,
+      "metrics": {
+        "ratingAvg": 4.7,
+        "reviewCount": 88
+      },
+      "createdAt": "2024-02-10T00:00:00Z",
+      "updatedAt": "2024-07-20T00:00:00Z"
+    },
+    {
+      "id": "unicef-basra-hub",
+      "slug": "unicef-youth-skills-hub-basra",
+      "name": { "ar": "مركز اليونيسف لتطوير مهارات الشباب", "en": "UNICEF Youth Skills Hub - Basra" },
+      "categoryId": "ngos",
+      "governorateId": "basra",
+      "cityId": "basra-center",
+      "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAL1FMqXdGY0daltx0LIm8V0sNt1q44WQTQj7GC0T_HJobYTep4hpI3Fw1yE_sYSmWtcZSksbTXR4oe1j1mWOBbTEfNy2l9JCN04IR96jFbIyBnB6UJMbP34nNCS5zR96ysttmV1n4163vA3iqh9_MhtnBCSFENRid3hXa-NHA_iZAdvwb3fXDHtOQXuxT8WCtTBkG4s5JS7cA0u06vbc4mrT8odEytK7goNudZBmBomkM2GUfKP8IkaWgeBQNMg5LvtJCfrKAq5Vc",
+      "coverImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAL1FMqXdGY0daltx0LIm8V0sNt1q44WQTQj7GC0T_HJobYTep4hpI3Fw1yE_sYSmWtcZSksbTXR4oe1j1mWOBbTEfNy2l9JCN04IR96jFbIyBnB6UJMbP34nNCS5zR96ysttmV1n4163vA3iqh9_MhtnBCSFENRid3hXa-NHA_iZAdvwb3fXDHtOQXuxT8WCtTBkG4s5JS7cA0u06vbc4mrT8odEytK7goNudZBmBomkM2GUfKP8IkaWgeBQNMg5LvtJCfrKAq5Vc",
+      "tagline": { "ar": "برامج تدريبية مجانية 100% مدعومة من المنظمات الدولية", "en": "100% Free funded vocational & digital training for Iraqi youth" },
+      "description": { 
+        "ar": "مركز تدريب مهني وتقني مجاني يقدم برامج تدريب احترافية معتمدة دولياً في المهارات الرقمية، ريادة الأعمال، واللغات لتمكين الشباب العراقي في سوق العمل.",
+        "en": "A free vocational and digital training hub supported by international humanitarian organizations in Basra."
+      },
+      "address": { "ar": "البصرة - الجزائر - شارع 14 تموز", "en": "Al-Jaza'ir, Basra, Iraq" },
+      "contact": {
+        "phonePrimary": "+964 781 234 5678",
+        "whatsappNumber": "9647812345678",
+        "email": "basra-hub@unicef-partner.org"
+      },
+      "establishedYear": 2021,
+      "genderPolicy": "CO_ED",
+      "languagesOfInstruction": ["AR", "EN"],
+      "tuition": {
+        "min": 0,
+        "max": 0,
+        "currency": "IQD",
+        "period": "COURSE",
+        "tierLabel": "FREE"
+      },
+      "taxonomyIds": ["acc-moe"],
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "برنامج مجاني مدعوم دولياً", "en": "100% Free / NGO Funded" },
+      "status": "ACTIVE",
+      "isFeatured": false,
+      "metrics": {
+        "ratingAvg": 4.9,
+        "reviewCount": 92
+      },
+      "createdAt": "2024-03-01T00:00:00Z",
+      "updatedAt": "2024-08-01T00:00:00Z"
+    }
+  ],
+  "tutors": [
+    {
+      "id": "tutor-ahmed-alkaabi",
+      "fullName": { "ar": "أ. أحمد الكعبي", "en": "Prof. Ahmed Al-Kaabi" },
+      "title": { "ar": "كبير مدرسي مادة الفيزياء - السادس العلمي (الفرع العلمي)", "en": "Senior 6th Prep Physics Master" },
+      "bio": { 
+        "ar": "خبرة أكثر من 16 عاماً في تدريس مادة الفيزياء لطلبة السادس الإعدادي بأسلوب مبسط وشامل للأسئلة الوزارية مع نسبة تفوق تجاوزت 96%.",
+        "en": "16+ years experience in Baccalaureate Physics preparation with verified past exam success records."
+      },
+      "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+      "governorateId": "baghdad",
+      "cityId": "baghdad-karkh",
+      "hourlyRate": { "iqd": 35000, "usd": 25 },
+      "groupRate": { "iqd": 60000, "usd": 43 },
+      "groupMaxSize": 4,
+      "availability": [
+        { "dayOfWeek": 1, "startTime": "16:00", "endTime": "18:00" },
+        { "dayOfWeek": 3, "startTime": "16:00", "endTime": "18:00" },
+        { "dayOfWeek": 6, "startTime": "10:00", "endTime": "13:00" }
+      ],
+      "deliveryMode": ["IN_PERSON", "ONLINE"],
+      "subjectIds": ["sub-physics-wazari"],
+      "studentLevelIds": ["curr-iraqi"],
+      "whatsappNumber": "9647809988776",
+      "phone": "+964 780 998 8776",
+      "yearsOfExperience": 16,
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "أستاذ وزاري معتمد وموثق", "en": "Ministry Vetted Tutor" },
+      "status": "ACTIVE",
+      "ratingAvg": 4.9,
+      "reviewCount": 184,
+      "createdAt": "2024-01-10T00:00:00Z",
+      "updatedAt": "2024-08-12T00:00:00Z"
+    },
+    {
+      "id": "tutor-sarah-bayati",
+      "fullName": { "ar": "أ. سارة البياتي", "en": "Ms. Sarah Al-Bayati" },
+      "title": { "ar": "أستاذة اللغة الإنجليزية ومدرّبة آيلتس معتمدة", "en": "Certified English & IELTS Instructor" },
+      "bio": { 
+        "ar": "حاصلة على ماجستير في طرائق تدريس اللغة الإنجليزية، متخصصة في تأهيل الطلبة لاختبارات IELTS الدولية والقبول الجامعي الخارجي.",
+        "en": "MA in ELT, expert in international IELTS preparation and university academic writing."
+      },
+      "photoUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
+      "governorateId": "erbil",
+      "cityId": "erbil-center",
+      "hourlyRate": { "iqd": 40000, "usd": 28 },
+      "groupRate": { "iqd": 70000, "usd": 50 },
+      "groupMaxSize": 3,
+      "availability": [
+        { "dayOfWeek": 0, "startTime": "17:00", "endTime": "19:00" },
+        { "dayOfWeek": 2, "startTime": "17:00", "endTime": "19:00" },
+        { "dayOfWeek": 4, "startTime": "17:00", "endTime": "19:00" }
+      ],
+      "deliveryMode": ["ONLINE", "IN_PERSON"],
+      "subjectIds": ["sub-english-ielts"],
+      "studentLevelIds": ["curr-british"],
+      "whatsappNumber": "9647501122334",
+      "phone": "+964 750 112 2334",
+      "yearsOfExperience": 10,
+      "isVerified": true,
+      "verificationBadgeLabel": { "ar": "مدرّبة دولية معتمدة", "en": "Certified IELTS Trainer" },
+      "status": "ACTIVE",
+      "ratingAvg": 5.0,
+      "reviewCount": 126,
+      "createdAt": "2024-01-18T00:00:00Z",
+      "updatedAt": "2024-08-19T00:00:00Z"
+    }
+  ],
+  "systemSettings": {
+    "siteName": { "ar": "دليل العراق التعليمي | إديوراك", "en": "Eduraq | Iraq Education Directory" },
+    "contactEmail": "support@eduraq.iq",
+    "contactPhone": "+964 780 000 0000",
+    "contactWhatsApp": "9647800000000",
+    "exchangeRateUsdToIqd": 1500,
+    "emergencyAnnouncement": {
+      "enabled": true,
+      "text": { 
+        "ar": "تنبيه هام: بدء التقديم على الجامعات الأهلية والدولية للعام الدراسي 2024-2025 عبر البوابة الإلكترونية الرسمية",
+        "en": "Notice: 2024-2025 private & international university admissions are officially open."
+      },
+      "level": "INFO"
+    }
+  }
+}

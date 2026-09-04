@@ -1,0 +1,63 @@
+# Firebase App Hosting config for this Next.js app (SSR + API routes + proxy.ts
+# require a Node server — this can't be a static export, so classic Firebase
+# Hosting alone won't run it; App Hosting deploys it as a managed Cloud Run service.
+#
+# Deploy: firebase apphosting:backends:create (first time), then git push to the
+# linked branch, or `firebase deploy --only apphosting`.
+#
+# Secrets referenced below must exist in Secret Manager first, e.g.:
+#   firebase apphosting:secrets:set firebase-service-account-key
+
+runConfig:
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyAKhjvTJemiFRhl-xxGNtOxbkqkjZTJe5A
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: school-4bcd6.firebaseapp.com
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: school-4bcd6
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: school-4bcd6.firebasestorage.app
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "100385437421"
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:100385437421:web:7c4a4f7c56ea93e379bee4"
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-CNN53515TM
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_DATABASE_NAME
+    value: schooldb
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_USE_FIRESTORE
+    value: "true"
+    availability: [BUILD, RUNTIME]
+
+  # Set the real deployed URL after the first deploy (used for SEO metadata + sitemap).
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://school-4bcd6.web.app
+    availability: [BUILD, RUNTIME]
+
+  # Server-only secret — create it first with `firebase apphosting:secrets:set`.
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: firebase-service-account-key
+    availability: [RUNTIME]
