@@ -84,6 +84,12 @@ Live at **https://school--school-4bcd6.us-east4.hosted.app** via Firebase App Ho
 - [ ] Custom domain not set up (still on the `*.hosted.app` default).
 - [ ] `firestore.indexes.json`'s existing 3 non-booking indexes (institutions×2, tutors×1) were never explicitly deployed via CLI — not currently blocking anything since no live query needs them yet, but worth doing before adding filters that would.
 
+### Post-deploy student walkthrough on the *live* production URL — found and fixed one more real bug
+
+- [x] **Bug found and fixed: booking API returned "Server not configured" in production only.** The `firebase-service-account-key` Secret Manager secret held only a fragment of the private key (missing the JSON wrapper, `client_email`, etc.) — likely a partial copy-paste during the console setup — so `JSON.parse()` in `src/core/firebase/admin.ts` threw and the Admin SDK silently never initialized (caught, logged, left `adminDb` null). Fixed by adding a corrected secret version from the same value already verified working locally. **Important lesson recorded here**: adding a new secret version alone did *not* fix it — the already-running Cloud Run revision doesn't re-resolve secrets, and even creating a new rollout that reused the same build/image reused the existing revision without re-binding it either. Only an actual fresh build (a real code push) forced a new revision that correctly re-resolved the secret.
+- [x] Verified end-to-end **directly against the live production API** (not just "build succeeded"): individual booking → succeeds with correct price; group booking (1 student, full pot) → second student joins → price splits correctly (70,000 → 35,000 each); one participant cancels → remaining student's price correctly reverts to the full pot (70,000); `/api/tutors/[id]/slots` never exposes other participants' names/phones. All test bookings cleaned up afterward.
+- [x] Confirmed the timezone fix from Phase 7 generalizes correctly under a *different* server timezone than local dev (Cloud Run vs. this machine's UTC+3) — calendar day labels matched real calendar weekdays on production too.
+
 ---
 
 ## ✅ PHASE 1: Project Scaffolding — COMPLETE
