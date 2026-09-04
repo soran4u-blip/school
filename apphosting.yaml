@@ -7,6 +7,10 @@
 #
 # Secrets referenced below must exist in Secret Manager first, e.g.:
 #   firebase apphosting:secrets:set firebase-service-account-key
+#
+# 2026-09-04: corrected firebase-service-account-key (a prior version held only
+# a private-key fragment instead of the full service account JSON) — bumping
+# this comment to force a fresh build/revision that re-resolves the secret.
 
 runConfig:
   minInstances: 0
