@@ -32,6 +32,7 @@ function ExploreContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [accreditations, setAccreditations] = useState<TaxonomyItem[]>([]);
+  const [curricula, setCurricula] = useState<TaxonomyItem[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,20 +42,23 @@ function ExploreContent() {
   const [selectedGov, setSelectedGov] = useState(searchParams.get('governorate') || 'all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [selectedAccreditations, setSelectedAccreditations] = useState<string[]>([]);
+  const [selectedCurricula, setSelectedCurricula] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'recommended' | 'rating' | 'tuition_asc'>('recommended');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   useEffect(() => {
     async function loadMaster() {
       setLoading(true);
-      const [cats, govs, accs] = await Promise.all([
+      const [cats, govs, accs, currs] = await Promise.all([
         MasterDataService.getCategories(),
         MasterDataService.getGovernorates(),
         MasterDataService.getTaxonomies('ACCREDITATION'),
+        MasterDataService.getTaxonomies('CURRICULUM'),
       ]);
       setCategories(cats);
       setGovernorates(govs);
       setAccreditations(accs);
+      setCurricula(currs);
 
       const insts = await MasterDataService.getInstitutions({});
       setInstitutions(insts);
@@ -78,6 +82,10 @@ function ExploreContent() {
       const hasAcc = selectedAccreditations.some(accId => inst.taxonomyIds?.includes(accId));
       if (!hasAcc) return false;
     }
+    if (selectedCurricula.length > 0) {
+      const hasCurr = selectedCurricula.some(currId => inst.taxonomyIds?.includes(currId));
+      if (!hasCurr) return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchName = inst.name.ar.toLowerCase().includes(q) || inst.name.en.toLowerCase().includes(q);
@@ -100,7 +108,13 @@ function ExploreContent() {
   });
 
   const toggleAccreditation = (id: string) => {
-    setSelectedAccreditations((prev) => 
+    setSelectedAccreditations((prev) =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleCurriculum = (id: string) => {
+    setSelectedCurricula((prev) =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
@@ -111,6 +125,7 @@ function ExploreContent() {
     setSelectedGov('all');
     setVerifiedOnly(false);
     setSelectedAccreditations([]);
+    setSelectedCurricula([]);
   };
 
   return (
@@ -271,6 +286,32 @@ function ExploreContent() {
                   })}
                 </div>
               </div>
+
+              {/* Curriculum (Iraqi / British / American / etc.) */}
+              {curricula.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">{t('المنهج الدراسي', 'Curriculum')}</label>
+                  <div className="space-y-2">
+                    {curricula.map((curr) => {
+                      const isChecked = selectedCurricula.includes(curr.id);
+                      return (
+                        <label
+                          key={curr.id}
+                          onClick={() => toggleCurriculum(curr.id)}
+                          className="flex items-center gap-2 text-xs text-slate-700 font-medium cursor-pointer"
+                        >
+                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${
+                            isChecked ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'
+                          }`}>
+                            {isChecked && <Check className="w-3 h-3" />}
+                          </div>
+                          <span>{language === 'en' ? curr.name.en : curr.name.ar}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Verified Filter Toggle */}
               <div className="pt-3 border-t border-slate-100">
