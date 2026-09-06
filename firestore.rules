@@ -124,5 +124,22 @@ service cloud.firestore {
       allow create: if isValidApplication();
       allow read, update, delete: if isSuperAdmin();
     }
+
+    // Messaging (Phase 1: one thread per booking, doc id == booking id). The tutor is
+    // authenticated and reads/writes directly here. Guests (students) have no account yet,
+    // so their side goes entirely through the Admin SDK API route (/api/bookings/[id]/messages),
+    // which verifies their phone against the booking before touching these docs — the same
+    // guest pattern already used for booking cancel/lookup.
+    match /threads/{threadId} {
+      allow read: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
+      allow create: if isSuperAdmin() || isOwnerTutor(request.resource.data.tutorId);
+      allow update: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
+      allow delete: if isSuperAdmin();
+
+      match /messages/{messageId} {
+        allow read, create: if isSuperAdmin()
+          || isOwnerTutor(get(/databases/$(database)/documents/threads/$(threadId)).data.tutorId);
+      }
+    }
   }
 }

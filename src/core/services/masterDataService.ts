@@ -12,6 +12,7 @@ import { Tutor } from '../types/tutor';
 import { Review, Inquiry } from '../types/review';
 import { Application } from '../types/application';
 import { Booking } from '../types/booking';
+import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
 import { 
   collection, 
@@ -541,5 +542,48 @@ export class MasterDataService {
     return snap.docs
       .map(d => ({ id: d.id, ...d.data() } as Booking))
       .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+  }
+
+  /* =========================================================
+     MESSAGING (Phase 1: one thread per booking, doc id == booking id).
+     Tutor side only — authenticated, direct via client SDK under firestore.rules.
+     The guest (student) side goes through /api/bookings/[id]/messages instead,
+     since students have no account yet to authenticate against these rules.
+  ========================================================= */
+  static async getThreadMessages(bookingId: string): Promise<ThreadMessage[]> {
+    const q = query(collection(db, 'threads', bookingId, 'messages'), orderBy('createdAt', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as ThreadMessage);
+  }
+
+  static async sendTutorMessage(booking: Booking, senderName: string, text: string): Promise<ThreadMessage> {
+    const now = new Date().toISOString();
+    const threadRef = doc(db, 'threads', booking.id);
+    const messageRef = doc(collection(db, 'threads', booking.id, 'messages'));
+
+    const message: ThreadMessage = {
+      id: messageRef.id,
+      senderRole: 'tutor',
+      senderName,
+      text,
+      createdAt: now,
+    };
+
+    const existingThread = await getDoc(threadRef);
+    if (existingThread.exists()) {
+      await updateDoc(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140) });
+    } else {
+      const thread: Thread = {
+        id: booking.id,
+        tutorId: booking.tutorId,
+        participantPhones: booking.participantPhones,
+        lastMessageAt: now,
+        lastMessagePreview: text.slice(0, 140),
+        createdAt: now,
+      };
+      await setDoc(threadRef, thread);
+    }
+    await setDoc(messageRef, message);
+    return message;
   }
 }

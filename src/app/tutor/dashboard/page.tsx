@@ -7,8 +7,9 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
+import { ThreadMessage } from '@/core/types/message';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
-import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle } from 'lucide-react';
+import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle, MessageCircle, Send } from 'lucide-react';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
@@ -39,6 +40,11 @@ export default function TutorDashboardPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [pausing, setPausing] = useState(false);
+  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
+  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
+  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
+  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -101,6 +107,36 @@ export default function TutorDashboardPage() {
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
     await MasterDataService.updateBookingStatus(booking.id, status);
     setBookings(bookings.map(b => (b.id === booking.id ? { ...b, status } : b)));
+  };
+
+  const toggleThread = async (bookingId: string) => {
+    if (expandedThreadId === bookingId) {
+      setExpandedThreadId(null);
+      return;
+    }
+    setExpandedThreadId(bookingId);
+    if (!threadMessages[bookingId]) {
+      setLoadingThreadId(bookingId);
+      try {
+        const messages = await MasterDataService.getThreadMessages(bookingId);
+        setThreadMessages((prev) => ({ ...prev, [bookingId]: messages }));
+      } finally {
+        setLoadingThreadId(null);
+      }
+    }
+  };
+
+  const handleSendMessage = async (booking: Booking) => {
+    const text = messageDrafts[booking.id]?.trim();
+    if (!text || !tutor) return;
+    setSendingThreadId(booking.id);
+    try {
+      const sent = await MasterDataService.sendTutorMessage(booking, tutor.fullName.en || tutor.fullName.ar, text);
+      setThreadMessages((prev) => ({ ...prev, [booking.id]: [...(prev[booking.id] || []), sent] }));
+      setMessageDrafts((prev) => ({ ...prev, [booking.id]: '' }));
+    } finally {
+      setSendingThreadId(null);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -606,7 +642,8 @@ export default function TutorDashboardPage() {
             <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد حجوزات بعد', 'No bookings yet')}</div>
           ) : (
             bookings.map((booking) => (
-              <div key={booking.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div key={booking.id} className="p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     {booking.type === 'GROUP' ? <Users className="w-3.5 h-3.5 text-blue-600" /> : <User className="w-3.5 h-3.5 text-purple-600" />}
@@ -637,8 +674,14 @@ export default function TutorDashboardPage() {
                   </div>
                 </div>
 
-                {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
-                  <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => toggleThread(booking.id)}
+                      className={`p-2 rounded-lg ${expandedThreadId === booking.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                      title={t('مراسلة', 'Message')}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </button>
                     {booking.status === 'PENDING' && (
                       <button
                         onClick={() => handleBookingStatus(booking, 'CONFIRMED')}
@@ -666,20 +709,62 @@ export default function TutorDashboardPage() {
                         </button>
                       </>
                     )}
+                    {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
+                      <button
+                        onClick={() => {
+                          if (booking.status === 'CONFIRMED' && !confirm(t('هذا الحجز مؤكد بالفعل. هل تريد إلغاءه فعلاً؟', 'This booking is already confirmed. Cancel it anyway?'))) {
+                            return;
+                          }
+                          handleBookingStatus(booking, 'CANCELLED');
+                        }}
+                        className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg"
+                        title={t('إلغاء', 'Cancel')}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                </div>
+              </div>
+
+              {expandedThreadId === booking.id && (
+                <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
+                  <div className="max-h-56 overflow-y-auto space-y-2">
+                    {loadingThreadId === booking.id ? (
+                      <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
+                    ) : (threadMessages[booking.id]?.length || 0) === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+                    ) : (
+                      threadMessages[booking.id].map((msg) => (
+                        <div key={msg.id} className={`flex ${msg.senderRole === 'tutor' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[75%] px-3 py-2 rounded-xl text-xs ${
+                            msg.senderRole === 'tutor' ? 'bg-[#0B192C] text-white' : 'bg-white border border-slate-200 text-slate-700'
+                          }`}>
+                            <p>{msg.text}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={messageDrafts[booking.id] || ''}
+                      onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [booking.id]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(booking); }}
+                      placeholder={t('اكتب رسالة...', 'Write a message...')}
+                      className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                    />
                     <button
-                      onClick={() => {
-                        if (booking.status === 'CONFIRMED' && !confirm(t('هذا الحجز مؤكد بالفعل. هل تريد إلغاءه فعلاً؟', 'This booking is already confirmed. Cancel it anyway?'))) {
-                          return;
-                        }
-                        handleBookingStatus(booking, 'CANCELLED');
-                      }}
-                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg"
-                      title={t('إلغاء', 'Cancel')}
+                      onClick={() => handleSendMessage(booking)}
+                      disabled={sendingThreadId === booking.id || !messageDrafts[booking.id]?.trim()}
+                      className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
+                      title={t('إرسال', 'Send')}
                     >
-                      <X className="w-4 h-4" />
+                      <Send className="w-4 h-4" />
                     </button>
                   </div>
-                )}
+                </div>
+              )}
               </div>
             ))
           )}

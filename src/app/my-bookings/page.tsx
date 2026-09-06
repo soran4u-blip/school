@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { Search, Calendar, Users, User, X, MessageSquare } from 'lucide-react';
+import { Search, Calendar, Users, User, X, MessageSquare, MessageCircle, Send } from 'lucide-react';
+import { ThreadMessage } from '@/core/types/message';
 
 interface LookupBooking {
   id: string;
@@ -29,6 +30,11 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
+  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
+  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
+  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +73,44 @@ export default function MyBookingsPage() {
       setBookings((prev) => prev?.map((b) => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b)) || null);
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const toggleThread = async (bookingId: string) => {
+    if (expandedThreadId === bookingId) {
+      setExpandedThreadId(null);
+      return;
+    }
+    setExpandedThreadId(bookingId);
+    if (!threadMessages[bookingId]) {
+      setLoadingThreadId(bookingId);
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/messages?phone=${encodeURIComponent(phone.trim())}`);
+        const data = await res.json();
+        if (data.success) setThreadMessages((prev) => ({ ...prev, [bookingId]: data.messages }));
+      } finally {
+        setLoadingThreadId(null);
+      }
+    }
+  };
+
+  const handleSendMessage = async (bookingId: string) => {
+    const text = messageDrafts[bookingId]?.trim();
+    if (!text) return;
+    setSendingThreadId(bookingId);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone.trim(), text, senderName: 'Student' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setThreadMessages((prev) => ({ ...prev, [bookingId]: [...(prev[bookingId] || []), data.message] }));
+        setMessageDrafts((prev) => ({ ...prev, [bookingId]: '' }));
+      }
+    } finally {
+      setSendingThreadId(null);
     }
   };
 
@@ -109,7 +153,8 @@ export default function MyBookingsPage() {
           ) : (
             <div className="space-y-3">
               {bookings.map((b) => (
-                <div key={b.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div key={b.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       {b.type === 'GROUP' ? <Users className="w-4 h-4 text-blue-600" /> : <User className="w-4 h-4 text-purple-600" />}
@@ -135,6 +180,13 @@ export default function MyBookingsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => toggleThread(b.id)}
+                      className={`p-2 rounded-lg ${expandedThreadId === b.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                      title={t('مراسلة الأستاذ', 'Message tutor')}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </button>
                     {b.tutorWhatsapp && (
                       <a
                         href={`https://wa.me/${b.tutorWhatsapp}`}
@@ -157,6 +209,47 @@ export default function MyBookingsPage() {
                       </button>
                     )}
                   </div>
+                </div>
+
+                {expandedThreadId === b.id && (
+                  <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
+                    <div className="max-h-56 overflow-y-auto space-y-2">
+                      {loadingThreadId === b.id ? (
+                        <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
+                      ) : (threadMessages[b.id]?.length || 0) === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+                      ) : (
+                        threadMessages[b.id].map((msg) => (
+                          <div key={msg.id} className={`flex ${msg.senderRole === 'student' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] px-3 py-2 rounded-xl text-xs ${
+                              msg.senderRole === 'student' ? 'bg-[#0B192C] text-white' : 'bg-white border border-slate-200 text-slate-700'
+                            }`}>
+                              <p>{msg.text}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={messageDrafts[b.id] || ''}
+                        onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(b.id); }}
+                        placeholder={t('اكتب رسالة...', 'Write a message...')}
+                        className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                      />
+                      <button
+                        onClick={() => handleSendMessage(b.id)}
+                        disabled={sendingThreadId === b.id || !messageDrafts[b.id]?.trim()}
+                        className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
+                        title={t('إرسال', 'Send')}
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 </div>
               ))}
             </div>
