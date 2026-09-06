@@ -335,8 +335,19 @@ export class MasterDataService {
   }
 
   static async getTutorById(id: string): Promise<Tutor | null> {
-    const list = await this.getMergedTutors();
-    return list.find(t => t.id === id) || null;
+    // A direct single-doc read (not the collection-wide getMergedTutors scan) so Firestore's
+    // per-document rules apply correctly — in particular so a tutor can read their OWN doc via
+    // isOwnerTutor() even while status is still 'PENDING' (e.g. right after approval, before an
+    // admin activates them), which an unfiltered collection query would otherwise deny entirely.
+    try {
+      if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
+        const snap = await getDoc(doc(db, 'tutors', id));
+        if (snap.exists()) return { id: snap.id, ...snap.data() } as Tutor;
+      }
+    } catch (e) {
+      console.warn('Firestore fallback to in-memory store for tutor', id);
+    }
+    return inMemoryStore.tutors.find(t => t.id === id) || null;
   }
 
   static async saveTutor(tutor: Tutor): Promise<Tutor> {
