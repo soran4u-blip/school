@@ -66,6 +66,11 @@ export default function ApplyPage() {
       return;
     }
 
+    if (type === 'INSTITUTION' && !categoryId) {
+      setError(t('يرجى اختيار نوع المؤسسة', 'Please select an institution category'));
+      return;
+    }
+
     setSubmitting(true);
     try {
       await MasterDataService.createApplication({
@@ -269,10 +274,11 @@ export default function ApplyPage() {
 
           {type === 'INSTITUTION' && (
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">{t('نوع المؤسسة', 'Institution Category')}</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">{t('نوع المؤسسة *', 'Institution Category *')}</label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
+                required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">{t('اختر النوع', 'Select category')}</option>

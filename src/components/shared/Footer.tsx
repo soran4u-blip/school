@@ -114,7 +114,7 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="w-3.5 h-3.5" />
-                  <span>+964 780 000 0000</span>
+                  <span dir="ltr">+964 780 000 0000</span>
                 </div>
               </li>
             </ul>

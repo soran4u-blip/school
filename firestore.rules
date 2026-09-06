@@ -52,7 +52,8 @@ service cloud.firestore {
         && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
         && d.governorateId is string && d.governorateId.size() > 0
         && d.message is string && d.message.size() <= 3000
-        && d.status == 'PENDING';
+        && d.status == 'PENDING'
+        && (d.type != 'INSTITUTION' || (d.categoryId is string && d.categoryId.size() > 0));
     }
 
     // Dynamic Master Data (Locations, Categories, Taxonomies, Settings): Public Read, Superadmin Write
