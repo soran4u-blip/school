@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
@@ -9,6 +10,7 @@ import { UserCircle2, Loader2 } from 'lucide-react';
 
 const DASHBOARD_BY_ROLE: Record<string, string> = {
   tutor: '/tutor/dashboard',
+  student: '/account',
 };
 
 function LoginForm() {
@@ -145,6 +147,13 @@ function LoginForm() {
           >
             {resetting ? t('جاري الإرسال...', 'Sending...') : t('نسيت كلمة المرور؟', 'Forgot password?')}
           </button>
+
+          <p className="text-center text-xs text-slate-500">
+            {t('طالب جديد؟', 'New student?')}{' '}
+            <Link href="/account/signup" className="font-bold text-emerald-700 hover:underline">
+              {t('أنشئ حساباً مجانياً', 'Create a free account')}
+            </Link>
+          </p>
         </form>
       </div>
     </div>

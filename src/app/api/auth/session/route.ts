@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const decoded = await adminAuth.verifyIdToken(idToken);
-    if (decoded.role !== 'superadmin' && decoded.role !== 'tutor') {
+    if (decoded.role !== 'superadmin' && decoded.role !== 'tutor' && decoded.role !== 'student') {
       return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
     }
 

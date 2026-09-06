@@ -4,9 +4,11 @@ import { adminAuth } from '@/core/firebase/admin';
 const SESSION_COOKIE_NAME = 'session';
 const PUBLIC_PATHS = ['/admin/login', '/login'];
 
-function requiredRole(pathname: string): 'superadmin' | 'tutor' | null {
+function requiredRole(pathname: string): 'superadmin' | 'tutor' | 'student' | null {
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/seed') || pathname.startsWith('/api/applications')) return 'superadmin';
   if (pathname.startsWith('/tutor/dashboard')) return 'tutor';
+  if (pathname.startsWith('/account') && !pathname.startsWith('/account/signup')) return 'student';
+  if (pathname.startsWith('/api/account')) return 'student';
   return null;
 }
 
@@ -40,16 +42,16 @@ export async function proxy(request: NextRequest) {
   }
 }
 
-function denyAccess(request: NextRequest, isApiRoute: boolean, role: 'superadmin' | 'tutor') {
+function denyAccess(request: NextRequest, isApiRoute: boolean, role: 'superadmin' | 'tutor' | 'student') {
   if (isApiRoute) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-  const loginPath = role === 'tutor' ? '/login' : '/admin/login';
+  const loginPath = role === 'superadmin' ? '/admin/login' : '/login';
   const loginUrl = new URL(loginPath, request.url);
   loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
   return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/seed/:path*', '/api/applications/:path*', '/tutor/:path*'],
+  matcher: ['/admin/:path*', '/api/seed/:path*', '/api/applications/:path*', '/tutor/:path*', '/account/:path*', '/api/account/:path*'],
 };

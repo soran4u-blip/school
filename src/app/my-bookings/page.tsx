@@ -147,6 +147,20 @@ export default function MyBookingsPage() {
           <div className="p-4 mb-4 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800">{error}</div>
         )}
 
+        {bookings && bookings.length > 0 && (
+          <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-emerald-800">
+              {t('احفظ حجوزاتك وراسل أساتذتك دون البحث برقم الهاتف في كل مرة.', "Save your bookings and message your tutors without searching by phone every time.")}
+            </p>
+            <Link
+              href={`/account/signup?phone=${encodeURIComponent(phone.trim())}`}
+              className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold text-center"
+            >
+              {t('أنشئ حساباً مجانياً', 'Create a free account')}
+            </Link>
+          </div>
+        )}
+
         {bookings && (
           bookings.length === 0 ? (
             <div className="text-center text-sm text-slate-400 py-12">{t('لا توجد حجوزات بهذا الرقم', 'No bookings found for this number')}</div>

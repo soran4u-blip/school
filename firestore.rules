@@ -141,5 +141,13 @@ service cloud.firestore {
           || isOwnerTutor(get(/databases/$(database)/documents/threads/$(threadId)).data.tutorId);
       }
     }
+
+    // Student accounts (phase 2 of messaging: optional, self-service — booking itself never
+    // requires one). Doc id == the student's own Auth uid, so isOwner() is a direct fit.
+    // Bookings/threads for a logged-in student are still read via /api/account/* (their phone
+    // lives in a server-set custom claim, not trusted from a client-side Firestore query).
+    match /students/{studentId} {
+      allow read, write: if isSuperAdmin() || isOwner(studentId);
+    }
   }
 }
