@@ -92,7 +92,8 @@ export default function AdminBookingsPage() {
                   <span className="text-xs text-slate-500 font-mono">{b.date} {b.startTime}–{b.endTime}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     b.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700' :
-                    b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
+                    b.status === 'COMPLETED' ? 'bg-blue-50 text-blue-700' :
+                    b.status === 'CANCELLED' || b.status === 'NO_SHOW' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     {b.status}
                   </span>

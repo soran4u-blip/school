@@ -19,6 +19,6 @@ export interface Booking {
     iqd: number;
     usd: number;
   };
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
   createdAt: string;
 }

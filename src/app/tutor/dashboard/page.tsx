@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
-import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog } from 'lucide-react';
+import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle } from 'lucide-react';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
@@ -34,6 +34,11 @@ export default function TutorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [pausing, setPausing] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -96,6 +101,53 @@ export default function TutorDashboardPage() {
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
     await MasterDataService.updateBookingStatus(booking.id, status);
     setBookings(bookings.map(b => (b.id === booking.id ? { ...b, status } : b)));
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    if (!user?.email) return;
+    if (newPassword.length < 6) {
+      setPasswordMessage({ text: t('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل', 'New password must be at least 6 characters'), type: 'error' });
+      return;
+    }
+    setChangingPassword(true);
+    setPasswordMessage(null);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setPasswordMessage({ text: t('تم تغيير كلمة المرور بنجاح', 'Password changed successfully'), type: 'success' });
+    } catch {
+      setPasswordMessage({ text: t('كلمة المرور الحالية غير صحيحة', 'Current password is incorrect'), type: 'error' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleTogglePause = async () => {
+    if (!tutor) return;
+    const status = tutor.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE';
+    if (status === 'PENDING' && !confirm(t('سيتم إخفاء ملفك من الدليل العام ولن يتمكن الطلاب من حجز مواعيد جديدة. هل تريد المتابعة؟', 'Your profile will be hidden from the public directory and students won\'t be able to book new sessions. Continue?'))) {
+      return;
+    }
+    setPausing(true);
+    try {
+      await MasterDataService.saveTutor({ ...tutor, status });
+      setTutor({ ...tutor, status });
+      setMessage({
+        text: status === 'PENDING'
+          ? t('تم إيقاف ملفك مؤقتاً — لن يظهر للطلاب حتى تُفعّله مجدداً', 'Your profile is now paused — hidden from students until you resume it')
+          : t('تم تفعيل ملفك مجدداً وهو الآن ظاهر للطلاب', 'Your profile is active again and visible to students'),
+        type: 'success',
+      });
+    } catch {
+      setMessage({ text: t('تعذر تحديث حالة الملف', 'Failed to update profile status'), type: 'error' });
+    } finally {
+      setPausing(false);
+    }
   };
 
   if (loading) {
@@ -375,6 +427,75 @@ export default function TutorDashboardPage() {
               <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ التغييرات', 'Save Changes')}</span>
             </button>
           </div>
+
+          {tutor.isVerified && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center gap-2">
+                {tutor.status === 'ACTIVE' ? <PauseCircle className="w-4 h-4 text-amber-600" /> : <PlayCircle className="w-4 h-4 text-emerald-600" />}
+                <h2 className="font-bold text-sm text-slate-900">{t('ظهور الملف للطلاب', 'Profile Visibility')}</h2>
+              </div>
+              <p className="text-xs text-slate-500">
+                {tutor.status === 'ACTIVE'
+                  ? t('ملفك ظاهر حالياً في الدليل العام ويمكن للطلاب حجز مواعيد جديدة.', 'Your profile is currently visible in the public directory and students can book new sessions.')
+                  : t('ملفك متوقف مؤقتاً ولن يظهر للطلاب حتى تُفعّله مجدداً.', 'Your profile is paused and hidden from students until you resume it.')}
+              </p>
+              <button
+                onClick={handleTogglePause}
+                disabled={pausing}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-60 ${
+                  tutor.status === 'ACTIVE' ? 'bg-amber-50 hover:bg-amber-100 text-amber-800' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
+                }`}
+              >
+                {tutor.status === 'ACTIVE' ? <PauseCircle className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5" />}
+                <span>
+                  {pausing ? t('جاري التحديث...', 'Updating...') : tutor.status === 'ACTIVE' ? t('إيقاف الملف مؤقتاً', 'Pause My Profile') : t('تفعيل الملف مجدداً', 'Resume My Profile')}
+                </span>
+              </button>
+            </div>
+          )}
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-slate-500" />
+              <h2 className="font-bold text-sm text-slate-900">{t('تغيير كلمة المرور', 'Change Password')}</h2>
+            </div>
+            <form onSubmit={handleChangePassword} className="space-y-3 max-w-sm">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('كلمة المرور الحالية', 'Current Password')}</label>
+                <input
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                  autoComplete="current-password"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('كلمة المرور الجديدة', 'New Password')}</label>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                  autoComplete="new-password"
+                />
+              </div>
+              {passwordMessage && (
+                <p className={`text-xs font-bold px-3 py-2 rounded-lg ${passwordMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
+                  {passwordMessage.text}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={changingPassword}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold disabled:opacity-60"
+              >
+                {changingPassword ? t('جاري التغيير...', 'Changing...') : t('تحديث كلمة المرور', 'Update Password')}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -493,7 +614,8 @@ export default function TutorDashboardPage() {
                     <span className="text-xs text-slate-500 font-mono">{booking.startTime}–{booking.endTime}</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       booking.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700' :
-                      booking.status === 'CANCELLED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
+                      booking.status === 'COMPLETED' ? 'bg-blue-50 text-blue-700' :
+                      booking.status === 'CANCELLED' || booking.status === 'NO_SHOW' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
                     }`}>
                       {booking.status}
                     </span>
@@ -515,7 +637,7 @@ export default function TutorDashboardPage() {
                   </div>
                 </div>
 
-                {booking.status !== 'CANCELLED' && (
+                {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
                   <div className="flex items-center gap-2 shrink-0">
                     {booking.status === 'PENDING' && (
                       <button
@@ -525,6 +647,24 @@ export default function TutorDashboardPage() {
                       >
                         <Check className="w-4 h-4" />
                       </button>
+                    )}
+                    {booking.status === 'CONFIRMED' && (
+                      <>
+                        <button
+                          onClick={() => handleBookingStatus(booking, 'COMPLETED')}
+                          className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg"
+                          title={t('اكتملت الجلسة', 'Mark Completed')}
+                        >
+                          <ListChecks className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleBookingStatus(booking, 'NO_SHOW')}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg"
+                          title={t('لم يحضر الطالب', 'Mark No-show')}
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => {

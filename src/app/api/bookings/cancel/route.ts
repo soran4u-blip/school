@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
       if (booking.status === 'CANCELLED') {
         throw new Error('Booking is already cancelled');
       }
+      if (booking.status === 'COMPLETED' || booking.status === 'NO_SHOW') {
+        throw new Error('This session has already taken place and can no longer be cancelled');
+      }
 
       if (booking.participants.length <= 1) {
         tx.update(ref, { status: 'CANCELLED' });
