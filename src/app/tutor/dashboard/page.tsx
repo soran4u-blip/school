@@ -515,17 +515,24 @@ export default function TutorDashboardPage() {
                   </div>
                 </div>
 
-                {booking.status === 'PENDING' && (
+                {booking.status !== 'CANCELLED' && (
                   <div className="flex items-center gap-2 shrink-0">
+                    {booking.status === 'PENDING' && (
+                      <button
+                        onClick={() => handleBookingStatus(booking, 'CONFIRMED')}
+                        className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
+                        title={t('تأكيد', 'Confirm')}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleBookingStatus(booking, 'CONFIRMED')}
-                      className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                      title={t('تأكيد', 'Confirm')}
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleBookingStatus(booking, 'CANCELLED')}
+                      onClick={() => {
+                        if (booking.status === 'CONFIRMED' && !confirm(t('هذا الحجز مؤكد بالفعل. هل تريد إلغاءه فعلاً؟', 'This booking is already confirmed. Cancel it anyway?'))) {
+                          return;
+                        }
+                        handleBookingStatus(booking, 'CANCELLED');
+                      }}
                       className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg"
                       title={t('إلغاء', 'Cancel')}
                     >

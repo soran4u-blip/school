@@ -5,9 +5,9 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate } from '@/core/types/masterData';
-import { UserCheck, ShieldCheck, Star, MapPin, Phone, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
+import { UserCheck, ShieldCheck, ShieldQuestion, Star, MapPin, Phone, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { formatCurrencyIQD } from '@/lib/utils';
+import { formatCurrencyIQD, deriveVerificationBadge } from '@/lib/utils';
 
 export default function AdminTutorsPage() {
   const { language, t } = useLanguage();
@@ -33,6 +33,22 @@ export default function AdminTutorsPage() {
       return;
     }
     await MasterDataService.deleteTutor(tutor.id);
+    await loadData();
+  };
+
+  const handleToggleStatus = async (tutor: Tutor) => {
+    const status = tutor.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE';
+    await MasterDataService.saveTutor({ ...tutor, status });
+    await loadData();
+  };
+
+  const handleToggleVerified = async (tutor: Tutor) => {
+    const isVerified = !tutor.isVerified;
+    await MasterDataService.saveTutor({
+      ...tutor,
+      isVerified,
+      verificationBadgeLabel: deriveVerificationBadge(isVerified, tutor.verificationBadgeLabel),
+    });
     await loadData();
   };
 
@@ -68,6 +84,7 @@ export default function AdminTutorsPage() {
               <th className="p-3 text-start">{t('التخصص والمحافظة', 'Subject & Governorate')}</th>
               <th className="p-3 text-center">{t('سعر الساعة', 'Hourly Rate')}</th>
               <th className="p-3 text-center">{t('التقييم', 'Rating')}</th>
+              <th className="p-3 text-center">{t('النشر', 'Status')}</th>
               <th className="p-3 text-center">{t('حالة التوثيق', 'Verification')}</th>
               <th className="p-3 text-end">{t('إجراءات', 'Actions')}</th>
             </tr>
@@ -106,10 +123,31 @@ export default function AdminTutorsPage() {
                     </div>
                   </td>
                   <td className="p-3 text-center">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
-                      <ShieldCheck className="w-3 h-3" />
+                    <button
+                      onClick={() => handleToggleStatus(tutor)}
+                      title={t('اضغط للتبديل', 'Click to toggle')}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
+                        tutor.status === 'ACTIVE'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                      }`}
+                    >
+                      {tutor.status === 'ACTIVE' ? t('نشط', 'Active') : t('قيد المراجعة', 'Pending')}
+                    </button>
+                  </td>
+                  <td className="p-3 text-center">
+                    <button
+                      onClick={() => handleToggleVerified(tutor)}
+                      title={t('اضغط للتبديل', 'Click to toggle')}
+                      className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
+                        tutor.isVerified
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-slate-50 text-slate-600 border-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      {tutor.isVerified ? <ShieldCheck className="w-3 h-3" /> : <ShieldQuestion className="w-3 h-3" />}
                       <span>{language === 'en' ? tutor.verificationBadgeLabel.en : tutor.verificationBadgeLabel.ar}</span>
-                    </span>
+                    </button>
                   </td>
                   <td className="p-3 text-end">
                     <div className="flex items-center justify-end gap-1.5">

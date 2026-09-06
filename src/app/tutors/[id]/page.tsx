@@ -24,7 +24,17 @@ import {
   Check,
   X,
   ListChecks,
+  BookOpen,
+  GraduationCap,
+  Laptop,
+  Award,
 } from 'lucide-react';
+
+const DELIVERY_MODE_LABEL: Record<string, { ar: string; en: string }> = {
+  ONLINE: { ar: 'عن بعد', en: 'Online' },
+  IN_PERSON: { ar: 'حضوري', en: 'In Person' },
+  HYBRID: { ar: 'مختلط', en: 'Hybrid' },
+};
 
 interface SlotStatus {
   bookingId: string;
@@ -78,6 +88,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
   const [tutor, setTutor] = useState<Tutor | null>(null);
   const [governorate, setGovernorate] = useState<Governorate | null>(null);
   const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
+  const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [slotStatuses, setSlotStatuses] = useState<SlotStatus[]>([]);
 
@@ -115,13 +126,15 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
         const tut = await MasterDataService.getTutorById(resolvedParams.id);
         if (tut) {
           setTutor(tut);
-          const [gov, taxes, revs] = await Promise.all([
+          const [gov, taxes, levels, revs] = await Promise.all([
             MasterDataService.getGovernorateById(tut.governorateId),
             MasterDataService.getTaxonomies('SUBJECT', false),
+            MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
             MasterDataService.getApprovedTutorReviews(tut.id).catch(() => []),
           ]);
           setGovernorate(gov);
           setSubjects(taxes.filter((tx) => tut.subjectIds.includes(tx.id)));
+          setStudentLevels(levels.filter((lvl) => tut.studentLevelIds.includes(lvl.id)));
           setReviews(revs);
           await loadSlotStatuses(tut.id);
         }
@@ -306,6 +319,55 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
             <p className="text-sm text-slate-700 leading-relaxed">{language === 'en' ? tutor.bio.en : tutor.bio.ar}</p>
           </div>
         )}
+
+        {/* Teaching Details: Subjects, Grades, Delivery Mode, Experience */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-6 space-y-4">
+          {tutor.yearsOfExperience > 0 && (
+            <div className="flex items-center gap-2 text-sm text-slate-700">
+              <Award className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="font-bold">{t(`${tutor.yearsOfExperience} سنوات خبرة`, `${tutor.yearsOfExperience} years of experience`)}</span>
+            </div>
+          )}
+
+          {tutor.deliveryMode?.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Laptop className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+              <div className="flex flex-wrap gap-1.5">
+                {tutor.deliveryMode.map((mode) => (
+                  <span key={mode} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                    {language === 'en' ? DELIVERY_MODE_LABEL[mode]?.en : DELIVERY_MODE_LABEL[mode]?.ar}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {subjects.length > 0 && (
+            <div className="flex items-start gap-2">
+              <BookOpen className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+              <div className="flex flex-wrap gap-1.5">
+                {subjects.map((s) => (
+                  <span key={s.id} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                    {language === 'en' ? s.name.en : s.name.ar}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {studentLevels.length > 0 && (
+            <div className="flex items-start gap-2">
+              <GraduationCap className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="flex flex-wrap gap-1.5">
+                {studentLevels.map((lvl) => (
+                  <span key={lvl.id} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                    {language === 'en' ? lvl.name.en : lvl.name.ar}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Pricing */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

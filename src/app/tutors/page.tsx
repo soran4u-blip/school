@@ -17,22 +17,26 @@ export default function TutorsListPage() {
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
+  const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [filterGov, setFilterGov] = useState('all');
   const [filterSubject, setFilterSubject] = useState('all');
+  const [filterLevel, setFilterLevel] = useState('all');
   const [filterMode, setFilterMode] = useState('all');
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc'>('rating');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [tutorList, govs, taxes] = await Promise.all([
+      const [tutorList, govs, taxes, levels] = await Promise.all([
         MasterDataService.getTutors({}),
         MasterDataService.getGovernorates(),
         MasterDataService.getTaxonomies('SUBJECT', false),
+        MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
       ]);
       setTutors(tutorList);
       setGovernorates(govs);
       setSubjects(taxes);
+      setStudentLevels(levels);
       setLoading(false);
     }
     load();
@@ -41,6 +45,7 @@ export default function TutorsListPage() {
   const filtered = tutors
     .filter((t) => filterGov === 'all' || t.governorateId === filterGov)
     .filter((t) => filterSubject === 'all' || t.subjectIds.includes(filterSubject))
+    .filter((t) => filterLevel === 'all' || t.studentLevelIds.includes(filterLevel))
     .filter((t) => filterMode === 'all' || t.deliveryMode.includes(filterMode as any))
     .sort((a, b) => (sortBy === 'rating' ? b.ratingAvg - a.ratingAvg : a.hourlyRate.iqd - b.hourlyRate.iqd));
 
@@ -74,6 +79,17 @@ export default function TutorsListPage() {
             <option value="all">{t('كافة المواد', 'All Subjects')}</option>
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>{language === 'en' ? s.name.en : s.name.ar}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg font-medium text-slate-700"
+          >
+            <option value="all">{t('كافة الصفوف', 'All Grades')}</option>
+            {studentLevels.map((lvl) => (
+              <option key={lvl.id} value={lvl.id}>{language === 'en' ? lvl.name.en : lvl.name.ar}</option>
             ))}
           </select>
 

@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
+import { MasterDataService } from '@/core/services/masterDataService';
 import {
   GraduationCap,
   LayoutDashboard,
@@ -28,6 +29,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { language, t } = useLanguage();
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    async function loadPendingCounts() {
+      try {
+        const [applications, reviews, inquiries] = await Promise.all([
+          MasterDataService.getAllApplications(),
+          MasterDataService.getAllReviews(),
+          MasterDataService.getAllInquiries(),
+        ]);
+        setPendingCounts({
+          '/admin/applications': applications.filter((a) => a.status === 'PENDING').length,
+          '/admin/reviews': reviews.filter((r) => r.status === 'PENDING').length + inquiries.filter((i) => i.status === 'NEW').length,
+        });
+      } catch {
+        // Non-critical — sidebar just won't show counts this load.
+      }
+    }
+    loadPendingCounts();
+  }, [pathname]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
@@ -137,6 +158,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {item.badge && (
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
                     {item.badge}
+                  </span>
+                )}
+                {!item.badge && !!pendingCounts[item.href] && (
+                  <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-bold min-w-5 text-center">
+                    {pendingCounts[item.href]}
                   </span>
                 )}
               </Link>

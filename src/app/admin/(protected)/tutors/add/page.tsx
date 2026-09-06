@@ -9,6 +9,7 @@ import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { UserCheck, Save, AlertCircle, ArrowRight } from 'lucide-react';
 import ImageUploadField from '@/components/shared/ImageUploadField';
+import { deriveVerificationBadge } from '@/lib/utils';
 
 const emptyForm: Partial<Tutor> = {
   id: '',
@@ -95,10 +96,10 @@ function TutorForm() {
       phone: form.phone || '',
       yearsOfExperience: Number(form.yearsOfExperience) || 0,
       isVerified: form.isVerified ?? false,
-      verificationBadgeLabel: {
+      verificationBadgeLabel: deriveVerificationBadge(form.isVerified ?? false, {
         ar: form.verificationBadgeLabel?.ar || 'قيد المراجعة',
         en: form.verificationBadgeLabel?.en || 'Under Review',
-      },
+      }),
       status: form.status || 'PENDING',
       ratingAvg: form.ratingAvg || 0,
       reviewCount: form.reviewCount || 0,

@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { UserCircle2, Loader2 } from 'lucide-react';
@@ -20,6 +20,8 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +53,25 @@ function LoginForm() {
       setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Invalid email or password'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError(t('أدخل بريدك الإلكتروني أولاً لإعادة تعيين كلمة المرور', 'Enter your email above first to reset your password'));
+      return;
+    }
+    setError('');
+    setResetMessage('');
+    setResetting(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetMessage(t('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'A password reset link has been sent to your email'));
+    } catch {
+      // Same message whether the account exists or not, to avoid leaking which emails are registered.
+      setResetMessage(t('إذا كان هذا البريد مسجلاً، فسيصلك رابط إعادة تعيين كلمة المرور', 'If that email is registered, a password reset link is on its way'));
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -101,6 +122,12 @@ function LoginForm() {
             </p>
           )}
 
+          {resetMessage && (
+            <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              {resetMessage}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -108,6 +135,15 @@ function LoginForm() {
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('تسجيل الدخول', 'Sign In')}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={resetting}
+            className="w-full text-center text-xs font-semibold text-slate-500 hover:text-emerald-700 transition-colors disabled:opacity-60"
+          >
+            {resetting ? t('جاري الإرسال...', 'Sending...') : t('نسيت كلمة المرور؟', 'Forgot password?')}
           </button>
         </form>
       </div>
