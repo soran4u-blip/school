@@ -7,7 +7,9 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
-import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone } from 'lucide-react';
+import { Governorate, TaxonomyItem } from '@/core/types/masterData';
+import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog } from 'lucide-react';
+import ImageUploadField from '@/components/shared/ImageUploadField';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
   { ar: 'الأحد', en: 'Sunday' },
@@ -21,11 +23,14 @@ const DAY_LABELS: { ar: string; en: string }[] = [
 
 export default function TutorDashboardPage() {
   const { language, t } = useLanguage();
-  const [tab, setTab] = useState<'availability' | 'bookings'>('availability');
+  const [tab, setTab] = useState<'profile' | 'availability' | 'bookings'>('profile');
   const [tutorId, setTutorId] = useState<string | null>(null);
   const [tutor, setTutor] = useState<Tutor | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
+  const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -45,13 +50,19 @@ export default function TutorDashboardPage() {
         const id = tokenResult.claims.tutorId as string | undefined;
         if (!id) return;
         setTutorId(id);
-        const [tutorDoc, tutorBookings] = await Promise.all([
+        const [tutorDoc, tutorBookings, govs, subs, levels] = await Promise.all([
           MasterDataService.getTutorById(id),
           MasterDataService.getTutorBookings(id),
+          MasterDataService.getGovernorates(false),
+          MasterDataService.getTaxonomies('SUBJECT', false),
+          MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
         ]);
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
         setBookings(tutorBookings);
+        setGovernorates(govs);
+        setSubjects(subs);
+        setStudentLevels(levels);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -117,7 +128,13 @@ export default function TutorDashboardPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-1.5 border border-slate-200 shadow-xs flex gap-1 max-w-sm">
+      <div className="bg-white rounded-xl p-1.5 border border-slate-200 shadow-xs flex gap-1 max-w-md">
+        <button
+          onClick={() => setTab('profile')}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'profile' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          {t('الملف الشخصي', 'Profile')}
+        </button>
         <button
           onClick={() => setTab('availability')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'availability' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
@@ -131,6 +148,233 @@ export default function TutorDashboardPage() {
           {t('الحجوزات', 'My Bookings')} {bookings.filter(b => b.status === 'PENDING').length > 0 && <span className="ms-1 text-amber-400">({bookings.filter(b => b.status === 'PENDING').length})</span>}
         </button>
       </div>
+
+      {tab === 'profile' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2">
+              <UserCog className="w-4 h-4 text-emerald-600" />
+              <h2 className="font-bold text-sm text-slate-900">{t('البيانات الشخصية', 'Personal Details')}</h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ImageUploadField
+                label={t('الصورة الشخصية', 'Photo')}
+                value={tutor.photoUrl || ''}
+                onChange={(url) => setTutor({ ...tutor, photoUrl: url })}
+                pathPrefix={`tutors/${tutor.id}`}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم الكامل بالعربية', 'Full Name (Arabic)')}</label>
+                <input
+                  type="text"
+                  value={tutor.fullName?.ar || ''}
+                  onChange={(e) => setTutor({ ...tutor, fullName: { ...tutor.fullName, ar: e.target.value } })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم الكامل بالإنجليزية', 'Full Name (English)')}</label>
+                <input
+                  type="text"
+                  value={tutor.fullName?.en || ''}
+                  onChange={(e) => setTutor({ ...tutor, fullName: { ...tutor.fullName, en: e.target.value } })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('اللقب المهني بالعربية', 'Title (Arabic)')}</label>
+                <input
+                  type="text"
+                  placeholder="أستاذ الفيزياء للفرع العلمي"
+                  value={tutor.title?.ar || ''}
+                  onChange={(e) => setTutor({ ...tutor, title: { ...tutor.title, ar: e.target.value } })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('اللقب المهني بالإنجليزية', 'Title (English)')}</label>
+                <input
+                  type="text"
+                  placeholder="Senior Physics Instructor"
+                  value={tutor.title?.en || ''}
+                  onChange={(e) => setTutor({ ...tutor, title: { ...tutor.title, en: e.target.value } })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية', 'Bio')}</label>
+              <textarea
+                rows={3}
+                value={tutor.bio?.ar || ''}
+                onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('المحافظة', 'Governorate')}</label>
+                <select
+                  value={tutor.governorateId || ''}
+                  onChange={(e) => setTutor({ ...tutor, governorateId: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
+                >
+                  <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
+                  {governorates.map((g) => (
+                    <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنوات الخبرة', 'Years of Experience')}</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={tutor.yearsOfExperience ?? 0}
+                  onChange={(e) => setTutor({ ...tutor, yearsOfExperience: Number(e.target.value) })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
+                <input
+                  type="text"
+                  placeholder="9647801234567"
+                  value={tutor.whatsappNumber || ''}
+                  onChange={(e) => setTutor({ ...tutor, whatsappNumber: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
+              <input
+                type="text"
+                value={tutor.phone || ''}
+                onChange={(e) => setTutor({ ...tutor, phone: e.target.value })}
+                className="w-full sm:w-1/3 px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              />
+            </div>
+
+            {/* Delivery Mode */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">{t('طريقة التدريس', 'Delivery Mode')}</label>
+              <div className="flex gap-2">
+                {(['ONLINE', 'IN_PERSON', 'HYBRID'] as const).map((mode) => {
+                  const checked = tutor.deliveryMode?.includes(mode) || false;
+                  return (
+                    <label
+                      key={mode}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
+                        checked ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={checked}
+                        onChange={(e) => {
+                          const set = new Set(tutor.deliveryMode || []);
+                          if (e.target.checked) set.add(mode); else set.delete(mode);
+                          setTutor({ ...tutor, deliveryMode: Array.from(set) });
+                        }}
+                      />
+                      {mode.replace('_', ' ')}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Subjects */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">{t('المواد الدراسية', 'Subjects')}</label>
+              <div className="flex flex-wrap gap-2">
+                {subjects.map((sub) => {
+                  const checked = tutor.subjectIds?.includes(sub.id) || false;
+                  return (
+                    <label
+                      key={sub.id}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
+                        checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={checked}
+                        onChange={(e) => {
+                          const ids = new Set(tutor.subjectIds || []);
+                          if (e.target.checked) ids.add(sub.id); else ids.delete(sub.id);
+                          setTutor({ ...tutor, subjectIds: Array.from(ids) });
+                        }}
+                      />
+                      {language === 'en' ? sub.name.en : sub.name.ar}
+                    </label>
+                  );
+                })}
+                {subjects.length === 0 && (
+                  <span className="text-[11px] text-slate-400">{t('لا توجد مواد دراسية بعد', 'No subjects available yet')}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Student Levels / Grades */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">{t('الصفوف الدراسية', 'Grades / Student Levels')}</label>
+              <div className="flex flex-wrap gap-2">
+                {studentLevels.map((lvl) => {
+                  const checked = tutor.studentLevelIds?.includes(lvl.id) || false;
+                  return (
+                    <label
+                      key={lvl.id}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
+                        checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={checked}
+                        onChange={(e) => {
+                          const ids = new Set(tutor.studentLevelIds || []);
+                          if (e.target.checked) ids.add(lvl.id); else ids.delete(lvl.id);
+                          setTutor({ ...tutor, studentLevelIds: Array.from(ids) });
+                        }}
+                      />
+                      {language === 'en' ? lvl.name.en : lvl.name.ar}
+                    </label>
+                  );
+                })}
+                {studentLevels.length === 0 && (
+                  <span className="text-[11px] text-slate-400">{t('لا توجد صفوف دراسية بعد', 'No grades available yet')}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ التغييرات', 'Save Changes')}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {tab === 'availability' && (
         <div className="space-y-6">

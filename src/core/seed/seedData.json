@@ -403,6 +403,174 @@
       "name": { "ar": "اللغة الإنجليزية وتحضير آيلتس (IELTS)", "en": "English & IELTS Preparation" },
       "isActive": true,
       "displayOrder": 4
+    },
+    {
+      "id": "sub-mathematics",
+      "type": "SUBJECT",
+      "code": "MATHEMATICS",
+      "name": { "ar": "الرياضيات", "en": "Mathematics" },
+      "isActive": true,
+      "displayOrder": 5
+    },
+    {
+      "id": "sub-physics",
+      "type": "SUBJECT",
+      "code": "PHYSICS",
+      "name": { "ar": "الفيزياء", "en": "Physics" },
+      "isActive": true,
+      "displayOrder": 6
+    },
+    {
+      "id": "sub-chemistry",
+      "type": "SUBJECT",
+      "code": "CHEMISTRY",
+      "name": { "ar": "الكيمياء", "en": "Chemistry" },
+      "isActive": true,
+      "displayOrder": 7
+    },
+    {
+      "id": "sub-biology",
+      "type": "SUBJECT",
+      "code": "BIOLOGY",
+      "name": { "ar": "الأحياء", "en": "Biology" },
+      "isActive": true,
+      "displayOrder": 8
+    },
+    {
+      "id": "sub-arabic",
+      "type": "SUBJECT",
+      "code": "ARABIC",
+      "name": { "ar": "اللغة العربية", "en": "Arabic Language" },
+      "isActive": true,
+      "displayOrder": 9
+    },
+    {
+      "id": "sub-english",
+      "type": "SUBJECT",
+      "code": "ENGLISH",
+      "name": { "ar": "اللغة الإنجليزية", "en": "English Language" },
+      "isActive": true,
+      "displayOrder": 10
+    },
+    {
+      "id": "sub-computer-science",
+      "type": "SUBJECT",
+      "code": "COMPUTER_SCIENCE",
+      "name": { "ar": "الحاسوب", "en": "Computer Science" },
+      "isActive": true,
+      "displayOrder": 11
+    },
+    {
+      "id": "sub-islamic-studies",
+      "type": "SUBJECT",
+      "code": "ISLAMIC_STUDIES",
+      "name": { "ar": "التربية الإسلامية", "en": "Islamic Studies" },
+      "isActive": true,
+      "displayOrder": 12
+    },
+    {
+      "id": "level-g1",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_1",
+      "name": { "ar": "الصف الأول", "en": "Grade 1" },
+      "isActive": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "level-g2",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_2",
+      "name": { "ar": "الصف الثاني", "en": "Grade 2" },
+      "isActive": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "level-g3",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_3",
+      "name": { "ar": "الصف الثالث", "en": "Grade 3" },
+      "isActive": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "level-g4",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_4",
+      "name": { "ar": "الصف الرابع", "en": "Grade 4" },
+      "isActive": true,
+      "displayOrder": 4
+    },
+    {
+      "id": "level-g5",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_5",
+      "name": { "ar": "الصف الخامس", "en": "Grade 5" },
+      "isActive": true,
+      "displayOrder": 5
+    },
+    {
+      "id": "level-g6",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_6",
+      "name": { "ar": "الصف السادس", "en": "Grade 6" },
+      "isActive": true,
+      "displayOrder": 6
+    },
+    {
+      "id": "level-g7",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_7",
+      "name": { "ar": "الصف السابع", "en": "Grade 7" },
+      "isActive": true,
+      "displayOrder": 7
+    },
+    {
+      "id": "level-g8",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_8",
+      "name": { "ar": "الصف الثامن", "en": "Grade 8" },
+      "isActive": true,
+      "displayOrder": 8
+    },
+    {
+      "id": "level-g9",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_9",
+      "name": { "ar": "الصف التاسع", "en": "Grade 9" },
+      "isActive": true,
+      "displayOrder": 9
+    },
+    {
+      "id": "level-g10",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_10",
+      "name": { "ar": "الصف العاشر", "en": "Grade 10" },
+      "isActive": true,
+      "displayOrder": 10
+    },
+    {
+      "id": "level-g11",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_11",
+      "name": { "ar": "الصف الحادي عشر", "en": "Grade 11" },
+      "isActive": true,
+      "displayOrder": 11
+    },
+    {
+      "id": "level-g12",
+      "type": "STUDENT_LEVEL",
+      "code": "GRADE_12",
+      "name": { "ar": "الصف الثاني عشر", "en": "Grade 12" },
+      "isActive": true,
+      "displayOrder": 12
+    },
+    {
+      "id": "level-university",
+      "type": "STUDENT_LEVEL",
+      "code": "UNIVERSITY",
+      "name": { "ar": "المرحلة الجامعية", "en": "University Level" },
+      "isActive": true,
+      "displayOrder": 13
     }
   ],
   "quickSearchTags": [

@@ -5,7 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { UserCheck, Loader2 } from 'lucide-react';
+import { UserCircle2, Loader2 } from 'lucide-react';
+
+const DASHBOARD_BY_ROLE: Record<string, string> = {
+  tutor: '/tutor/dashboard',
+};
 
 function LoginForm() {
   const router = useRouter();
@@ -33,13 +37,14 @@ function LoginForm() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || data.role !== 'tutor') {
+      // This portal is for tutors/schools/students only — superadmin keeps its own hidden login.
+      if (!res.ok || data.role === 'superadmin' || !DASHBOARD_BY_ROLE[data.role]) {
         await signOut(auth);
-        setError(data.error || t('هذا الحساب غير مسجل كأستاذ', 'This account is not registered as a tutor'));
+        setError(data.error || t('هذا الحساب غير مصرح له بالدخول من هنا', 'This account is not authorized to sign in here'));
         return;
       }
 
-      const redirect = searchParams.get('redirect') || '/tutor/dashboard';
+      const redirect = searchParams.get('redirect') || DASHBOARD_BY_ROLE[data.role];
       router.push(redirect);
       router.refresh();
     } catch (err: any) {
@@ -54,11 +59,11 @@ function LoginForm() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8">
         <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
-            <UserCheck className="w-7 h-7" />
+            <UserCircle2 className="w-7 h-7" />
           </div>
           <h1 className="font-extrabold text-xl text-[#0B192C]">Eduraq</h1>
           <p className="text-xs text-emerald-700 font-semibold mt-1">
-            {t('بوابة الأستاذ الخصوصي', 'Tutor Portal')}
+            {t('تسجيل دخول الحساب', 'Account Sign In')}
           </p>
         </div>
 
@@ -110,7 +115,7 @@ function LoginForm() {
   );
 }
 
-export default function TutorLoginPage() {
+export default function LoginPage() {
   return (
     <Suspense fallback={null}>
       <LoginForm />

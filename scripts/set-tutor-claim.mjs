@@ -1,5 +1,5 @@
 // Link a Firebase Auth user to a Tutor directory entry and grant them the 'tutor' role,
-// so they can sign in at /tutor/login and manage their own availability/pricing/bookings.
+// so they can sign in at /login and manage their own availability/pricing/bookings.
 // Usage: node --env-file=.env.local scripts/set-tutor-claim.mjs <email> <tutorId>
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';

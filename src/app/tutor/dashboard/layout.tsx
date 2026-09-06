@@ -15,7 +15,7 @@ export default function TutorDashboardLayout({ children }: { children: React.Rea
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
     await signOut(auth);
-    router.push('/tutor/login');
+    router.push('/login');
   };
 
   return (

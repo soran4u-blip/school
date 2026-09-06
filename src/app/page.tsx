@@ -509,7 +509,7 @@ export default function HomePage() {
           </div>
 
           <Link
-            href="/admin/institutions"
+            href="/apply"
             className="px-8 py-3.5 bg-[#F1C40F] hover:bg-[#D4AC0D] text-[#0B192C] font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all active:scale-95 shrink-0"
           >
             {t('سجل مؤسستك التعليمية الآن', '+ Register Your Institution')}

@@ -119,30 +119,22 @@ export default function Navbar() {
               <span>{language === 'ar' ? 'English' : 'عربي'}</span>
             </button>
 
-            {/* Tutor Portal Login */}
+            {/* Account Login (tutors, schools, students, etc.) */}
             <Link
-              href="/tutor/login"
+              href="/login"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-colors"
             >
               <UserCheck className="w-3.5 h-3.5" />
-              <span>{t('بوابة الأستاذ', 'Tutor Portal')}</span>
+              <span>{t('تسجيل الدخول', 'Login')}</span>
             </Link>
 
-            {/* Superadmin Dashboard Button */}
+            {/* Join as Tutor/Institution CTA */}
             <Link
-              href="/admin"
-              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-800 transition-colors"
-            >
-              {t('لوحة الإدارة', 'Admin Panel')}
-            </Link>
-
-            {/* Register Institution CTA */}
-            <Link
-              href="/admin/institutions"
+              href="/apply"
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B192C] hover:bg-[#1E3E62] text-white text-xs font-bold shadow-xs transition-all active:scale-95"
             >
               <PlusCircle className="w-3.5 h-3.5 text-[#F1C40F]" />
-              <span>{t('سجل مؤسستك', '+ Add Institution')}</span>
+              <span>{t('انضم إلينا', '+ Join Eduraq')}</span>
             </Link>
           </div>
 
@@ -186,25 +178,18 @@ export default function Navbar() {
           ))}
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
             <Link
-              href="/tutor/login"
+              href="/login"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2 text-xs font-bold bg-emerald-50 text-emerald-800 rounded-lg"
             >
-              {t('بوابة الأستاذ الخصوصي', 'Tutor Portal')}
+              {t('تسجيل الدخول', 'Login')}
             </Link>
             <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2 text-xs font-bold bg-slate-100 text-slate-700 rounded-lg"
-            >
-              {t('لوحة الإدارة والمشرفين', 'Superadmin Control Center')}
-            </Link>
-            <Link
-              href="/admin/institutions"
+              href="/apply"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 text-xs font-bold bg-[#0B192C] text-white rounded-lg"
             >
-              {t('سجل مؤسستك التعليمية الآن', '+ Register Institution')}
+              {t('انضم إلينا كأستاذ أو مؤسسة', '+ Join as Tutor or Institution')}
             </Link>
           </div>
         </div>

@@ -14,7 +14,8 @@ import {
   AlertCircle,
   ShieldCheck,
   BookMarked,
-  Award
+  Award,
+  GraduationCap
 } from 'lucide-react';
 
 export default function AdminTaxonomiesPage() {
@@ -159,6 +160,15 @@ export default function AdminTaxonomiesPage() {
         >
           <Award className="w-4 h-4" />
           <span>{t('المواد الدراسية (خصوصي/وزاري)', 'Study Subjects')}</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab('STUDENT_LEVEL'); setIsAdding(false); setIsEditing(false); }}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'STUDENT_LEVEL' ? 'border-[#0B192C] text-[#0B192C]' : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>{t('الصفوف الدراسية', 'Grades / Student Levels')}</span>
         </button>
       </div>
 

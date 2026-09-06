@@ -98,24 +98,8 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/admin" className="text-[#F1C40F] hover:underline font-bold flex items-center gap-1.5">
-                  <span>⚙️</span>
-                  <span>{t('لوحة تحكم السوبر أدمن', 'Superadmin Control')}</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/locations" className="hover:text-white transition-colors">
-                  {t('إدارة المحافظات والمدن', 'Manage Locations')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/institutions" className="hover:text-white transition-colors">
-                  {t('إدارة المؤسسات والتوثيق', 'Institutions Management')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/tutor/login" className="hover:text-white transition-colors">
-                  {t('بوابة الأستاذ الخصوصي', 'Tutor Portal')}
+                <Link href="/login" className="hover:text-white transition-colors">
+                  {t('تسجيل الدخول', 'Login')}
                 </Link>
               </li>
               <li>
@@ -141,10 +125,6 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} Eduraq. {t('جميع الحقوق محفوظة لجمهورية العراق.', 'All rights reserved. Republic of Iraq.')}</p>
           <div className="flex gap-6">
-            <Link href="/admin" className="hover:text-slate-300 transition-colors">
-              {t('سوبر أدمن (تحكم كامل)', 'Superadmin Console')}
-            </Link>
-            <span className="text-slate-700">|</span>
             <span>{t('تحديث فوري وقاعدة بيانات ديناميكية', 'Real-time & Zero Hardcoding Engine')}</span>
           </div>
         </div>

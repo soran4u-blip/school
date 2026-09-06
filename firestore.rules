@@ -40,6 +40,17 @@ service cloud.firestore {
         && d.status == 'NEW';
     }
 
+    function isValidApplication() {
+      let d = request.resource.data;
+      return d.type in ['TUTOR', 'INSTITUTION']
+        && d.fullName is string && d.fullName.size() > 0 && d.fullName.size() <= 150
+        && d.email is string && d.email.size() > 0 && d.email.size() <= 200
+        && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
+        && d.governorateId is string && d.governorateId.size() > 0
+        && d.message is string && d.message.size() <= 3000
+        && d.status == 'PENDING';
+    }
+
     // Dynamic Master Data (Locations, Categories, Taxonomies, Settings): Public Read, Superadmin Write
     match /locations_governorates/{govId} {
       allow read: if true;
@@ -103,6 +114,14 @@ service cloud.firestore {
     // Inquiries & Leads (Anyone can create inquiry, only recipient/admin can read)
     match /inquiries/{inquiryId} {
       allow create: if isValidInquiry();
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // Join Applications (tutor/institution). Anyone can apply; only superadmin reviews.
+    // Approval for tutors goes through the Admin SDK API route (/api/applications/[id]/approve)
+    // so account provisioning + custom claims stay server-side.
+    match /applications/{applicationId} {
+      allow create: if isValidApplication();
       allow read, update, delete: if isSuperAdmin();
     }
   }

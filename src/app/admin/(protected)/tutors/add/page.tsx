@@ -42,18 +42,21 @@ function TutorForm() {
 
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
+  const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [form, setForm] = useState<Partial<Tutor>>(emptyForm);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [govs, subs] = await Promise.all([
+      const [govs, subs, levels] = await Promise.all([
         MasterDataService.getGovernorates(false),
         MasterDataService.getTaxonomies('SUBJECT', false),
+        MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
       ]);
       setGovernorates(govs);
       setSubjects(subs);
+      setStudentLevels(levels);
 
       if (editId) {
         const existing = await MasterDataService.getTutorById(editId);
@@ -350,6 +353,39 @@ function TutorForm() {
             })}
             {subjects.length === 0 && (
               <span className="text-[11px] text-slate-400">{t('لا توجد مواد دراسية مضافة بعد. أضفها من صفحة الاعتمادات والمناهج.', 'No subjects yet. Add some from Taxonomies.')}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Student Levels / Grades */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('الصفوف الدراسية', 'Grades / Student Levels')}</label>
+          <div className="flex flex-wrap gap-2">
+            {studentLevels.map(lvl => {
+              const checked = form.studentLevelIds?.includes(lvl.id) || false;
+              return (
+                <label
+                  key={lvl.id}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
+                    checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={checked}
+                    onChange={(e) => {
+                      const ids = new Set(form.studentLevelIds || []);
+                      if (e.target.checked) ids.add(lvl.id); else ids.delete(lvl.id);
+                      setForm({ ...form, studentLevelIds: Array.from(ids) });
+                    }}
+                  />
+                  {language === 'en' ? lvl.name.en : lvl.name.ar}
+                </label>
+              );
+            })}
+            {studentLevels.length === 0 && (
+              <span className="text-[11px] text-slate-400">{t('لا توجد صفوف دراسية مضافة بعد. أضفها من صفحة الاعتمادات والمناهج.', 'No grades yet. Add some from Taxonomies.')}</span>
             )}
           </div>
         </div>
