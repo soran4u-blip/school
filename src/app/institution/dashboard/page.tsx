@@ -12,9 +12,10 @@ import { ThreadMessage } from '@/core/types/message';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
+import { getInstitutionCompleteness } from '@/lib/utils';
 import {
   Building2, Save, AlertCircle, Plus, Trash2, Send, Star, Mail, Phone,
-  KeyRound, PauseCircle, PlayCircle, ShieldCheck, MessageCircle,
+  KeyRound, PauseCircle, PlayCircle, ShieldCheck, MessageCircle, Rocket,
 } from 'lucide-react';
 
 function emptyProgram(): InstitutionProgram {
@@ -209,6 +210,7 @@ export default function InstitutionDashboardPage() {
 
   const handleTogglePause = async () => {
     if (!institution) return;
+    const wasPending = institution.status === 'PENDING';
     const status = institution.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     if (status === 'SUSPENDED' && !confirm(t('سيتم إخفاء ملف مؤسستك من الدليل العام. هل تريد المتابعة؟', "Your institution's profile will be hidden from the public directory. Continue?"))) {
       return;
@@ -220,7 +222,9 @@ export default function InstitutionDashboardPage() {
       setMessage({
         text: status === 'SUSPENDED'
           ? t('تم إيقاف ملف مؤسستك مؤقتاً', 'Your institution profile is now paused')
-          : t('تم تفعيل ملف مؤسستك مجدداً', 'Your institution profile is active again'),
+          : wasPending
+            ? t('تم نشر ملف مؤسستك في الدليل العام!', 'Your institution profile is now live in the public directory!')
+            : t('تم تفعيل ملف مؤسستك مجدداً', 'Your institution profile is active again'),
         type: 'success',
       });
     } catch {
@@ -607,7 +611,54 @@ export default function InstitutionDashboardPage() {
             </button>
           </div>
 
-          {institution.isVerified && (
+          {institution.status === 'PENDING' ? (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-4 h-4 text-indigo-600" />
+                <h2 className="font-bold text-sm text-slate-900">{t('نشر الملف في الدليل العام', 'Publish to the Directory')}</h2>
+              </div>
+              <p className="text-xs text-slate-500">
+                {t(
+                  'ملفك غير منشور بعد ولا يظهر لزوار الموقع. أكمل المعلومات التالية ثم انشره.',
+                  "Your profile isn't published yet and can't be seen by visitors. Complete the following, then publish."
+                )}
+              </p>
+              {(() => {
+                const completeness = getInstitutionCompleteness(institution);
+                if (completeness.complete) {
+                  return (
+                    <button
+                      onClick={handleTogglePause}
+                      disabled={pausing}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      <span>{pausing ? t('جاري النشر...', 'Publishing...') : t('نشر الملف الآن', 'Publish Now')}</span>
+                    </button>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    <ul className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
+                      {completeness.missingFields.map((f) => (
+                        <li key={f.en} className="flex items-center gap-1.5">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{t(f.ar, f.en)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      disabled
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      <span>{t('أكمل المعلومات أعلاه أولاً', 'Complete the fields above first')}</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center gap-2">
                 {institution.status === 'ACTIVE' ? <PauseCircle className="w-4 h-4 text-amber-600" /> : <PlayCircle className="w-4 h-4 text-emerald-600" />}

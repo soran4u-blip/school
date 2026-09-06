@@ -216,15 +216,17 @@ export class MasterDataService {
     governorateId?: string;
     keyword?: string;
     isVerified?: boolean;
-    status?: string;
+    status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
   }): Promise<Institution[]> {
     let list = await this.getMergedInstitutions();
+    if (filter?.status === 'ALL') {
+      // no status filtering — admin needs to see PENDING/INACTIVE listings too
+    } else if (filter?.status) {
+      list = list.filter(i => i.status === filter.status);
+    } else {
+      list = list.filter(i => i.status === 'ACTIVE');
+    }
     if (filter) {
-      if (filter.status) {
-        list = list.filter(i => i.status === filter.status);
-      } else {
-        list = list.filter(i => i.status === 'ACTIVE');
-      }
       if (filter.categoryId && filter.categoryId !== 'all') {
         list = list.filter(i => i.categoryId === filter.categoryId);
       }
@@ -344,8 +346,16 @@ export class MasterDataService {
     governorateId?: string;
     subjectId?: string;
     isVerified?: boolean;
+    status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
   }): Promise<Tutor[]> {
-    let list = (await this.getMergedTutors()).filter(t => t.status === 'ACTIVE');
+    let list = await this.getMergedTutors();
+    if (filter?.status === 'ALL') {
+      // no status filtering — admin needs to see PENDING/INACTIVE listings too
+    } else if (filter?.status) {
+      list = list.filter(t => t.status === filter.status);
+    } else {
+      list = list.filter(t => t.status === 'ACTIVE');
+    }
     if (filter) {
       if (filter.governorateId && filter.governorateId !== 'all') {
         list = list.filter(t => t.governorateId === filter.governorateId);

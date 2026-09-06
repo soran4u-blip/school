@@ -29,8 +29,8 @@ export default function AdminDashboardPage() {
       const [govs, cats, insts, tutors] = await Promise.all([
         MasterDataService.getGovernorates(false),
         MasterDataService.getCategories(false),
-        MasterDataService.getInstitutions({}),
-        MasterDataService.getTutors({})
+        MasterDataService.getInstitutions({ status: 'ALL' }),
+        MasterDataService.getTutors({ status: 'ALL' })
       ]);
 
       setStats({

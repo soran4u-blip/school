@@ -29,7 +29,7 @@ export default function AdminInstitutionsPage() {
 
   const loadData = async () => {
     const [insts, govs, cats] = await Promise.all([
-      MasterDataService.getInstitutions({ status: undefined }),
+      MasterDataService.getInstitutions({ status: 'ALL' }),
       MasterDataService.getGovernorates(false),
       MasterDataService.getCategories(false),
     ]);

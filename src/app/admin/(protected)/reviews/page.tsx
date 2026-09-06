@@ -25,8 +25,8 @@ export default function AdminReviewsPage() {
       const [revs, inqs, insts, tuts] = await Promise.all([
         MasterDataService.getAllReviews(),
         MasterDataService.getAllInquiries(),
-        MasterDataService.getInstitutions({}),
-        MasterDataService.getTutors({}),
+        MasterDataService.getInstitutions({ status: 'ALL' }),
+        MasterDataService.getTutors({ status: 'ALL' }),
       ]);
       setReviews(revs);
       setInquiries(inqs);

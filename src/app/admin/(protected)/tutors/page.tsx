@@ -16,7 +16,7 @@ export default function AdminTutorsPage() {
 
   const loadData = async () => {
     const [tutList, govs] = await Promise.all([
-      MasterDataService.getTutors({}),
+      MasterDataService.getTutors({ status: 'ALL' }),
       MasterDataService.getGovernorates(false),
     ]);
     setTutors(tutList);
