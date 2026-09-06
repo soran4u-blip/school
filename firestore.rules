@@ -163,20 +163,27 @@ service cloud.firestore {
       allow read, update, delete: if isSuperAdmin();
     }
 
-    // Messaging (Phase 1: one thread per booking, doc id == booking id). The tutor is
-    // authenticated and reads/writes directly here. Guests (students) have no account yet,
-    // so their side goes entirely through the Admin SDK API route (/api/bookings/[id]/messages),
-    // which verifies their phone against the booking before touching these docs — the same
-    // guest pattern already used for booking cancel/lookup.
+    // Messaging: one thread per context (a Booking or an Inquiry), doc id == that context's id.
+    // The tutor/institution owner is authenticated and reads/writes directly here. Guests
+    // (students/parents) have no account requirement, so their side goes entirely through the
+    // Admin SDK API routes (/api/bookings/[id]/messages, /api/inquiries/[id]/messages), which
+    // verify their phone against the booking/inquiry before touching these docs — the same
+    // guest pattern already used for booking cancel/lookup. `.get(key, null)` is used instead of
+    // dot-notation because exactly one of tutorId/institutionId is ever set on a given thread,
+    // and dot-notation access to a genuinely absent map key throws in this rules version.
+    function isOwnerOfThread(data) {
+      return isOwnerTutor(data.get('tutorId', null)) || isOwnerInstitution(data.get('institutionId', null));
+    }
+
     match /threads/{threadId} {
-      allow read: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
-      allow create: if isSuperAdmin() || isOwnerTutor(request.resource.data.tutorId);
-      allow update: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
+      allow read: if isSuperAdmin() || isOwnerOfThread(resource.data);
+      allow create: if isSuperAdmin() || isOwnerOfThread(request.resource.data);
+      allow update: if isSuperAdmin() || isOwnerOfThread(resource.data);
       allow delete: if isSuperAdmin();
 
       match /messages/{messageId} {
         allow read, create: if isSuperAdmin()
-          || isOwnerTutor(get(/databases/$(database)/documents/threads/$(threadId)).data.tutorId);
+          || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data);
       }
     }
 

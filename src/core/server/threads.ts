@@ -1,8 +1,18 @@
 import { Firestore } from 'firebase-admin/firestore';
 import { Booking } from '@/core/types/booking';
+import { Inquiry } from '@/core/types/review';
 import { Thread, ThreadMessage } from '@/core/types/message';
 
 export const MAX_MESSAGE_LENGTH = 2000;
+
+// The shared bit of a Booking or Inquiry a thread actually needs — exactly one of
+// tutorId/institutionId is set, mirroring the Review/Inquiry "exactly one owner" pattern.
+export interface ThreadContext {
+  id: string;
+  tutorId?: string;
+  institutionId?: string;
+  participantPhones: string[];
+}
 
 export async function loadBookingAndVerifyPhone(adminDb: Firestore, bookingId: string, phone: string): Promise<Booking | null> {
   const snap = await adminDb.collection('bookings').doc(bookingId).get();
@@ -12,20 +22,28 @@ export async function loadBookingAndVerifyPhone(adminDb: Firestore, bookingId: s
   return booking;
 }
 
-export async function listThreadMessages(adminDb: Firestore, bookingId: string): Promise<ThreadMessage[]> {
-  const snap = await adminDb.collection('threads').doc(bookingId).collection('messages').orderBy('createdAt', 'asc').get();
+export async function loadInquiryAndVerifyPhone(adminDb: Firestore, inquiryId: string, phone: string): Promise<Inquiry | null> {
+  const snap = await adminDb.collection('inquiries').doc(inquiryId).get();
+  if (!snap.exists) return null;
+  const inquiry = snap.data() as Inquiry;
+  if (inquiry.phone !== phone) return null;
+  return inquiry;
+}
+
+export async function listThreadMessages(adminDb: Firestore, contextId: string): Promise<ThreadMessage[]> {
+  const snap = await adminDb.collection('threads').doc(contextId).collection('messages').orderBy('createdAt', 'asc').get();
   return snap.docs.map((d) => d.data() as ThreadMessage);
 }
 
 export async function sendThreadMessage(
   adminDb: Firestore,
-  booking: Booking,
-  senderRole: 'tutor' | 'student',
+  context: ThreadContext,
+  senderRole: 'tutor' | 'institution' | 'student',
   senderName: string,
   text: string
 ): Promise<ThreadMessage> {
   const now = new Date().toISOString();
-  const threadRef = adminDb.collection('threads').doc(booking.id);
+  const threadRef = adminDb.collection('threads').doc(context.id);
   const messageRef = threadRef.collection('messages').doc();
 
   const message: ThreadMessage = { id: messageRef.id, senderRole, senderName, text, createdAt: now };
@@ -34,9 +52,10 @@ export async function sendThreadMessage(
     const threadSnap = await tx.get(threadRef);
     if (!threadSnap.exists) {
       const thread: Thread = {
-        id: booking.id,
-        tutorId: booking.tutorId,
-        participantPhones: booking.participantPhones,
+        id: context.id,
+        ...(context.tutorId && { tutorId: context.tutorId }),
+        ...(context.institutionId && { institutionId: context.institutionId }),
+        participantPhones: context.participantPhones,
         lastMessageAt: now,
         lastMessagePreview: text.slice(0, 140),
         createdAt: now,

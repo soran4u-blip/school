@@ -8,12 +8,13 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Inquiry, Review } from '@/core/types/review';
+import { ThreadMessage } from '@/core/types/message';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
 import {
   Building2, Save, AlertCircle, Plus, Trash2, Send, Star, Mail, Phone,
-  KeyRound, PauseCircle, PlayCircle, ShieldCheck,
+  KeyRound, PauseCircle, PlayCircle, ShieldCheck, MessageCircle,
 } from 'lucide-react';
 
 function emptyProgram(): InstitutionProgram {
@@ -47,8 +48,11 @@ export default function InstitutionDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const [inquiryReplyDrafts, setInquiryReplyDrafts] = useState<Record<string, string>>({});
-  const [replyingInquiryId, setReplyingInquiryId] = useState<string | null>(null);
+  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
+  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
+  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
+  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
   const [reviewReplyDrafts, setReviewReplyDrafts] = useState<Record<string, string>>({});
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
 
@@ -127,17 +131,37 @@ export default function InstitutionDashboardPage() {
     }
   };
 
-  const handleReplyToInquiry = async (inquiryId: string) => {
-    const text = inquiryReplyDrafts[inquiryId]?.trim();
-    if (!text) return;
-    setReplyingInquiryId(inquiryId);
+  const toggleThread = async (inquiryId: string) => {
+    if (expandedThreadId === inquiryId) {
+      setExpandedThreadId(null);
+      return;
+    }
+    setExpandedThreadId(inquiryId);
+    if (!threadMessages[inquiryId]) {
+      setLoadingThreadId(inquiryId);
+      try {
+        const messages = await MasterDataService.getThreadMessages(inquiryId);
+        setThreadMessages((prev) => ({ ...prev, [inquiryId]: messages }));
+      } finally {
+        setLoadingThreadId(null);
+      }
+    }
+  };
+
+  const handleSendMessage = async (inquiry: Inquiry) => {
+    const text = messageDrafts[inquiry.id]?.trim();
+    if (!text || !institution) return;
+    setSendingThreadId(inquiry.id);
     try {
-      await MasterDataService.replyToInquiry(inquiryId, text);
-      await MasterDataService.updateInquiryStatus(inquiryId, 'CONTACTED');
-      setInquiries((prev) => prev.map((i) => (i.id === inquiryId ? { ...i, status: 'CONTACTED', reply: { text, createdAt: new Date().toISOString() } } : i)));
-      setInquiryReplyDrafts((prev) => ({ ...prev, [inquiryId]: '' }));
+      const sent = await MasterDataService.sendInstitutionMessage(inquiry, institution.name.en || institution.name.ar, text);
+      setThreadMessages((prev) => ({ ...prev, [inquiry.id]: [...(prev[inquiry.id] || []), sent] }));
+      setMessageDrafts((prev) => ({ ...prev, [inquiry.id]: '' }));
+      if (inquiry.status === 'NEW') {
+        await MasterDataService.updateInquiryStatus(inquiry.id, 'CONTACTED');
+        setInquiries((prev) => prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'CONTACTED' } : i)));
+      }
     } finally {
-      setReplyingInquiryId(null);
+      setSendingThreadId(null);
     }
   };
 
@@ -774,45 +798,28 @@ export default function InstitutionDashboardPage() {
           ) : (
             inquiries.map((inq) => (
               <div key={inq.id} className="p-4 space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-slate-900">{inq.fullName}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    inq.status === 'NEW' ? 'bg-blue-50 text-blue-700' : inq.status === 'CONTACTED' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {inq.status}
-                  </span>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-sm text-slate-900">{inq.fullName}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      inq.status === 'NEW' ? 'bg-blue-50 text-blue-700' : inq.status === 'CONTACTED' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {inq.status}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => toggleThread(inq.id)}
+                    className={`p-2 rounded-lg ${expandedThreadId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                    title={t('مراسلة', 'Message')}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-slate-500">
                   <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{inq.phone}</span>
                   {inq.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{inq.email}</span>}
                 </div>
                 {inq.message && <p className="text-xs text-slate-600">{inq.message}</p>}
-
-                {inq.reply ? (
-                  <div className="ms-4 ps-3 border-s-2 border-emerald-200">
-                    <span className="text-[10px] font-bold text-emerald-700">{t('ردّك', 'Your reply')}</span>
-                    <p className="text-xs text-slate-600">{inq.reply.text}</p>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={inquiryReplyDrafts[inq.id] || ''}
-                      onChange={(e) => setInquiryReplyDrafts((prev) => ({ ...prev, [inq.id]: e.target.value }))}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleReplyToInquiry(inq.id); }}
-                      placeholder={t('اكتب ملاحظة عن المتابعة...', 'Write a follow-up note...')}
-                      className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                    />
-                    <button
-                      onClick={() => handleReplyToInquiry(inq.id)}
-                      disabled={replyingInquiryId === inq.id || !inquiryReplyDrafts[inq.id]?.trim()}
-                      className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                      title={t('حفظ', 'Save')}
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
 
                 <select
                   value={inq.status}
@@ -827,6 +834,46 @@ export default function InstitutionDashboardPage() {
                   <option value="CONTACTED">{t('تم التواصل', 'Contacted')}</option>
                   <option value="CLOSED">{t('مغلق', 'Closed')}</option>
                 </select>
+
+                {expandedThreadId === inq.id && (
+                  <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
+                    <div className="max-h-56 overflow-y-auto space-y-2">
+                      {loadingThreadId === inq.id ? (
+                        <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
+                      ) : (threadMessages[inq.id]?.length || 0) === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+                      ) : (
+                        threadMessages[inq.id].map((msg) => (
+                          <div key={msg.id} className={`flex ${msg.senderRole === 'institution' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] px-3 py-2 rounded-xl text-xs ${
+                              msg.senderRole === 'institution' ? 'bg-[#0B192C] text-white' : 'bg-white border border-slate-200 text-slate-700'
+                            }`}>
+                              <p>{msg.text}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={messageDrafts[inq.id] || ''}
+                        onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [inq.id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(inq); }}
+                        placeholder={t('اكتب رسالة...', 'Write a message...')}
+                        className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                      />
+                      <button
+                        onClick={() => handleSendMessage(inq)}
+                        disabled={sendingThreadId === inq.id || !messageDrafts[inq.id]?.trim()}
+                        className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
+                        title={t('إرسال', 'Send')}
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}

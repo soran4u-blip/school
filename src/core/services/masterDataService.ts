@@ -607,45 +607,56 @@ export class MasterDataService {
   }
 
   /* =========================================================
-     MESSAGING (Phase 1: one thread per booking, doc id == booking id).
-     Tutor side only — authenticated, direct via client SDK under firestore.rules.
-     The guest (student) side goes through /api/bookings/[id]/messages instead,
-     since students have no account yet to authenticate against these rules.
+     MESSAGING — one thread per context (a Booking or an Inquiry), doc id == that context's id.
+     Tutor/institution owner side only — authenticated, direct via client SDK under
+     firestore.rules. The guest (student/parent) side goes through /api/bookings/[id]/messages
+     or /api/inquiries/[id]/messages instead, since guests have no account to authenticate
+     against these rules directly.
   ========================================================= */
-  static async getThreadMessages(bookingId: string): Promise<ThreadMessage[]> {
-    const q = query(collection(db, 'threads', bookingId, 'messages'), orderBy('createdAt', 'asc'));
+  static async getThreadMessages(contextId: string): Promise<ThreadMessage[]> {
+    const q = query(collection(db, 'threads', contextId, 'messages'), orderBy('createdAt', 'asc'));
     const snap = await getDocs(q);
     return snap.docs.map(d => d.data() as ThreadMessage);
   }
 
-  static async sendTutorMessage(booking: Booking, senderName: string, text: string): Promise<ThreadMessage> {
+  private static async sendOwnerMessage(
+    thread: Omit<Thread, 'lastMessageAt' | 'lastMessagePreview' | 'createdAt'>,
+    senderRole: 'tutor' | 'institution',
+    senderName: string,
+    text: string
+  ): Promise<ThreadMessage> {
     const now = new Date().toISOString();
-    const threadRef = doc(db, 'threads', booking.id);
-    const messageRef = doc(collection(db, 'threads', booking.id, 'messages'));
+    const threadRef = doc(db, 'threads', thread.id);
+    const messageRef = doc(collection(db, 'threads', thread.id, 'messages'));
 
-    const message: ThreadMessage = {
-      id: messageRef.id,
-      senderRole: 'tutor',
-      senderName,
-      text,
-      createdAt: now,
-    };
+    const message: ThreadMessage = { id: messageRef.id, senderRole, senderName, text, createdAt: now };
 
     const existingThread = await getDoc(threadRef);
     if (existingThread.exists()) {
       await updateDoc(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140) });
     } else {
-      const thread: Thread = {
-        id: booking.id,
-        tutorId: booking.tutorId,
-        participantPhones: booking.participantPhones,
-        lastMessageAt: now,
-        lastMessagePreview: text.slice(0, 140),
-        createdAt: now,
-      };
-      await setDoc(threadRef, thread);
+      const newThread: Thread = { ...thread, lastMessageAt: now, lastMessagePreview: text.slice(0, 140), createdAt: now };
+      await setDoc(threadRef, newThread);
     }
     await setDoc(messageRef, message);
     return message;
+  }
+
+  static async sendTutorMessage(booking: Booking, senderName: string, text: string): Promise<ThreadMessage> {
+    return this.sendOwnerMessage(
+      { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participantPhones },
+      'tutor',
+      senderName,
+      text
+    );
+  }
+
+  static async sendInstitutionMessage(inquiry: Inquiry, senderName: string, text: string): Promise<ThreadMessage> {
+    return this.sendOwnerMessage(
+      { id: inquiry.id, institutionId: inquiry.institutionId, participantPhones: [inquiry.phone] },
+      'institution',
+      senderName,
+      text
+    );
   }
 }
