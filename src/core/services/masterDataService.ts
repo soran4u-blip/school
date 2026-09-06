@@ -249,8 +249,20 @@ export class MasterDataService {
   }
 
   static async getInstitutionById(id: string): Promise<Institution | null> {
-    const list = await this.getMergedInstitutions();
-    return list.find(i => i.id === id) || null;
+    // A direct single-doc read (not the collection-wide getMergedInstitutions scan) — same fix
+    // as getTutorById, for the same reason: an unfiltered collection query gets denied entirely
+    // for a signed-in owner whose own doc is still 'PENDING' (e.g. right after approval, before
+    // an admin activates it), even though isOwnerInstitution() already permits reading that doc
+    // directly.
+    try {
+      if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
+        const snap = await getDoc(doc(db, 'institutions', id));
+        if (snap.exists()) return { id: snap.id, ...snap.data() } as Institution;
+      }
+    } catch (e) {
+      console.warn('Firestore fallback to in-memory store for institution', id);
+    }
+    return inMemoryStore.institutions.find(i => i.id === id) || null;
   }
 
   static async getInstitutionBySlug(slug: string): Promise<Institution | null> {
@@ -282,12 +294,25 @@ export class MasterDataService {
   static async deleteInstitution(id: string): Promise<void> {
     try {
       if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
+        // Firestore doesn't cascade-delete subcollections when their parent doc goes.
+        await deleteDoc(doc(db, 'institutions', id, 'private', 'verification')).catch(() => {});
         await deleteDoc(doc(db, 'institutions', id));
       }
     } catch (e) {
       console.warn('Error deleting institution from Firestore:', e);
     }
     inMemoryStore.institutions = inMemoryStore.institutions.filter(i => i.id !== id);
+  }
+
+  // Accreditation/verification documents live in a private subcollection, same reasoning as
+  // the tutor equivalent — the institution doc is world-readable once status is 'ACTIVE'.
+  static async getInstitutionVerificationDocuments(institutionId: string): Promise<string[]> {
+    const snap = await getDoc(doc(db, 'institutions', institutionId, 'private', 'verification'));
+    return snap.exists() ? (snap.data().documents as string[]) || [] : [];
+  }
+
+  static async saveInstitutionVerificationDocuments(institutionId: string, documents: string[]): Promise<void> {
+    await setDoc(doc(db, 'institutions', institutionId, 'private', 'verification'), { documents });
   }
 
   /* =========================================================
@@ -490,6 +515,21 @@ export class MasterDataService {
 
   static async updateInquiryStatus(id: string, status: Inquiry['status']): Promise<void> {
     await updateDoc(doc(db, 'inquiries', id), { status });
+  }
+
+  // An institution's own inquiries (isOwnerInstitution rule scopes this to their own docs only).
+  static async getInstitutionInquiries(institutionId: string): Promise<Inquiry[]> {
+    const q = query(collection(db, 'inquiries'), where('institutionId', '==', institutionId));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Inquiry))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async replyToInquiry(inquiryId: string, text: string): Promise<void> {
+    await updateDoc(doc(db, 'inquiries', inquiryId), {
+      reply: { text, createdAt: new Date().toISOString() },
+    });
   }
 
   /* =========================================================

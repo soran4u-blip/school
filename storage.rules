@@ -7,6 +7,9 @@ service firebase.storage {
     function isOwnerTutor(tutorId) {
       return request.auth != null && request.auth.token.role == 'tutor' && request.auth.token.tutorId == tutorId;
     }
+    function isOwnerInstitution(institutionId) {
+      return request.auth != null && request.auth.token.role == 'institution' && request.auth.token.institutionId == institutionId;
+    }
     function isValidImage() {
       return request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
@@ -18,7 +21,14 @@ service firebase.storage {
 
     match /institutions/{institutionId}/{fileName} {
       allow read: if true;
-      allow write: if isSuperAdmin() && isValidImage();
+      allow write: if (isSuperAdmin() || isOwnerInstitution(institutionId)) && isValidImage();
+    }
+
+    // Accreditation documents backing an institution's verification — private, same reasoning
+    // as the tutor equivalent below.
+    match /institutions/{institutionId}/verification/{fileName} {
+      allow read: if isSuperAdmin() || isOwnerInstitution(institutionId);
+      allow write: if (isSuperAdmin() || isOwnerInstitution(institutionId)) && isValidVerificationDoc();
     }
 
     match /tutors/{tutorId}/{fileName} {

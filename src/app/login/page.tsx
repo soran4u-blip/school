@@ -11,6 +11,7 @@ import { UserCircle2, Loader2 } from 'lucide-react';
 const DASHBOARD_BY_ROLE: Record<string, string> = {
   tutor: '/tutor/dashboard',
   student: '/account',
+  institution: '/institution/dashboard',
 };
 
 function LoginForm() {

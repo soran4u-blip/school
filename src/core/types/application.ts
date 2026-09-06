@@ -2,9 +2,7 @@ export type ApplicationType = 'TUTOR' | 'INSTITUTION';
 export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 // Public "join the platform" applications from prospective tutors or institutions.
-// Approval provisions a login for tutors (see /api/applications/[id]/approve); institution
-// applications still require the superadmin to create the Institution record by hand, since
-// there's no institution-owner login/dashboard yet.
+// Approval provisions a login for both types (see /api/applications/[id]/approve).
 export interface Application {
   id: string;
   type: ApplicationType;
@@ -23,4 +21,5 @@ export interface Application {
   reviewedAt?: string;
   rejectionReason?: string;
   resultTutorId?: string; // set once a TUTOR application is approved and its Tutor doc is created
+  resultInstitutionId?: string; // set once an INSTITUTION application is approved and its Institution doc is created
 }

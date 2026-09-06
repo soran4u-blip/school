@@ -491,6 +491,14 @@ export default function InstitutionProfilePage({
                           </div>
                         </div>
                         <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
+                        {rev.reply && institution && (
+                          <div className="ms-4 ps-3 border-s-2 border-emerald-200 mt-2">
+                            <span className="text-[10px] font-bold text-emerald-700">
+                              {t(`رد ${institution.name.ar}`, `${institution.name.en}'s reply`)}
+                            </span>
+                            <p className="text-xs text-slate-600 leading-relaxed">{rev.reply.text}</p>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (

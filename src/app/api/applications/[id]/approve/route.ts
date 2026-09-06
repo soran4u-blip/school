@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Application } from '@/core/types/application';
 import { Tutor } from '@/core/types/tutor';
+import { Institution } from '@/core/types/institution';
 
 function randomPassword(): string {
   return Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+}
+
+function slugify(name: string, uniqueSuffix: string): string {
+  const base = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 60);
+  return `${base || 'institution'}-${uniqueSuffix}`;
 }
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,13 +36,58 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   const now = new Date().toISOString();
 
   if (application.type === 'INSTITUTION') {
-    // No institution-owner login/dashboard exists yet — just mark it reviewed so the
-    // superadmin knows to create the Institution record by hand from the details given.
-    await appSnap.ref.update({ status: 'APPROVED', reviewedAt: now });
-    return NextResponse.json({
-      success: true,
-      note: 'Institution accounts are not self-service yet — create the Institution record manually from the application details.',
-    });
+    try {
+      const instRef = adminDb.collection('institutions').doc();
+      const authUser = await adminAuth.createUser({
+        email: application.email,
+        password: randomPassword(),
+        displayName: application.fullName,
+      });
+      await adminAuth.setCustomUserClaims(authUser.uid, { role: 'institution', institutionId: instRef.id });
+
+      const institution: Institution = {
+        id: instRef.id,
+        userId: authUser.uid,
+        slug: slugify(application.fullName, instRef.id.slice(-6)),
+        name: { ar: application.fullName, en: application.fullName },
+        categoryId: application.categoryId || '',
+        governorateId: application.governorateId,
+        logoUrl: '',
+        coverImageUrl: '',
+        tagline: { ar: '', en: '' },
+        description: { ar: application.message, en: application.message },
+        address: { ar: '', en: '' },
+        contact: {
+          phonePrimary: application.phone,
+          whatsappNumber: application.whatsappNumber || application.phone,
+          email: application.email,
+        },
+        establishedYear: new Date().getFullYear(),
+        genderPolicy: 'CO_ED',
+        languagesOfInstruction: ['AR'],
+        tuition: { min: 0, max: 0, currency: 'USD', period: 'YEAR' },
+        taxonomyIds: [],
+        isVerified: false,
+        verificationBadgeLabel: { ar: 'قيد المراجعة', en: 'Under Review' },
+        status: 'PENDING',
+        isFeatured: false,
+        metrics: { ratingAvg: 0, reviewCount: 0 },
+        createdAt: now,
+        updatedAt: now,
+      };
+      await instRef.set(institution);
+
+      const resetLink = await adminAuth.generatePasswordResetLink(application.email);
+      await appSnap.ref.update({ status: 'APPROVED', reviewedAt: now, resultInstitutionId: instRef.id });
+
+      return NextResponse.json({ success: true, institutionId: instRef.id, resetLink });
+    } catch (error: any) {
+      if (error?.code === 'auth/email-already-exists') {
+        return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
+      }
+      console.error('Application approval failed:', error);
+      return NextResponse.json({ success: false, error: 'Approval failed' }, { status: 500 });
+    }
   }
 
   try {

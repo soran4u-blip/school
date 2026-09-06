@@ -64,6 +64,7 @@ function InstitutionForm() {
   const [form, setForm] = useState<Partial<Institution>>(emptyForm);
   const [facilitiesText, setFacilitiesText] = useState('');
   const [programs, setPrograms] = useState<InstitutionProgram[]>([]);
+  const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -84,12 +85,16 @@ function InstitutionForm() {
       setTaxonomies(taxes);
 
       if (editId) {
-        const existing = await MasterDataService.getInstitutionById(editId);
+        const [existing, docs] = await Promise.all([
+          MasterDataService.getInstitutionById(editId),
+          MasterDataService.getInstitutionVerificationDocuments(editId),
+        ]);
         if (existing) {
           setForm(existing);
           setFacilitiesText((existing.facilities || []).join(', '));
           setPrograms(existing.programs || []);
         }
+        setVerificationDocuments(docs);
       }
     }
     load();
@@ -547,6 +552,25 @@ function InstitutionForm() {
             </div>
           )}
         </div>
+
+        {verificationDocuments.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+            <span className="text-xs font-bold text-amber-800">{t('وثائق الاعتماد المرفوعة', 'Uploaded Accreditation Documents')}</span>
+            <div className="flex flex-wrap gap-2">
+              {verificationDocuments.map((url, idx) => (
+                <a
+                  key={idx}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-[11px] font-bold text-blue-700 hover:underline"
+                >
+                  {t(`مستند ${idx + 1}`, `Document ${idx + 1}`)}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-6 pt-2">
           <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">

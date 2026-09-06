@@ -16,6 +16,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.role == 'tutor' && request.auth.token.tutorId == tutorId;
     }
 
+    function isOwnerInstitution(instId) {
+      return isAuthenticated() && request.auth.token.role == 'institution' && request.auth.token.institutionId == instId;
+    }
+
     function isValidReview() {
       let d = request.resource.data;
       return (
@@ -82,11 +86,18 @@ service cloud.firestore {
 
     // Institutions Directory
     match /institutions/{instId} {
-      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin();
-      allow write: if isSuperAdmin();
+      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerInstitution(instId);
+      allow write: if isSuperAdmin() || isOwner(resource.data.userId) || isOwnerInstitution(instId);
       match /programs/{progId} {
         allow read: if true;
-        allow write: if isSuperAdmin();
+        allow write: if isSuperAdmin() || isOwnerInstitution(instId);
+      }
+
+      // Verification/accreditation documents — same private-subcollection pattern as tutors,
+      // since the institution doc above is world-readable once status is 'ACTIVE' with no
+      // field-level restriction, and Storage download-URL tokens bypass storage.rules anyway.
+      match /private/{docId} {
+        allow read, write: if isSuperAdmin() || isOwnerInstitution(instId);
       }
     }
 
@@ -114,23 +125,34 @@ service cloud.firestore {
     }
 
     // User Reviews (Public read approved, Authenticated create)
-    function isTutorReplyingToOwnApprovedReview() {
-      return isOwnerTutor(resource.data.tutorId)
-        && resource.data.status == 'APPROVED'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reply']);
+    function isOwnerReplyingToOwnApprovedReview() {
+      let d = resource.data;
+      return (
+        (d.tutorId is string && isOwnerTutor(d.tutorId))
+        || (d.institutionId is string && isOwnerInstitution(d.institutionId))
+      )
+        && d.status == 'APPROVED'
+        && request.resource.data.diff(d).affectedKeys().hasOnly(['reply']);
     }
 
     match /reviews/{reviewId} {
       allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
       allow create: if isAuthenticated() && isValidReview();
-      allow update: if isSuperAdmin() || isTutorReplyingToOwnApprovedReview();
+      allow update: if isSuperAdmin() || isOwnerReplyingToOwnApprovedReview();
       allow delete: if isSuperAdmin();
     }
 
-    // Inquiries & Leads (Anyone can create inquiry, only recipient/admin can read)
+    // Inquiries & Leads (Anyone can create inquiry; recipient institution or admin can read/reply)
+    function isInstitutionUpdatingOwnInquiry() {
+      return isOwnerInstitution(resource.data.institutionId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reply']);
+    }
+
     match /inquiries/{inquiryId} {
       allow create: if isValidInquiry();
-      allow read, update, delete: if isSuperAdmin();
+      allow read: if isSuperAdmin() || isOwnerInstitution(resource.data.institutionId);
+      allow update: if isSuperAdmin() || isInstitutionUpdatingOwnInquiry();
+      allow delete: if isSuperAdmin();
     }
 
     // Join Applications (tutor/institution). Anyone can apply; only superadmin reviews.

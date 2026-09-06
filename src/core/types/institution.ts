@@ -25,6 +25,7 @@ export interface InstitutionContact {
 
 export interface Institution {
   id: string;
+  userId?: string; // linked Firebase Auth uid, once the institution has an owner account
   slug: string;
   name: LocalizedString;
   categoryId: string; // References Category.id (e.g. 'universities', 'schools')
