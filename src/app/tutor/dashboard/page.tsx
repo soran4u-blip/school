@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
@@ -10,8 +11,9 @@ import { Booking } from '@/core/types/booking';
 import { ThreadMessage } from '@/core/types/message';
 import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
-import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle, MessageCircle, Send, Star } from 'lucide-react';
+import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle, MessageCircle, Send, Star, ShieldCheck } from 'lucide-react';
 import ImageUploadField from '@/components/shared/ImageUploadField';
+import DocumentUploadField from '@/components/shared/DocumentUploadField';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
   { ar: 'الأحد', en: 'Sunday' },
@@ -24,6 +26,7 @@ const DAY_LABELS: { ar: string; en: string }[] = [
 ];
 
 export default function TutorDashboardPage() {
+  const router = useRouter();
   const { language, t } = useLanguage();
   const [tab, setTab] = useState<'profile' | 'availability' | 'bookings' | 'reviews'>('profile');
   const [tutorId, setTutorId] = useState<string | null>(null);
@@ -44,6 +47,12 @@ export default function TutorDashboardPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [pausing, setPausing] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [newBlockedDate, setNewBlockedDate] = useState('');
+  const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
   const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
   const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
   const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
@@ -65,21 +74,24 @@ export default function TutorDashboardPage() {
         const id = tokenResult.claims.tutorId as string | undefined;
         if (!id) return;
         setTutorId(id);
-        const [tutorDoc, tutorBookings, govs, subs, levels, tutorReviews] = await Promise.all([
+        const [tutorDoc, tutorBookings, govs, subs, levels, tutorReviews, verifDocs] = await Promise.all([
           MasterDataService.getTutorById(id),
           MasterDataService.getTutorBookings(id),
           MasterDataService.getGovernorates(false),
           MasterDataService.getTaxonomies('SUBJECT', false),
           MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
           MasterDataService.getApprovedTutorReviews(id),
+          MasterDataService.getTutorVerificationDocuments(id),
         ]);
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
+        setUnavailableDates(tutorDoc?.unavailableDates || []);
         setBookings(tutorBookings);
         setGovernorates(govs);
         setSubjects(subs);
         setStudentLevels(levels);
         setReviews(tutorReviews);
+        setVerificationDocuments(verifDocs);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -101,7 +113,10 @@ export default function TutorDashboardPage() {
     if (!tutor) return;
     setSaving(true);
     try {
-      await MasterDataService.saveTutor({ ...tutor, availability });
+      await Promise.all([
+        MasterDataService.saveTutor({ ...tutor, availability, unavailableDates }),
+        MasterDataService.saveTutorVerificationDocuments(tutor.id, verificationDocuments),
+      ]);
       setMessage({ text: t('تم حفظ التغييرات بنجاح', 'Changes saved successfully'), type: 'success' });
     } catch {
       setMessage({ text: t('تعذر حفظ التغييرات', 'Failed to save changes'), type: 'error' });
@@ -109,6 +124,13 @@ export default function TutorDashboardPage() {
       setSaving(false);
     }
   };
+
+  const addBlockedDate = () => {
+    if (!newBlockedDate || unavailableDates.includes(newBlockedDate)) return;
+    setUnavailableDates([...unavailableDates, newBlockedDate].sort());
+    setNewBlockedDate('');
+  };
+  const removeBlockedDate = (date: string) => setUnavailableDates(unavailableDates.filter((d) => d !== date));
 
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
     await MasterDataService.updateBookingStatus(booking.id, status);
@@ -179,6 +201,40 @@ export default function TutorDashboardPage() {
       setPasswordMessage({ text: t('كلمة المرور الحالية غير صحيحة', 'Current password is incorrect'), type: 'error' });
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser;
+    if (!user?.email || !tutorId) return;
+    setDeleteError('');
+
+    if (!confirm(t(
+      'سيتم حذف ملفك الشخصي وحسابك نهائياً ولن يظهر للطلاب بعد الآن. سيتم إلغاء حجوزاتك القادمة. هذا الإجراء لا يمكن التراجع عنه.',
+      'This will permanently delete your profile and account — you will no longer appear to students, and your upcoming bookings will be cancelled. This cannot be undone.'
+    ))) {
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, deletePassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // Cancel any bookings still in play before the tutor doc disappears from under them.
+      await Promise.all(
+        bookings
+          .filter((b) => b.status === 'PENDING' || b.status === 'CONFIRMED')
+          .map((b) => MasterDataService.updateBookingStatus(b.id, 'CANCELLED'))
+      );
+
+      await MasterDataService.deleteTutor(tutorId);
+      await deleteUser(user);
+      router.push('/');
+    } catch {
+      setDeleteError(t('كلمة المرور غير صحيحة', 'Incorrect password'));
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -478,6 +534,22 @@ export default function TutorDashboardPage() {
             </div>
           </div>
 
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <h2 className="font-bold text-sm text-slate-900">{t('وثائق التوثيق', 'Verification Documents')}</h2>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              {t('ارفع صورة هويتك أو شهاداتك لمساعدة الإدارة على توثيق ملفك — هذه الوثائق خاصة ولا تظهر للعامة.', 'Upload your ID or certificates to help the admin verify your profile — these documents are private and never shown publicly.')}
+            </p>
+            <DocumentUploadField
+              label=""
+              value={verificationDocuments}
+              onChange={setVerificationDocuments}
+              pathPrefix={`tutors/${tutor.id}/verification`}
+            />
+          </div>
+
           <div className="flex justify-end">
             <button
               onClick={handleSave}
@@ -556,6 +628,36 @@ export default function TutorDashboardPage() {
                 {changingPassword ? t('جاري التغيير...', 'Changing...') : t('تحديث كلمة المرور', 'Update Password')}
               </button>
             </form>
+          </div>
+
+          <div className="bg-rose-50 p-6 rounded-2xl border border-rose-200 space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600" />
+              <h2 className="font-bold text-sm text-rose-900">{t('منطقة الخطر', 'Danger Zone')}</h2>
+            </div>
+            <p className="text-xs text-rose-700">
+              {t('حذف حسابك نهائياً — سيُخفى ملفك عن الطلاب وتُلغى حجوزاتك القادمة. لا يمكن التراجع عن هذا الإجراء.', 'Permanently delete your account — your profile disappears from the directory and any upcoming bookings are cancelled. This cannot be undone.')}
+            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 max-w-sm">
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder={t('كلمة المرور للتأكيد', 'Password to confirm')}
+                className="flex-1 w-full px-3 py-2 text-xs border border-rose-200 rounded-lg"
+              />
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || !deletePassword}
+                className="shrink-0 flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold disabled:opacity-60"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deletingAccount ? t('جاري الحذف...', 'Deleting...') : t('حذف حسابي نهائياً', 'Delete My Account')}</span>
+              </button>
+            </div>
+            {deleteError && (
+              <p className="text-xs font-bold px-3 py-2 rounded-lg bg-rose-100 text-rose-800">{deleteError}</p>
+            )}
           </div>
         </div>
       )}
@@ -646,6 +748,45 @@ export default function TutorDashboardPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Blocked Dates (vacation / one-off unavailability) */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-rose-500" />
+              <h2 className="font-bold text-sm text-slate-900">{t('أيام محجوبة (إجازة)', 'Blocked Dates (Vacation)')}</h2>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              {t('حدد تواريخ لن تكون فيها متاحاً رغم توافقها مع جدولك الأسبوعي المعتاد.', "Mark specific dates you're unavailable even though they match your usual weekly schedule.")}
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={newBlockedDate}
+                onChange={(e) => setNewBlockedDate(e.target.value)}
+                className="px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              />
+              <button
+                onClick={addBlockedDate}
+                disabled={!newBlockedDate}
+                className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t('حجب اليوم', 'Block Date')}</span>
+              </button>
+            </div>
+            {unavailableDates.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {unavailableDates.map((date) => (
+                  <span key={date} className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-mono font-bold">
+                    {date}
+                    <button onClick={() => removeBlockedDate(date)} className="hover:text-rose-900">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">

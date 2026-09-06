@@ -45,6 +45,7 @@ function TutorForm() {
   const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
   const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [form, setForm] = useState<Partial<Tutor>>(emptyForm);
+  const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -60,8 +61,12 @@ function TutorForm() {
       setStudentLevels(levels);
 
       if (editId) {
-        const existing = await MasterDataService.getTutorById(editId);
+        const [existing, docs] = await Promise.all([
+          MasterDataService.getTutorById(editId),
+          MasterDataService.getTutorVerificationDocuments(editId),
+        ]);
         if (existing) setForm(existing);
+        setVerificationDocuments(docs);
       }
     }
     load();
@@ -390,6 +395,25 @@ function TutorForm() {
             )}
           </div>
         </div>
+
+        {verificationDocuments.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+            <span className="text-xs font-bold text-amber-800">{t('وثائق التوثيق المرفوعة', 'Uploaded Verification Documents')}</span>
+            <div className="flex flex-wrap gap-2">
+              {verificationDocuments.map((url, idx) => (
+                <a
+                  key={idx}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-[11px] font-bold text-blue-700 hover:underline"
+                >
+                  {t(`مستند ${idx + 1}`, `Document ${idx + 1}`)}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

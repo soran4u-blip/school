@@ -21,4 +21,5 @@ export interface Booking {
   };
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
   createdAt: string;
+  recurringGroupId?: string; // shared across all weekly instances created from one recurring booking request
 }

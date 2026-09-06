@@ -95,7 +95,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
   const [selectedSlot, setSelectedSlot] = useState<DaySlot | null>(null);
   const [bookingMode, setBookingMode] = useState<'INDIVIDUAL' | 'GROUP' | null>(null);
   const [joinBookingId, setJoinBookingId] = useState<string | undefined>(undefined);
-  const [form, setForm] = useState({ name: '', phone: '', subjectId: '' });
+  const [form, setForm] = useState({ name: '', phone: '', subjectId: '', recurring: false, weeks: 4 });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; priceIqd?: number } | null>(null);
 
@@ -199,7 +199,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
     setSelectedSlot(daySlot);
     setBookingMode(mode);
     setJoinBookingId(existingGroupId);
-    setForm({ name: '', phone: '', subjectId: subjects[0]?.id || '' });
+    setForm({ name: '', phone: '', subjectId: subjects[0]?.id || '', recurring: false, weeks: 4 });
     setResult(null);
   };
 
@@ -230,6 +230,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
           phone: form.phone.trim(),
           joinBookingId,
           ...(form.subjectId && { subjectId: form.subjectId }),
+          ...(bookingMode === 'INDIVIDUAL' && form.recurring && { recurring: true, weeks: form.weeks }),
         }),
       });
       const data = await res.json();
@@ -239,11 +240,23 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
       }
       const priceIqd = data.booking.pricePerStudent.iqd;
       const price = priceIqd.toLocaleString();
-      setResult({
-        success: true,
-        message: t(`تم الحجز بنجاح! السعر لكل طالب: ${price} د.ع.`, `Booked successfully! Price per student: ${price} IQD`),
-        priceIqd,
-      });
+      if (data.bookings?.length > 1) {
+        const skippedCount = data.skipped?.length || 0;
+        setResult({
+          success: true,
+          message: t(
+            `تم حجز ${data.bookings.length} جلسة أسبوعية بنجاح! السعر لكل جلسة: ${price} د.ع.${skippedCount ? ` (تعذر حجز ${skippedCount} أسبوع بسبب التعارض)` : ''}`,
+            `Booked ${data.bookings.length} weekly sessions! Price per session: ${price} IQD${skippedCount ? ` (${skippedCount} week(s) couldn't be booked due to a conflict)` : ''}`
+          ),
+          priceIqd,
+        });
+      } else {
+        setResult({
+          success: true,
+          message: t(`تم الحجز بنجاح! السعر لكل طالب: ${price} د.ع.`, `Booked successfully! Price per student: ${price} IQD`),
+          priceIqd,
+        });
+      }
       await loadSlotStatuses(tutor.id);
     } catch {
       setResult({ success: false, message: t('تعذر إتمام الحجز', 'Booking failed') });
@@ -405,6 +418,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
               {days.map(({ date, dayOfWeek }) => {
                 const daySlots = tutor.availability.filter((s) => s.dayOfWeek === dayOfWeek);
                 if (daySlots.length === 0) return null;
+                if ((tutor.unavailableDates || []).includes(date)) return null;
                 const dateObj = new Date(`${date}T00:00:00`);
                 return (
                   <div key={date} className="flex flex-col sm:flex-row sm:items-center gap-2 pb-3 border-b border-slate-100 last:border-0">
@@ -637,6 +651,33 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl font-mono"
                 />
+                {bookingMode === 'INDIVIDUAL' && (
+                  <div className="p-3 bg-slate-50 rounded-xl space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.recurring}
+                        onChange={(e) => setForm({ ...form, recurring: e.target.checked })}
+                        className="rounded text-emerald-600"
+                      />
+                      <span>{t('تكرار أسبوعي', 'Repeat weekly')}</span>
+                    </label>
+                    {form.recurring && (
+                      <div className="flex items-center gap-2 ps-6">
+                        <span className="text-[11px] text-slate-500">{t('لعدد', 'For')}</span>
+                        <input
+                          type="number"
+                          min={2}
+                          max={12}
+                          value={form.weeks}
+                          onChange={(e) => setForm({ ...form, weeks: Number(e.target.value) })}
+                          className="w-16 px-2 py-1 text-xs border border-slate-200 rounded-lg font-mono"
+                        />
+                        <span className="text-[11px] text-slate-500">{t('أسابيع', 'weeks')}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={submitting}

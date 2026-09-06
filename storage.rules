@@ -11,6 +11,10 @@ service firebase.storage {
       return request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
+    function isValidVerificationDoc() {
+      return request.resource.size < 5 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
 
     match /institutions/{institutionId}/{fileName} {
       allow read: if true;
@@ -20,6 +24,13 @@ service firebase.storage {
     match /tutors/{tutorId}/{fileName} {
       allow read: if true;
       allow write: if (isSuperAdmin() || isOwnerTutor(tutorId)) && isValidImage();
+    }
+
+    // ID/certificate documents backing a tutor's verification — private (identity documents),
+    // unlike the public profile photo above. Only the tutor themself and superadmin can read.
+    match /tutors/{tutorId}/verification/{fileName} {
+      allow read: if isSuperAdmin() || isOwnerTutor(tutorId);
+      allow write: if (isSuperAdmin() || isOwnerTutor(tutorId)) && isValidVerificationDoc();
     }
   }
 }

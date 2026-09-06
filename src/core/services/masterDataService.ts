@@ -375,12 +375,26 @@ export class MasterDataService {
   static async deleteTutor(id: string): Promise<void> {
     try {
       if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
+        // Firestore doesn't cascade-delete subcollections when their parent doc goes —
+        // clean up the private verification doc explicitly so it doesn't linger orphaned.
+        await deleteDoc(doc(db, 'tutors', id, 'private', 'verification')).catch(() => {});
         await deleteDoc(doc(db, 'tutors', id));
       }
     } catch (e) {
       console.warn('Error deleting tutor from Firestore:', e);
     }
     inMemoryStore.tutors = inMemoryStore.tutors.filter(t => t.id !== id);
+  }
+
+  // Verification documents live in a private subcollection, not on the tutor doc itself —
+  // that doc is world-readable once status is 'ACTIVE', which would leak these otherwise.
+  static async getTutorVerificationDocuments(tutorId: string): Promise<string[]> {
+    const snap = await getDoc(doc(db, 'tutors', tutorId, 'private', 'verification'));
+    return snap.exists() ? (snap.data().documents as string[]) || [] : [];
+  }
+
+  static async saveTutorVerificationDocuments(tutorId: string, documents: string[]): Promise<void> {
+    await setDoc(doc(db, 'tutors', tutorId, 'private', 'verification'), { documents });
   }
 
   /* =========================================================

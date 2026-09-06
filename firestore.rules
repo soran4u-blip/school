@@ -94,6 +94,15 @@ service cloud.firestore {
     match /tutors/{tutorId} {
       allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerTutor(tutorId);
       allow write: if isSuperAdmin() || isOwner(resource.data.userId) || isOwnerTutor(tutorId);
+
+      // Verification documents (ID/certificate photos) live here instead of on the tutor doc
+      // above, because that doc's read rule has no field-level restriction — anything on it
+      // is world-readable the moment status is 'ACTIVE'. Storage download-URL tokens also
+      // bypass storage.rules on a direct fetch, so keeping these URLs off the public doc is
+      // the only real privacy boundary for identity documents.
+      match /private/{docId} {
+        allow read, write: if isSuperAdmin() || isOwnerTutor(tutorId);
+      }
     }
 
     // Tutoring Session Bookings (individual or group). Writes only via the Admin SDK

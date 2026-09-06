@@ -31,6 +31,7 @@ export interface Tutor {
   groupMaxSize: number; // e.g. 4 — max students per group session
 
   availability: AvailabilitySlot[]; // weekly recurring pattern
+  unavailableDates?: string[]; // 'YYYY-MM-DD' dates the tutor has blocked off despite a matching weekly slot (vacation, etc.)
 
   deliveryMode: ('ONLINE' | 'IN_PERSON' | 'HYBRID')[];
   subjectIds: string[]; // References taxonomy item IDs (e.g. 'sub-physics-wazari', 'sub-math')
@@ -42,6 +43,9 @@ export interface Tutor {
   
   isVerified: boolean;
   verificationBadgeLabel: LocalizedString;
+  // Verification document URLs are NOT stored here — this doc is world-readable once status is
+  // 'ACTIVE', so they live in the private tutors/{id}/private/verification subcollection instead
+  // (see MasterDataService.getTutorVerificationDocuments/saveTutorVerificationDocuments).
   status: 'ACTIVE' | 'PENDING';
   
   ratingAvg: number;
