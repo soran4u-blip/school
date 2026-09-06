@@ -449,6 +449,14 @@ export class MasterDataService {
     }
   }
 
+  // Tutor replying to their own approved review — firestore.rules restricts this update to
+  // touching only the `reply` field, so it must be the *only* key in this call's payload.
+  static async replyToReview(reviewId: string, text: string): Promise<void> {
+    await updateDoc(doc(db, 'reviews', reviewId), {
+      reply: { text, createdAt: new Date().toISOString() },
+    });
+  }
+
   /* =========================================================
      INQUIRIES & LEADS
   ========================================================= */

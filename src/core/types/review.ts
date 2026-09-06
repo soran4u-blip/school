@@ -8,6 +8,13 @@ export interface Review {
   comment: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
+  // A single public reply from whoever is being reviewed (tutor for now — institutions have
+  // no login yet). Not a back-and-forth thread, just one owner response, same as most review
+  // platforms.
+  reply?: {
+    text: string;
+    createdAt: string;
+  };
 }
 
 export interface Inquiry {

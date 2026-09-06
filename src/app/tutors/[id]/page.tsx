@@ -491,6 +491,14 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
                     </div>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
+                  {rev.reply && (
+                    <div className="ms-4 ps-3 border-s-2 border-emerald-200 mt-2">
+                      <span className="text-[10px] font-bold text-emerald-700">
+                        {t(`رد ${tutor.fullName.ar}`, `${tutor.fullName.en}'s reply`)}
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">{rev.reply.text}</p>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (

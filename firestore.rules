@@ -105,10 +105,17 @@ service cloud.firestore {
     }
 
     // User Reviews (Public read approved, Authenticated create)
+    function isTutorReplyingToOwnApprovedReview() {
+      return isOwnerTutor(resource.data.tutorId)
+        && resource.data.status == 'APPROVED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reply']);
+    }
+
     match /reviews/{reviewId} {
       allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
       allow create: if isAuthenticated() && isValidReview();
-      allow update, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin() || isTutorReplyingToOwnApprovedReview();
+      allow delete: if isSuperAdmin();
     }
 
     // Inquiries & Leads (Anyone can create inquiry, only recipient/admin can read)

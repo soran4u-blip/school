@@ -8,8 +8,9 @@ import { MasterDataService } from '@/core/services/masterDataService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
 import { ThreadMessage } from '@/core/types/message';
+import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
-import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle, MessageCircle, Send } from 'lucide-react';
+import { Calendar, Save, AlertCircle, Plus, Trash2, Users, User, Check, X, Phone, UserCog, ListChecks, UserX, KeyRound, PauseCircle, PlayCircle, MessageCircle, Send, Star } from 'lucide-react';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
@@ -24,11 +25,14 @@ const DAY_LABELS: { ar: string; en: string }[] = [
 
 export default function TutorDashboardPage() {
   const { language, t } = useLanguage();
-  const [tab, setTab] = useState<'profile' | 'availability' | 'bookings'>('profile');
+  const [tab, setTab] = useState<'profile' | 'availability' | 'bookings' | 'reviews'>('profile');
   const [tutorId, setTutorId] = useState<string | null>(null);
   const [tutor, setTutor] = useState<Tutor | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyingId, setReplyingId] = useState<string | null>(null);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
   const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
@@ -61,12 +65,13 @@ export default function TutorDashboardPage() {
         const id = tokenResult.claims.tutorId as string | undefined;
         if (!id) return;
         setTutorId(id);
-        const [tutorDoc, tutorBookings, govs, subs, levels] = await Promise.all([
+        const [tutorDoc, tutorBookings, govs, subs, levels, tutorReviews] = await Promise.all([
           MasterDataService.getTutorById(id),
           MasterDataService.getTutorBookings(id),
           MasterDataService.getGovernorates(false),
           MasterDataService.getTaxonomies('SUBJECT', false),
           MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
+          MasterDataService.getApprovedTutorReviews(id),
         ]);
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
@@ -74,6 +79,7 @@ export default function TutorDashboardPage() {
         setGovernorates(govs);
         setSubjects(subs);
         setStudentLevels(levels);
+        setReviews(tutorReviews);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -136,6 +142,19 @@ export default function TutorDashboardPage() {
       setMessageDrafts((prev) => ({ ...prev, [booking.id]: '' }));
     } finally {
       setSendingThreadId(null);
+    }
+  };
+
+  const handleReplyToReview = async (reviewId: string) => {
+    const text = replyDrafts[reviewId]?.trim();
+    if (!text) return;
+    setReplyingId(reviewId);
+    try {
+      await MasterDataService.replyToReview(reviewId, text);
+      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: { text, createdAt: new Date().toISOString() } } : r)));
+      setReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
+    } finally {
+      setReplyingId(null);
     }
   };
 
@@ -218,7 +237,7 @@ export default function TutorDashboardPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-1.5 border border-slate-200 shadow-xs flex gap-1 max-w-md">
+      <div className="bg-white rounded-xl p-1.5 border border-slate-200 shadow-xs flex gap-1 max-w-lg">
         <button
           onClick={() => setTab('profile')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'profile' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
@@ -236,6 +255,12 @@ export default function TutorDashboardPage() {
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'bookings' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
         >
           {t('الحجوزات', 'My Bookings')} {bookings.filter(b => b.status === 'PENDING').length > 0 && <span className="ms-1 text-amber-400">({bookings.filter(b => b.status === 'PENDING').length})</span>}
+        </button>
+        <button
+          onClick={() => setTab('reviews')}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'reviews' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          {t('التقييمات', 'Reviews')} {reviews.filter(r => !r.reply).length > 0 && <span className="ms-1 text-amber-400">({reviews.filter(r => !r.reply).length})</span>}
         </button>
       </div>
 
@@ -765,6 +790,56 @@ export default function TutorDashboardPage() {
                   </div>
                 </div>
               )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'reviews' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
+          {reviews.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد تقييمات معتمدة بعد', 'No approved reviews yet')}</div>
+          ) : (
+            reviews.map((review) => (
+              <div key={review.id} className="p-4 space-y-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-slate-900">{review.reviewerName}</span>
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">{review.comment}</p>
+                </div>
+
+                {review.reply ? (
+                  <div className="ms-4 ps-3 border-s-2 border-emerald-200 space-y-1">
+                    <span className="text-[10px] font-bold text-emerald-700">{t('ردّك', 'Your reply')}</span>
+                    <p className="text-xs text-slate-600">{review.reply.text}</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={replyDrafts[review.id] || ''}
+                      onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleReplyToReview(review.id); }}
+                      placeholder={t('اكتب رداً علنياً...', 'Write a public reply...')}
+                      className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                    />
+                    <button
+                      onClick={() => handleReplyToReview(review.id)}
+                      disabled={replyingId === review.id || !replyDrafts[review.id]?.trim()}
+                      className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
+                      title={t('نشر الرد', 'Post reply')}
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}

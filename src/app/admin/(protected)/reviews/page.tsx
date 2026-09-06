@@ -129,6 +129,12 @@ export default function AdminReviewsPage() {
                   }`}>
                     {rev.status}
                   </span>
+                  {rev.reply && (
+                    <div className="ms-4 ps-3 border-s-2 border-emerald-200 mt-1">
+                      <span className="text-[10px] font-bold text-emerald-700">{t('رد صاحب الملف', 'Owner reply')}</span>
+                      <p className="text-xs text-slate-600">{rev.reply.text}</p>
+                    </div>
+                  )}
                 </div>
 
                 {rev.status === 'PENDING' && (
