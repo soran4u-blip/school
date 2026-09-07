@@ -182,6 +182,7 @@ service cloud.firestore {
         && d.institutionId is string && d.institutionId.size() > 0
         && d.fullName is string && d.fullName.size() > 0 && d.fullName.size() <= 100
         && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
+        && d.resumeUrl is string && d.resumeUrl.size() > 0
         && d.get('coverLetter', '') is string && d.get('coverLetter', '').size() <= 3000
         && d.status == 'SUBMITTED';
     }

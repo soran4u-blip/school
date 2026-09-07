@@ -34,6 +34,8 @@ export interface JobApplication {
   // Storage path (not a resolved download URL) — the applicant who uploads it has no read access
   // under storage.rules, only write. Resolve via resolveDownloadURL() from a session that does
   // (the owning institution), never store a pre-resolved URL here.
+  // Required by firestore.rules for new submissions (the apply form enforces it client-side too);
+  // still optional in the type since applications created before that requirement lack it.
   resumeUrl?: string;
   coverLetter?: string;
   status: 'SUBMITTED' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'HIRED';

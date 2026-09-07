@@ -116,6 +116,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       return;
     }
 
+    if (!resumeUrl) {
+      setError(t('يرجى إرفاق السيرة الذاتية قبل الإرسال', 'Please attach your resume before submitting'));
+      return;
+    }
+
     if (isCooldownActive('job-application')) {
       setError(t('يرجى الانتظار قليلاً قبل إرسال طلب آخر', 'Please wait a moment before submitting another application'));
       return;
@@ -316,7 +321,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     ) : (
                       <label className="flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors w-full">
                         {uploadingResume ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        <span>{uploadingResume ? t('جاري الرفع...', 'Uploading...') : t('إرفاق السيرة الذاتية (اختياري)', 'Attach Resume (optional)')}</span>
+                        <span>{uploadingResume ? t('جاري الرفع...', 'Uploading...') : t('إرفاق السيرة الذاتية *', 'Attach Resume *')}</span>
                         <input type="file" accept="image/*,application/pdf,.doc,.docx" className="hidden" onChange={handleResumeFile} disabled={uploadingResume} />
                       </label>
                     )}
