@@ -13,6 +13,7 @@ import { Review, Inquiry } from '../types/review';
 import { Application } from '../types/application';
 import { Booking } from '../types/booking';
 import { Job, JobApplication } from '../types/job';
+import { Employer } from '../types/employer';
 import { CommunityPost, CommunityReply } from '../types/community';
 import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
@@ -650,6 +651,14 @@ export class MasterDataService {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
+  static async getEmployerJobs(employerId: string): Promise<Job[]> {
+    const q = query(collection(db, 'jobs'), where('employerId', '==', employerId));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Job))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   // Public directory of open jobs — jobs are dynamic/time-sensitive so (unlike institutions/tutors)
   // there's no in-memory seed fallback here, just a straight Firestore query on the one indexable
   // field (status) with the rest filtered client-side, same approach the /tutors listing uses.
@@ -686,6 +695,14 @@ export class MasterDataService {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
+  static async getEmployerJobApplications(employerId: string): Promise<JobApplication[]> {
+    const q = query(collection(db, 'jobApplications'), where('employerId', '==', employerId));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as JobApplication))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   static async updateJobApplicationStatus(id: string, status: JobApplication['status']): Promise<void> {
     await updateDoc(doc(db, 'jobApplications', id), { status, updatedAt: new Date().toISOString() });
   }
@@ -705,6 +722,29 @@ export class MasterDataService {
   static async getAllJobApplications(): Promise<JobApplication[]> {
     const snap = await getDocs(collection(db, 'jobApplications'));
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as JobApplication));
+  }
+
+  /* =========================================================
+     EMPLOYERS (companies/NGOs — narrower than institutions, job-posting only)
+  ========================================================= */
+  static async getEmployerById(id: string): Promise<Employer | null> {
+    const snap = await getDoc(doc(db, 'employers', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Employer) : null;
+  }
+
+  static async getAllEmployers(): Promise<Employer[]> {
+    const snap = await getDocs(collection(db, 'employers'));
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Employer))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async updateEmployerStatus(id: string, status: Employer['status']): Promise<void> {
+    await updateDoc(doc(db, 'employers', id), { status, updatedAt: new Date().toISOString() });
+  }
+
+  static async deleteEmployer(id: string): Promise<void> {
+    await deleteDoc(doc(db, 'employers', id));
   }
 
   /* =========================================================

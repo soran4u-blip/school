@@ -4,12 +4,13 @@ import { adminAuth } from '@/core/firebase/admin';
 const SESSION_COOKIE_NAME = 'session';
 const PUBLIC_PATHS = ['/admin/login', '/login'];
 
-function requiredRole(pathname: string): 'superadmin' | 'tutor' | 'student' | 'institution' | null {
+function requiredRole(pathname: string): 'superadmin' | 'tutor' | 'student' | 'institution' | 'employer' | null {
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/seed') || pathname.startsWith('/api/applications')) return 'superadmin';
   if (pathname.startsWith('/tutor/dashboard')) return 'tutor';
   if (pathname.startsWith('/account') && !pathname.startsWith('/account/signup')) return 'student';
   if (pathname.startsWith('/api/account')) return 'student';
   if (pathname.startsWith('/institution/dashboard')) return 'institution';
+  if (pathname.startsWith('/employer/dashboard')) return 'employer';
   return null;
 }
 
@@ -43,7 +44,7 @@ export async function proxy(request: NextRequest) {
   }
 }
 
-function denyAccess(request: NextRequest, isApiRoute: boolean, role: 'superadmin' | 'tutor' | 'student' | 'institution') {
+function denyAccess(request: NextRequest, isApiRoute: boolean, role: 'superadmin' | 'tutor' | 'student' | 'institution' | 'employer') {
   if (isApiRoute) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
@@ -54,5 +55,5 @@ function denyAccess(request: NextRequest, isApiRoute: boolean, role: 'superadmin
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/seed/:path*', '/api/applications/:path*', '/tutor/:path*', '/account/:path*', '/api/account/:path*', '/institution/:path*'],
+  matcher: ['/admin/:path*', '/api/seed/:path*', '/api/applications/:path*', '/tutor/:path*', '/account/:path*', '/api/account/:path*', '/institution/:path*', '/employer/:path*'],
 };

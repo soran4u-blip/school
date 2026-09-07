@@ -259,7 +259,12 @@ function JobsContent() {
                           </h2>
                           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mt-1">
                             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>{job.institutionName || job.institutionId}</span>
+                            <span>{job.posterName || job.institutionId || job.employerId}</span>
+                            {job.employerId && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700">
+                                {job.posterType === 'NGO' ? t('منظمة', 'NGO') : t('شركة', 'Company')}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200">

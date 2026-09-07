@@ -6,7 +6,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Governorate, TaxonomyItem, Category } from '@/core/types/masterData';
 import { ApplicationType } from '@/core/types/application';
-import { UserPlus, Building2, GraduationCap, CheckCircle2, Loader2 } from 'lucide-react';
+import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function ApplyPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [governorateId, setGovernorateId] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [employerType, setEmployerType] = useState<'COMPANY' | 'NGO'>('COMPANY');
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [studentLevelIds, setStudentLevelIds] = useState<string[]>([]);
@@ -81,6 +82,7 @@ export default function ApplyPage() {
         whatsappNumber: whatsappNumber.trim() || undefined,
         governorateId,
         categoryId: type === 'INSTITUTION' ? categoryId || undefined : undefined,
+        employerType: type === 'EMPLOYER' ? employerType : undefined,
         subjectIds: type === 'TUTOR' ? subjectIds : undefined,
         studentLevelIds: type === 'TUTOR' ? studentLevelIds : undefined,
         yearsOfExperience: type === 'TUTOR' && yearsOfExperience ? Number(yearsOfExperience) : undefined,
@@ -132,7 +134,7 @@ export default function ApplyPage() {
             {t('انضم إلى Eduraq', 'Join Eduraq')}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t('قدّم طلبك كأستاذ خصوصي أو كمؤسسة تعليمية — سيراجعه فريقنا قبل التفعيل.', 'Apply as a private tutor or an educational institution — our team reviews every application before activation.')}
+            {t('قدّم طلبك كأستاذ خصوصي، مؤسسة تعليمية، أو شركة/منظمة لنشر فرص العمل — سيراجعه فريقنا قبل التفعيل.', 'Apply as a private tutor, an educational institution, or a company/NGO to post job openings — our team reviews every application before activation.')}
           </p>
         </div>
 
@@ -153,12 +155,24 @@ export default function ApplyPage() {
             <Building2 className="w-4 h-4" />
             {t('مؤسسة تعليمية', 'Institution')}
           </button>
+          <button
+            type="button"
+            onClick={() => setType('EMPLOYER')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'EMPLOYER' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+          >
+            <Briefcase className="w-4 h-4" />
+            {t('شركة / منظمة', 'Company / NGO')}
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
-              {type === 'INSTITUTION' ? t('اسم المؤسسة', 'Institution Name') : t('الاسم الكامل', 'Full Name')} *
+              {type === 'INSTITUTION'
+                ? t('اسم المؤسسة', 'Institution Name')
+                : type === 'EMPLOYER'
+                  ? t('اسم الشركة أو المنظمة', 'Company / Organization Name')
+                  : t('الاسم الكامل', 'Full Name')} *
             </label>
             <input
               type="text"
@@ -272,6 +286,32 @@ export default function ApplyPage() {
             </>
           )}
 
+          {type === 'EMPLOYER' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">{t('النوع', 'Type')} *</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEmployerType('COMPANY')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                    employerType === 'COMPANY' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-600 hover:border-emerald-400'
+                  }`}
+                >
+                  {t('شركة', 'Company')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmployerType('NGO')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                    employerType === 'NGO' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-600 hover:border-emerald-400'
+                  }`}
+                >
+                  {t('منظمة غير حكومية', 'NGO')}
+                </button>
+              </div>
+            </div>
+          )}
+
           {type === 'INSTITUTION' && (
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1.5">{t('نوع المؤسسة *', 'Institution Category *')}</label>
@@ -293,7 +333,9 @@ export default function ApplyPage() {
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
               {type === 'INSTITUTION'
                 ? t('نبذة عن المؤسسة', 'Tell us about your institution')
-                : t('نبذة عنك ومؤهلاتك', 'Tell us about yourself and your qualifications')}
+                : type === 'EMPLOYER'
+                  ? t('نبذة عن الشركة أو المنظمة', 'Tell us about your company or organization')
+                  : t('نبذة عنك ومؤهلاتك', 'Tell us about yourself and your qualifications')}
             </label>
             <textarea
               rows={4}

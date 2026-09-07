@@ -3,16 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
-import { Job, JobApplication } from '@/core/types/job';
-import { Institution } from '@/core/types/institution';
+import { Job } from '@/core/types/job';
 import { Briefcase, Users, AlertCircle, ExternalLink } from 'lucide-react';
 
 export default function AdminJobsPage() {
   const { language, t } = useLanguage();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [filterInstitution, setFilterInstitution] = useState('all');
+  const [filterPoster, setFilterPoster] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,16 +19,14 @@ export default function AdminJobsPage() {
       setLoading(true);
       setError('');
       try {
-        const [allJobs, allApplications, insts] = await Promise.all([
+        const [allJobs, allApplications] = await Promise.all([
           MasterDataService.getAllJobs(),
           MasterDataService.getAllJobApplications(),
-          MasterDataService.getInstitutions({}),
         ]);
         setJobs(allJobs);
         const counts: Record<string, number> = {};
         for (const app of allApplications) counts[app.jobId] = (counts[app.jobId] || 0) + 1;
         setApplicationCounts(counts);
-        setInstitutions(insts);
       } catch {
         setError(t('تعذر تحميل البيانات. تأكد من تسجيل الدخول كسوبر أدمن.', 'Failed to load data. Make sure you are signed in as superadmin.'));
       } finally {
@@ -40,12 +36,10 @@ export default function AdminJobsPage() {
     load();
   }, [t]);
 
-  const institutionName = (id: string) => {
-    const inst = institutions.find((i) => i.id === id);
-    return inst ? (language === 'en' ? inst.name.en : inst.name.ar) : id;
-  };
+  const posterKey = (job: Job) => job.institutionId || job.employerId || job.id;
+  const posters = Array.from(new Map(jobs.map((j) => [posterKey(j), j.posterName || posterKey(j)])).entries());
 
-  const filtered = filterInstitution === 'all' ? jobs : jobs.filter((j) => j.institutionId === filterInstitution);
+  const filtered = filterPoster === 'all' ? jobs : jobs.filter((j) => posterKey(j) === filterPoster);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -55,7 +49,7 @@ export default function AdminJobsPage() {
           <span>{t('كافة الوظائف الشاغرة', 'All Job Postings')}</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          {t('نظرة شاملة على وظائف كل المؤسسات على المنصة.', "A platform-wide view across every institution's job postings.")}
+          {t('نظرة شاملة على وظائف كل المؤسسات والشركات والمنظمات على المنصة.', 'A platform-wide view across every institution, company, and NGO job posting.')}
         </p>
       </div>
 
@@ -68,13 +62,13 @@ export default function AdminJobsPage() {
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <select
-          value={filterInstitution}
-          onChange={(e) => setFilterInstitution(e.target.value)}
+          value={filterPoster}
+          onChange={(e) => setFilterPoster(e.target.value)}
           className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
         >
-          <option value="all">{t('كافة المؤسسات', 'All Institutions')}</option>
-          {institutions.map((i) => (
-            <option key={i.id} value={i.id}>{language === 'en' ? i.name.en : i.name.ar}</option>
+          <option value="all">{t('كافة الجهات', 'All Posters')}</option>
+          {posters.map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
           ))}
         </select>
         <span className="text-xs text-slate-500 font-bold">
@@ -98,8 +92,13 @@ export default function AdminJobsPage() {
                   }`}>
                     {job.status}
                   </span>
+                  {job.employerId && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700">
+                      {job.posterType === 'NGO' ? t('منظمة', 'NGO') : t('شركة', 'Company')}
+                    </span>
+                  )}
                 </div>
-                <div className="text-xs text-slate-500 font-semibold">{institutionName(job.institutionId)}</div>
+                <div className="text-xs text-slate-500 font-semibold">{job.posterName || posterKey(job)}</div>
                 <div className="flex items-center gap-1 text-[11px] text-slate-500 font-semibold">
                   <Users className="w-3 h-3" />
                   <span>{applicationCounts[job.id] || 0} {t('متقدم', 'applicants')}</span>

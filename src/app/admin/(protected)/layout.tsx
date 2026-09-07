@@ -104,6 +104,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: Briefcase,
     },
     {
+      href: '/admin/employers',
+      label: { ar: 'الشركات والمنظمات', en: 'Companies & NGOs' },
+      icon: Briefcase,
+    },
+    {
       href: '/admin/applications',
       label: { ar: 'طلبات الانضمام', en: 'Join Applications' },
       icon: FileCheck2,

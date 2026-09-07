@@ -10,6 +10,9 @@ service firebase.storage {
     function isOwnerInstitution(institutionId) {
       return request.auth != null && request.auth.token.role == 'institution' && request.auth.token.institutionId == institutionId;
     }
+    function isOwnerEmployer(employerId) {
+      return request.auth != null && request.auth.token.role == 'employer' && request.auth.token.employerId == employerId;
+    }
     function isValidImage() {
       return request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
@@ -51,10 +54,11 @@ service firebase.storage {
 
     // Resumes attached to a job application. The applicant is a guest (anonymous auth only, same
     // posture as a review submission) uploading before the application doc exists, so ownership
-    // can't be checked here — instead the path embeds institutionId so only that institution (or
-    // admin) can read it back, matching the verification-doc paths above.
-    match /job-applications/{institutionId}/{jobId}/{fileName} {
-      allow read: if isSuperAdmin() || isOwnerInstitution(institutionId);
+    // can't be checked here — instead the path embeds the job's owner id (an institution or an
+    // employer — the two id spaces never collide since they're separate collections) so only that
+    // owner (or admin) can read it back, matching the verification-doc paths above.
+    match /job-applications/{ownerId}/{jobId}/{fileName} {
+      allow read: if isSuperAdmin() || isOwnerInstitution(ownerId) || isOwnerEmployer(ownerId);
       allow write: if request.auth != null && isValidResumeDoc();
     }
   }

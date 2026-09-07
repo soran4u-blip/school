@@ -208,8 +208,8 @@ export default function InstitutionDashboardPage() {
       } else {
         const created = await MasterDataService.createJob({
           ...editingJob,
-          institutionName: institution.name.en || institution.name.ar,
-          institutionLogoUrl: institution.logoUrl,
+          posterName: institution.name.en || institution.name.ar,
+          posterLogoUrl: institution.logoUrl,
         });
         setJobs((prev) => [created, ...prev]);
       }

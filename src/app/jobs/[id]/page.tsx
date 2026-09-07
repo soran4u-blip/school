@@ -59,7 +59,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       setJob(j);
       if (j) {
         const [inst, govs, subs] = await Promise.all([
-          MasterDataService.getInstitutionById(j.institutionId),
+          j.institutionId ? MasterDataService.getInstitutionById(j.institutionId) : Promise.resolve(null),
           MasterDataService.getGovernorates(),
           MasterDataService.getTaxonomies('SUBJECT'),
         ]);
@@ -93,7 +93,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      const path = `job-applications/${job.institutionId}/${job.id}/${Date.now()}-${file.name}`;
+      const ownerId = job.institutionId || job.employerId;
+      const path = `job-applications/${ownerId}/${job.id}/${Date.now()}-${file.name}`;
       await uploadFileOnly(file, path);
       setResumeUrl(path);
       setResumeFileName(file.name);
@@ -133,7 +134,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       }
       await MasterDataService.createJobApplication({
         jobId: job.id,
-        institutionId: job.institutionId,
+        ...(job.institutionId && { institutionId: job.institutionId }),
+        ...(job.employerId && { employerId: job.employerId }),
         jobTitle: job.title,
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
@@ -193,12 +195,20 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                     {language === 'en' ? job.title.en : job.title.ar}
                   </h1>
-                  {institution && (
+                  {institution ? (
                     <Link href={`/institutions/${institution.slug}`} className="flex items-center gap-1.5 text-sm text-blue-700 font-bold hover:underline mt-1">
                       <Building2 className="w-4 h-4" />
                       {language === 'en' ? institution.name.en : institution.name.ar}
                     </Link>
-                  )}
+                  ) : job.posterName ? (
+                    <div className="flex items-center gap-1.5 text-sm text-slate-700 font-bold mt-1">
+                      <Building2 className="w-4 h-4 text-slate-400" />
+                      {job.posterName}
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700">
+                        {job.posterType === 'NGO' ? t('منظمة', 'NGO') : t('شركة', 'Company')}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
                 <span className="px-3 py-1 rounded-md text-xs font-extrabold bg-blue-50 text-blue-800 border border-blue-200">
                   {language === 'en' ? EMPLOYMENT_LABELS[job.employmentType].en : EMPLOYMENT_LABELS[job.employmentType].ar}

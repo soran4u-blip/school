@@ -131,9 +131,9 @@ export default function AdminApplicationsPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-slate-900">{app.fullName}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    app.type === 'TUTOR' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                    app.type === 'TUTOR' ? 'bg-blue-50 text-blue-700' : app.type === 'INSTITUTION' ? 'bg-purple-50 text-purple-700' : 'bg-orange-50 text-orange-700'
                   }`}>
-                    {app.type === 'TUTOR' ? t('أستاذ', 'Tutor') : t('مؤسسة', 'Institution')}
+                    {app.type === 'TUTOR' ? t('أستاذ', 'Tutor') : app.type === 'INSTITUTION' ? t('مؤسسة', 'Institution') : t('شركة/منظمة', 'Company/NGO')}
                   </span>
                   <span className="text-[10px] text-slate-400">{governorateName(app.governorateId)}</span>
                   <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${

@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Application } from '@/core/types/application';
 import { Tutor } from '@/core/types/tutor';
 import { Institution } from '@/core/types/institution';
+import { Employer } from '@/core/types/employer';
 
 function randomPassword(): string {
   return Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
@@ -81,6 +82,47 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       await appSnap.ref.update({ status: 'APPROVED', reviewedAt: now, resultInstitutionId: instRef.id });
 
       return NextResponse.json({ success: true, institutionId: instRef.id, resetLink });
+    } catch (error: any) {
+      if (error?.code === 'auth/email-already-exists') {
+        return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
+      }
+      console.error('Application approval failed:', error);
+      return NextResponse.json({ success: false, error: 'Approval failed' }, { status: 500 });
+    }
+  }
+
+  if (application.type === 'EMPLOYER') {
+    try {
+      const employerRef = adminDb.collection('employers').doc();
+      const authUser = await adminAuth.createUser({
+        email: application.email,
+        password: randomPassword(),
+        displayName: application.fullName,
+      });
+      await adminAuth.setCustomUserClaims(authUser.uid, { role: 'employer', employerId: employerRef.id });
+
+      const employer: Employer = {
+        id: employerRef.id,
+        userId: authUser.uid,
+        name: application.fullName,
+        type: application.employerType || 'COMPANY',
+        description: application.message,
+        governorateId: application.governorateId,
+        contact: {
+          phone: application.phone,
+          whatsappNumber: application.whatsappNumber || application.phone,
+          email: application.email,
+        },
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await employerRef.set(employer);
+
+      const resetLink = await adminAuth.generatePasswordResetLink(application.email);
+      await appSnap.ref.update({ status: 'APPROVED', reviewedAt: now, resultEmployerId: employerRef.id });
+
+      return NextResponse.json({ success: true, employerId: employerRef.id, resetLink });
     } catch (error: any) {
       if (error?.code === 'auth/email-already-exists') {
         return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
