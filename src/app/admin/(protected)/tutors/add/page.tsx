@@ -4,7 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getTutorById, getTutorVerificationDocuments, saveTutor } from '@/core/services/tutorService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { UserCheck, Save, AlertCircle, ArrowRight } from 'lucide-react';
@@ -52,9 +53,9 @@ function TutorForm() {
   useEffect(() => {
     async function load() {
       const [govs, subs, levels] = await Promise.all([
-        MasterDataService.getGovernorates(false),
-        MasterDataService.getTaxonomies('SUBJECT', false),
-        MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
+        getGovernorates(false),
+        getTaxonomies('SUBJECT', false),
+        getTaxonomies('STUDENT_LEVEL', false),
       ]);
       setGovernorates(govs);
       setSubjects(subs);
@@ -62,8 +63,8 @@ function TutorForm() {
 
       if (editId) {
         const [existing, docs] = await Promise.all([
-          MasterDataService.getTutorById(editId),
-          MasterDataService.getTutorVerificationDocuments(editId),
+          getTutorById(editId),
+          getTutorVerificationDocuments(editId),
         ]);
         if (existing) setForm(existing);
         setVerificationDocuments(docs);
@@ -113,7 +114,7 @@ function TutorForm() {
     };
 
     try {
-      await MasterDataService.saveTutor(tutor);
+      await saveTutor(tutor);
       setMessage({ text: t('تم حفظ بيانات الأستاذ بنجاح', 'Tutor saved successfully'), type: 'success' });
       setTimeout(() => router.push('/admin/tutors'), 900);
     } catch {

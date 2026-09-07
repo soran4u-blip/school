@@ -6,7 +6,8 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getTutors } from '@/core/services/tutorService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Star, MapPin, ShieldCheck } from 'lucide-react';
@@ -28,10 +29,10 @@ export default function TutorsListPage() {
   useEffect(() => {
     async function load() {
       const [tutorList, govs, taxes, levels] = await Promise.all([
-        MasterDataService.getTutors({}),
-        MasterDataService.getGovernorates(),
-        MasterDataService.getTaxonomies('SUBJECT', false),
-        MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
+        getTutors({}),
+        getGovernorates(),
+        getTaxonomies('SUBJECT', false),
+        getTaxonomies('STUDENT_LEVEL', false),
       ]);
       setTutors(tutorList);
       setGovernorates(govs);

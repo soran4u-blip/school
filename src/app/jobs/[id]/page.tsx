@@ -5,7 +5,9 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getJobById, createJobApplication } from '@/core/services/jobService';
+import { getInstitutionById } from '@/core/services/institutionService';
 import { Job } from '@/core/types/job';
 import { Institution } from '@/core/types/institution';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -55,13 +57,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const j = await MasterDataService.getJobById(id);
+      const j = await getJobById(id);
       setJob(j);
       if (j) {
         const [inst, govs, subs] = await Promise.all([
-          j.institutionId ? MasterDataService.getInstitutionById(j.institutionId) : Promise.resolve(null),
-          MasterDataService.getGovernorates(),
-          MasterDataService.getTaxonomies('SUBJECT'),
+          j.institutionId ? getInstitutionById(j.institutionId) : Promise.resolve(null),
+          getGovernorates(),
+          getTaxonomies('SUBJECT'),
         ]);
         setInstitution(inst);
         setGovernorate(govs.find((g) => g.id === j.governorateId) || null);
@@ -132,7 +134,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      await MasterDataService.createJobApplication({
+      await createJobApplication({
         jobId: job.id,
         ...(job.institutionId && { institutionId: job.institutionId }),
         ...(job.employerId && { employerId: job.employerId }),

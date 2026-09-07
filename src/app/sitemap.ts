@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getInstitutions } from '@/core/services/institutionService';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/explore`, changeFrequency: 'daily', priority: 0.9 },
   ];
 
-  const institutions = await MasterDataService.getInstitutions({ status: 'ACTIVE' });
+  const institutions = await getInstitutions({ status: 'ACTIVE' });
   const institutionRoutes: MetadataRoute.Sitemap = institutions.map((inst) => ({
     url: `${siteUrl}/institutions/${inst.slug}`,
     lastModified: inst.updatedAt ? new Date(inst.updatedAt) : undefined,

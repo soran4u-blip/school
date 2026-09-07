@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getCategories } from '@/core/services/masterDataService';
+import { getInstitutions } from '@/core/services/institutionService';
+import { getTutors } from '@/core/services/tutorService';
 import { 
   Building2, 
   MapPin, 
@@ -27,10 +29,10 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function loadStats() {
       const [govs, cats, insts, tutors] = await Promise.all([
-        MasterDataService.getGovernorates(false),
-        MasterDataService.getCategories(false),
-        MasterDataService.getInstitutions({ status: 'ALL' }),
-        MasterDataService.getTutors({ status: 'ALL' })
+        getGovernorates(false),
+        getCategories(false),
+        getInstitutions({ status: 'ALL' }),
+        getTutors({ status: 'ALL' })
       ]);
 
       setStats({

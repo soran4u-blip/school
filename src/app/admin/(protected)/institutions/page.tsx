@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getInstitutions, saveInstitution, deleteInstitution } from '@/core/services/institutionService';
+import { getGovernorates, getCategories } from '@/core/services/masterDataService';
 import { Institution } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
 import {
@@ -29,9 +30,9 @@ export default function AdminInstitutionsPage() {
 
   const loadData = async () => {
     const [insts, govs, cats] = await Promise.all([
-      MasterDataService.getInstitutions({ status: 'ALL' }),
-      MasterDataService.getGovernorates(false),
-      MasterDataService.getCategories(false),
+      getInstitutions({ status: 'ALL' }),
+      getGovernorates(false),
+      getCategories(false),
     ]);
     setInstitutions(insts);
     setGovernorates(govs);
@@ -47,7 +48,7 @@ export default function AdminInstitutionsPage() {
       ...inst,
       isVerified: !inst.isVerified,
     };
-    await MasterDataService.saveInstitution(updated);
+    await saveInstitution(updated);
     await loadData();
   };
 
@@ -56,7 +57,7 @@ export default function AdminInstitutionsPage() {
       ...inst,
       isFeatured: !inst.isFeatured,
     };
-    await MasterDataService.saveInstitution(updated);
+    await saveInstitution(updated);
     await loadData();
   };
 
@@ -65,7 +66,7 @@ export default function AdminInstitutionsPage() {
     if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
       return;
     }
-    await MasterDataService.deleteInstitution(inst.id);
+    await deleteInstitution(inst.id);
     await loadData();
   };
 

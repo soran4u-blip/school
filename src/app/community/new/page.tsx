@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates } from '@/core/services/masterDataService';
+import { createCommunityPost } from '@/core/services/communityService';
 import { Governorate } from '@/core/types/masterData';
 import { auth } from '@/core/firebase/config';
 import { signInAnonymously } from 'firebase/auth';
@@ -23,7 +24,7 @@ export default function NewCommunityPostPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    MasterDataService.getGovernorates().then(setGovernorates);
+    getGovernorates().then(setGovernorates);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +48,7 @@ export default function NewCommunityPostPage() {
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      await MasterDataService.createCommunityPost({
+      await createCommunityPost({
         governorateId: form.governorateId,
         authorName: form.authorName.trim(),
         title: form.title.trim(),

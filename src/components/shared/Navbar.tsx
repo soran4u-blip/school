@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getCategories, getGovernorates } from '@/core/services/masterDataService';
 import { Category, Governorate } from '@/core/types/masterData';
 import {
   GraduationCap,
@@ -35,8 +35,8 @@ export default function Navbar() {
   useEffect(() => {
     async function loadNavData() {
       const [cats, govs] = await Promise.all([
-        MasterDataService.getCategories(),
-        MasterDataService.getGovernorates()
+        getCategories(),
+        getGovernorates()
       ]);
       setCategories(cats);
       setGovernorates(govs);

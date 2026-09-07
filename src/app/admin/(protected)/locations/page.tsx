@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getCities, saveGovernorate, saveCity, deleteGovernorate } from '@/core/services/masterDataService';
 import { Governorate, City } from '@/core/types/masterData';
 import { 
   MapPin, 
@@ -49,7 +49,7 @@ export default function AdminLocationsPage() {
   });
 
   const loadData = async () => {
-    const list = await MasterDataService.getGovernorates(false);
+    const list = await getGovernorates(false);
     setGovernorates(list);
     if (list.length > 0 && !selectedGov) {
       selectGovernorate(list[0]);
@@ -62,7 +62,7 @@ export default function AdminLocationsPage() {
 
   const selectGovernorate = async (gov: Governorate) => {
     setSelectedGov(gov);
-    const cityList = await MasterDataService.getCities(gov.id, false);
+    const cityList = await getCities(gov.id, false);
     setCities(cityList);
   };
 
@@ -89,7 +89,7 @@ export default function AdminLocationsPage() {
       institutionsCount: govForm.institutionsCount || 0,
     };
 
-    await MasterDataService.saveGovernorate(newGov);
+    await saveGovernorate(newGov);
     setMessage({ 
       text: t('تم حفظ المحافظة بنجاح في قاعدة البيانات', 'Governorate saved successfully to master database'), 
       type: 'success' 
@@ -119,16 +119,16 @@ export default function AdminLocationsPage() {
       displayOrder: Number(cityForm.displayOrder) || cities.length + 1,
     };
 
-    await MasterDataService.saveCity(newCity);
+    await saveCity(newCity);
     setMessage({ text: t('تم حفظ المدينة/المنطقة بنجاح', 'City saved successfully'), type: 'success' });
     setIsAddingCity(false);
-    const updated = await MasterDataService.getCities(selectedGov.id, false);
+    const updated = await getCities(selectedGov.id, false);
     setCities(updated);
   };
 
   const handleDeleteGov = async (id: string) => {
     if (confirm(t('هل أنت متأكد من حذف هذه المحافظة؟', 'Are you sure you want to delete this governorate?'))) {
-      await MasterDataService.deleteGovernorate(id);
+      await deleteGovernorate(id);
       setMessage({ text: t('تم حذف المحافظة بنجاح', 'Governorate deleted'), type: 'success' });
       await loadData();
     }

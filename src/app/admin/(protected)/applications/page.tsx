@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllApplications, approveApplication, rejectApplication } from '@/core/services/applicationService';
+import { getGovernorates } from '@/core/services/masterDataService';
 import { Application } from '@/core/types/application';
 import { Governorate } from '@/core/types/masterData';
 import { FileCheck2, Check, X, Phone, Mail, AlertCircle, Copy } from 'lucide-react';
@@ -21,8 +22,8 @@ export default function AdminApplicationsPage() {
     setError('');
     try {
       const [apps, govs] = await Promise.all([
-        MasterDataService.getAllApplications(),
-        MasterDataService.getGovernorates(false),
+        getAllApplications(),
+        getGovernorates(false),
       ]);
       setApplications(apps);
       setGovernorates(govs);
@@ -46,7 +47,7 @@ export default function AdminApplicationsPage() {
     setBusyId(app.id);
     setError('');
     try {
-      const result = await MasterDataService.approveApplication(app.id);
+      const result = await approveApplication(app.id);
       if (result.resetLink) {
         setResetLink({ email: app.email, link: result.resetLink });
       } else if (result.note) {
@@ -64,7 +65,7 @@ export default function AdminApplicationsPage() {
     const reason = window.prompt(t('سبب الرفض (اختياري)', 'Rejection reason (optional)')) || undefined;
     setBusyId(app.id);
     try {
-      await MasterDataService.rejectApplication(app.id, reason);
+      await rejectApplication(app.id, reason);
       await loadData();
     } finally {
       setBusyId(null);

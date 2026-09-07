@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllReviews, getAllInquiries, updateReviewStatus, updateInquiryStatus } from '@/core/services/reviewService';
+import { getInstitutions } from '@/core/services/institutionService';
+import { getTutors } from '@/core/services/tutorService';
 import { Review, Inquiry } from '@/core/types/review';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
@@ -23,10 +25,10 @@ export default function AdminReviewsPage() {
     setError('');
     try {
       const [revs, inqs, insts, tuts] = await Promise.all([
-        MasterDataService.getAllReviews(),
-        MasterDataService.getAllInquiries(),
-        MasterDataService.getInstitutions({ status: 'ALL' }),
-        MasterDataService.getTutors({ status: 'ALL' }),
+        getAllReviews(),
+        getAllInquiries(),
+        getInstitutions({ status: 'ALL' }),
+        getTutors({ status: 'ALL' }),
       ]);
       setReviews(revs);
       setInquiries(inqs);
@@ -57,12 +59,12 @@ export default function AdminReviewsPage() {
     rev.institutionId ? institutionName(rev.institutionId) : rev.tutorId ? tutorName(rev.tutorId) : '';
 
   const handleReviewDecision = async (review: Review, status: 'APPROVED' | 'REJECTED') => {
-    await MasterDataService.updateReviewStatus(review.id, status, review);
+    await updateReviewStatus(review.id, status, review);
     await loadData();
   };
 
   const handleInquiryStatus = async (inquiry: Inquiry, status: Inquiry['status']) => {
-    await MasterDataService.updateInquiryStatus(inquiry.id, status);
+    await updateInquiryStatus(inquiry.id, status);
     await loadData();
   };
 

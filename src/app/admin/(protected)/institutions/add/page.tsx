@@ -4,7 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
+import { getInstitutionById, getInstitutionVerificationDocuments, saveInstitution } from '@/core/services/institutionService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { Building2, Save, AlertCircle, ArrowRight, Plus, Trash2 } from 'lucide-react';
@@ -76,9 +77,9 @@ function InstitutionForm() {
   useEffect(() => {
     async function load() {
       const [govs, cats, taxes] = await Promise.all([
-        MasterDataService.getGovernorates(false),
-        MasterDataService.getCategories(false),
-        MasterDataService.getTaxonomies(undefined, false),
+        getGovernorates(false),
+        getCategories(false),
+        getTaxonomies(undefined, false),
       ]);
       setGovernorates(govs);
       setCategories(cats);
@@ -86,8 +87,8 @@ function InstitutionForm() {
 
       if (editId) {
         const [existing, docs] = await Promise.all([
-          MasterDataService.getInstitutionById(editId),
-          MasterDataService.getInstitutionVerificationDocuments(editId),
+          getInstitutionById(editId),
+          getInstitutionVerificationDocuments(editId),
         ]);
         if (existing) {
           setForm(existing);
@@ -153,7 +154,7 @@ function InstitutionForm() {
     };
 
     try {
-      await MasterDataService.saveInstitution(institution);
+      await saveInstitution(institution);
       setMessage({ text: t('تم حفظ المؤسسة بنجاح', 'Institution saved successfully'), type: 'success' });
       setTimeout(() => router.push('/admin/institutions'), 900);
     } catch (err) {

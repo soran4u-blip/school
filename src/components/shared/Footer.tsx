@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getCategories, getGovernorates } from '@/core/services/masterDataService';
 import { Category, Governorate } from '@/core/types/masterData';
 import { GraduationCap, ShieldCheck, Mail, Phone } from 'lucide-react';
 
@@ -15,8 +15,8 @@ export default function Footer() {
   useEffect(() => {
     async function loadFooterData() {
       const [cats, govs] = await Promise.all([
-        MasterDataService.getCategories(),
-        MasterDataService.getGovernorates()
+        getCategories(),
+        getGovernorates()
       ]);
       setCategories(cats);
       setGovernorates(govs.slice(0, 8)); // Top governorates for footer links

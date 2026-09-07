@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllCommunityPosts, updateCommunityPostStatus, deleteCommunityPost } from '@/core/services/communityService';
+import { getGovernorates } from '@/core/services/masterDataService';
 import { CommunityPost } from '@/core/types/community';
 import { Governorate } from '@/core/types/masterData';
 import { Users, Check, X, Trash2, AlertCircle, MapPin } from 'lucide-react';
@@ -19,8 +20,8 @@ export default function AdminCommunityPage() {
     setError('');
     try {
       const [allPosts, govs] = await Promise.all([
-        MasterDataService.getAllCommunityPosts(),
-        MasterDataService.getGovernorates(false),
+        getAllCommunityPosts(),
+        getGovernorates(false),
       ]);
       setPosts(allPosts);
       setGovernorates(govs);
@@ -41,13 +42,13 @@ export default function AdminCommunityPage() {
   };
 
   const handleDecision = async (id: string, status: CommunityPost['status']) => {
-    await MasterDataService.updateCommunityPostStatus(id, status);
+    await updateCommunityPostStatus(id, status);
     await loadData();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm(t('هل تريد حذف هذا النقاش نهائياً؟', 'Permanently delete this discussion?'))) return;
-    await MasterDataService.deleteCommunityPost(id);
+    await deleteCommunityPost(id);
     await loadData();
   };
 

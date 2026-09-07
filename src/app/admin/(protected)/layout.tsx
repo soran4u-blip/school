@@ -6,7 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllApplications } from '@/core/services/applicationService';
+import { getAllReviews, getAllInquiries } from '@/core/services/reviewService';
+import { getAllCommunityPosts } from '@/core/services/communityService';
 import {
   GraduationCap,
   LayoutDashboard,
@@ -38,10 +40,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     async function loadPendingCounts() {
       try {
         const [applications, reviews, inquiries, communityPosts] = await Promise.all([
-          MasterDataService.getAllApplications(),
-          MasterDataService.getAllReviews(),
-          MasterDataService.getAllInquiries(),
-          MasterDataService.getAllCommunityPosts(),
+          getAllApplications(),
+          getAllReviews(),
+          getAllInquiries(),
+          getAllCommunityPosts(),
         ]);
         setPendingCounts({
           '/admin/applications': applications.filter((a) => a.status === 'PENDING').length,

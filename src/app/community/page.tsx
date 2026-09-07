@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates } from '@/core/services/masterDataService';
+import { getApprovedCommunityPosts } from '@/core/services/communityService';
 import { Governorate } from '@/core/types/masterData';
 import { CommunityPost } from '@/core/types/community';
 import { MessageCircle, MapPin, Plus, Users } from 'lucide-react';
@@ -23,9 +24,9 @@ function CommunityContent() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const govs = await MasterDataService.getGovernorates();
+      const govs = await getGovernorates();
       setGovernorates(govs);
-      const list = await MasterDataService.getApprovedCommunityPosts();
+      const list = await getApprovedCommunityPosts();
       setPosts(list);
       setLoading(false);
     }

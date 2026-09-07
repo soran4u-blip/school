@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllJobs, getAllJobApplications } from '@/core/services/jobService';
 import { Job } from '@/core/types/job';
 import { Briefcase, Users, AlertCircle, ExternalLink } from 'lucide-react';
 
@@ -20,8 +20,8 @@ export default function AdminJobsPage() {
       setError('');
       try {
         const [allJobs, allApplications] = await Promise.all([
-          MasterDataService.getAllJobs(),
-          MasterDataService.getAllJobApplications(),
+          getAllJobs(),
+          getAllJobApplications(),
         ]);
         setJobs(allJobs);
         const counts: Record<string, number> = {};

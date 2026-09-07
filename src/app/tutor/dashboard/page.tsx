@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getTutorById, saveTutor, getTutorVerificationDocuments, saveTutorVerificationDocuments, deleteTutor } from '@/core/services/tutorService';
+import { getTutorBookings, updateBookingStatus } from '@/core/services/bookingService';
+import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getApprovedTutorReviews, replyToReview } from '@/core/services/reviewService';
+import { getThreadMessages, sendTutorMessage } from '@/core/services/messagingService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
 import { ThreadMessage } from '@/core/types/message';
@@ -76,13 +80,13 @@ export default function TutorDashboardPage() {
         if (!id) return;
         setTutorId(id);
         const [tutorDoc, tutorBookings, govs, subs, levels, tutorReviews, verifDocs] = await Promise.all([
-          MasterDataService.getTutorById(id),
-          MasterDataService.getTutorBookings(id),
-          MasterDataService.getGovernorates(false),
-          MasterDataService.getTaxonomies('SUBJECT', false),
-          MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
-          MasterDataService.getApprovedTutorReviews(id),
-          MasterDataService.getTutorVerificationDocuments(id),
+          getTutorById(id),
+          getTutorBookings(id),
+          getGovernorates(false),
+          getTaxonomies('SUBJECT', false),
+          getTaxonomies('STUDENT_LEVEL', false),
+          getApprovedTutorReviews(id),
+          getTutorVerificationDocuments(id),
         ]);
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
@@ -115,8 +119,8 @@ export default function TutorDashboardPage() {
     setSaving(true);
     try {
       await Promise.all([
-        MasterDataService.saveTutor({ ...tutor, availability, unavailableDates }),
-        MasterDataService.saveTutorVerificationDocuments(tutor.id, verificationDocuments),
+        saveTutor({ ...tutor, availability, unavailableDates }),
+        saveTutorVerificationDocuments(tutor.id, verificationDocuments),
       ]);
       setMessage({ text: t('تم حفظ التغييرات بنجاح', 'Changes saved successfully'), type: 'success' });
     } catch {
@@ -134,7 +138,7 @@ export default function TutorDashboardPage() {
   const removeBlockedDate = (date: string) => setUnavailableDates(unavailableDates.filter((d) => d !== date));
 
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
-    await MasterDataService.updateBookingStatus(booking.id, status);
+    await updateBookingStatus(booking.id, status);
     setBookings(bookings.map(b => (b.id === booking.id ? { ...b, status } : b)));
   };
 
@@ -147,7 +151,7 @@ export default function TutorDashboardPage() {
     if (!threadMessages[bookingId]) {
       setLoadingThreadId(bookingId);
       try {
-        const messages = await MasterDataService.getThreadMessages(bookingId);
+        const messages = await getThreadMessages(bookingId);
         setThreadMessages((prev) => ({ ...prev, [bookingId]: messages }));
       } finally {
         setLoadingThreadId(null);
@@ -160,7 +164,7 @@ export default function TutorDashboardPage() {
     if (!text || !tutor) return;
     setSendingThreadId(booking.id);
     try {
-      const sent = await MasterDataService.sendTutorMessage(booking, tutor.fullName.en || tutor.fullName.ar, text);
+      const sent = await sendTutorMessage(booking, tutor.fullName.en || tutor.fullName.ar, text);
       setThreadMessages((prev) => ({ ...prev, [booking.id]: [...(prev[booking.id] || []), sent] }));
       setMessageDrafts((prev) => ({ ...prev, [booking.id]: '' }));
     } finally {
@@ -173,7 +177,7 @@ export default function TutorDashboardPage() {
     if (!text) return;
     setReplyingId(reviewId);
     try {
-      await MasterDataService.replyToReview(reviewId, text);
+      await replyToReview(reviewId, text);
       setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: { text, createdAt: new Date().toISOString() } } : r)));
       setReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
     } finally {
@@ -226,10 +230,10 @@ export default function TutorDashboardPage() {
       await Promise.all(
         bookings
           .filter((b) => b.status === 'PENDING' || b.status === 'CONFIRMED')
-          .map((b) => MasterDataService.updateBookingStatus(b.id, 'CANCELLED'))
+          .map((b) => updateBookingStatus(b.id, 'CANCELLED'))
       );
 
-      await MasterDataService.deleteTutor(tutorId);
+      await deleteTutor(tutorId);
       await deleteUser(user);
       router.push('/');
     } catch {
@@ -247,7 +251,7 @@ export default function TutorDashboardPage() {
     }
     setPausing(true);
     try {
-      await MasterDataService.saveTutor({ ...tutor, status });
+      await saveTutor({ ...tutor, status });
       setTutor({ ...tutor, status });
       setMessage({
         text: status === 'PENDING'

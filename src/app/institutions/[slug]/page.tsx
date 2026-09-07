@@ -6,7 +6,9 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorateById, getCategories } from '@/core/services/masterDataService';
+import { getInstitutionBySlug } from '@/core/services/institutionService';
+import { getApprovedReviews, createReview, createInquiry } from '@/core/services/reviewService';
 import { Institution } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
@@ -63,13 +65,13 @@ export default function InstitutionProfilePage({
   useEffect(() => {
     async function loadProfile() {
       setLoading(true);
-      const inst = await MasterDataService.getInstitutionBySlug(resolvedParams.slug);
+      const inst = await getInstitutionBySlug(resolvedParams.slug);
       if (inst) {
         setInstitution(inst);
         const [gov, cat, revs] = await Promise.all([
-          MasterDataService.getGovernorateById(inst.governorateId),
-          MasterDataService.getCategories().then(cats => cats.find(c => c.slug === inst.categoryId) || null),
-          MasterDataService.getApprovedReviews(inst.id).catch(() => [])
+          getGovernorateById(inst.governorateId),
+          getCategories().then(cats => cats.find(c => c.slug === inst.categoryId) || null),
+          getApprovedReviews(inst.id).catch(() => [])
         ]);
         setGovernorate(gov);
         setCategory(cat);
@@ -102,7 +104,7 @@ export default function InstitutionProfilePage({
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      await MasterDataService.createReview({
+      await createReview({
         institutionId: institution.id,
         reviewerName: reviewForm.reviewerName.trim(),
         rating: reviewForm.rating,
@@ -131,7 +133,7 @@ export default function InstitutionProfilePage({
     setInquirySubmitting(true);
     try {
       const email = inquiryForm.email.trim();
-      await MasterDataService.createInquiry({
+      await createInquiry({
         institutionId: institution.id,
         institutionName: institution.name.en,
         fullName: inquiryForm.fullName.trim(),

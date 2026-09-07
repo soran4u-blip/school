@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllBookings } from '@/core/services/bookingService';
+import { getTutors } from '@/core/services/tutorService';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
 import { Calendar, Users, User, Phone, AlertCircle } from 'lucide-react';
@@ -21,8 +22,8 @@ export default function AdminBookingsPage() {
       setError('');
       try {
         const [allBookings, tutorList] = await Promise.all([
-          MasterDataService.getAllBookings(),
-          MasterDataService.getTutors({}),
+          getAllBookings(),
+          getTutors({}),
         ]);
         setBookings(allBookings);
         setTutors(tutorList);

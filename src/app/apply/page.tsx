@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getTaxonomies, getCategories } from '@/core/services/masterDataService';
+import { createApplication } from '@/core/services/applicationService';
 import { Governorate, TaxonomyItem, Category } from '@/core/types/masterData';
 import { ApplicationType } from '@/core/types/application';
 import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
@@ -37,10 +38,10 @@ export default function ApplyPage() {
   useEffect(() => {
     async function load() {
       const [govs, subs, levels, cats] = await Promise.all([
-        MasterDataService.getGovernorates(),
-        MasterDataService.getTaxonomies('SUBJECT'),
-        MasterDataService.getTaxonomies('STUDENT_LEVEL'),
-        MasterDataService.getCategories(),
+        getGovernorates(),
+        getTaxonomies('SUBJECT'),
+        getTaxonomies('STUDENT_LEVEL'),
+        getCategories(),
       ]);
       setGovernorates(govs);
       setSubjects(subs);
@@ -74,7 +75,7 @@ export default function ApplyPage() {
 
     setSubmitting(true);
     try {
-      await MasterDataService.createApplication({
+      await createApplication({
         type,
         fullName: fullName.trim(),
         email: email.trim(),

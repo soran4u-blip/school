@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getAllEmployers, updateEmployerStatus, deleteEmployer } from '@/core/services/employerService';
+import { getGovernorates } from '@/core/services/masterDataService';
 import { Employer } from '@/core/types/employer';
 import { Governorate } from '@/core/types/masterData';
 import { Briefcase, MapPin, Mail, Phone, Trash2 } from 'lucide-react';
@@ -19,8 +20,8 @@ export default function AdminEmployersPage() {
     setError('');
     try {
       const [emps, govs] = await Promise.all([
-        MasterDataService.getAllEmployers(),
-        MasterDataService.getGovernorates(false),
+        getAllEmployers(),
+        getGovernorates(false),
       ]);
       setEmployers(emps);
       setGovernorates(govs);
@@ -42,13 +43,13 @@ export default function AdminEmployersPage() {
 
   const handleToggleStatus = async (employer: Employer) => {
     const status = employer.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    await MasterDataService.updateEmployerStatus(employer.id, status);
+    await updateEmployerStatus(employer.id, status);
     await loadData();
   };
 
   const handleDelete = async (employer: Employer) => {
     if (!confirm(t(`هل تريد حذف "${employer.name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${employer.name}"? This cannot be undone.`))) return;
-    await MasterDataService.deleteEmployer(employer.id);
+    await deleteEmployer(employer.id);
     await loadData();
   };
 

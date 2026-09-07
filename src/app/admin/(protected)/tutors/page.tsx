@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getTutors, deleteTutor, saveTutor } from '@/core/services/tutorService';
+import { getGovernorates } from '@/core/services/masterDataService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate } from '@/core/types/masterData';
 import { UserCheck, ShieldCheck, ShieldQuestion, Star, MapPin, Phone, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
@@ -16,8 +17,8 @@ export default function AdminTutorsPage() {
 
   const loadData = async () => {
     const [tutList, govs] = await Promise.all([
-      MasterDataService.getTutors({ status: 'ALL' }),
-      MasterDataService.getGovernorates(false),
+      getTutors({ status: 'ALL' }),
+      getGovernorates(false),
     ]);
     setTutors(tutList);
     setGovernorates(govs);
@@ -32,19 +33,19 @@ export default function AdminTutorsPage() {
     if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
       return;
     }
-    await MasterDataService.deleteTutor(tutor.id);
+    await deleteTutor(tutor.id);
     await loadData();
   };
 
   const handleToggleStatus = async (tutor: Tutor) => {
     const status = tutor.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE';
-    await MasterDataService.saveTutor({ ...tutor, status });
+    await saveTutor({ ...tutor, status });
     await loadData();
   };
 
   const handleToggleVerified = async (tutor: Tutor) => {
     const isVerified = !tutor.isVerified;
-    await MasterDataService.saveTutor({
+    await saveTutor({
       ...tutor,
       isVerified,
       verificationBadgeLabel: deriveVerificationBadge(isVerified, tutor.verificationBadgeLabel),

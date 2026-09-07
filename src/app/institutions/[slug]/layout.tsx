@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getInstitutionBySlug } from '@/core/services/institutionService';
 
 export async function generateMetadata({
   params,
@@ -7,7 +7,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const institution = await MasterDataService.getInstitutionBySlug(slug);
+  const institution = await getInstitutionBySlug(slug);
 
   if (!institution) {
     return {

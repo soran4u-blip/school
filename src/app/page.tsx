@@ -6,7 +6,9 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getCategories, getGovernorates, getQuickSearchTags, getSystemSettings } from '@/core/services/masterDataService';
+import { getInstitutions } from '@/core/services/institutionService';
+import { getTutors } from '@/core/services/tutorService';
 import { 
   Governorate, 
   Category, 
@@ -52,12 +54,12 @@ export default function HomePage() {
   useEffect(() => {
     async function loadHomeData() {
       const [cats, govs, tags, insts, tuts, sysSettings] = await Promise.all([
-        MasterDataService.getCategories(),
-        MasterDataService.getGovernorates(),
-        MasterDataService.getQuickSearchTags(),
-        MasterDataService.getInstitutions({}),
-        MasterDataService.getTutors({}),
-        MasterDataService.getSystemSettings(),
+        getCategories(),
+        getGovernorates(),
+        getQuickSearchTags(),
+        getInstitutions({}),
+        getTutors({}),
+        getSystemSettings(),
       ]);
 
       setCategories(cats);

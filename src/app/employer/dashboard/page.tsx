@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getEmployerById } from '@/core/services/employerService';
+import { getGovernorates } from '@/core/services/masterDataService';
+import { getEmployerJobs, getEmployerJobApplications, updateJob, createJob } from '@/core/services/jobService';
 import { Employer } from '@/core/types/employer';
 import { Job } from '@/core/types/job';
 import { Governorate } from '@/core/types/masterData';
@@ -56,10 +58,10 @@ export default function EmployerDashboardPage() {
         if (!id) return;
 
         const [emp, govs, empJobs, empApplications] = await Promise.all([
-          MasterDataService.getEmployerById(id),
-          MasterDataService.getGovernorates(false),
-          MasterDataService.getEmployerJobs(id),
-          MasterDataService.getEmployerJobApplications(id),
+          getEmployerById(id),
+          getGovernorates(false),
+          getEmployerJobs(id),
+          getEmployerJobApplications(id),
         ]);
         setEmployer(emp);
         setGovernorates(govs);
@@ -81,10 +83,10 @@ export default function EmployerDashboardPage() {
     setSavingJob(true);
     try {
       if ('id' in editingJob) {
-        await MasterDataService.updateJob(editingJob.id, editingJob);
+        await updateJob(editingJob.id, editingJob);
         setJobs((prev) => prev.map((j) => (j.id === editingJob.id ? { ...j, ...editingJob } : j)));
       } else {
-        const created = await MasterDataService.createJob({
+        const created = await createJob({
           ...editingJob,
           posterName: employer.name,
           posterLogoUrl: employer.logoUrl,
@@ -102,7 +104,7 @@ export default function EmployerDashboardPage() {
   };
 
   const handleJobStatus = async (jobId: string, status: Job['status']) => {
-    await MasterDataService.updateJob(jobId, { status });
+    await updateJob(jobId, { status });
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status } : j)));
   };
 

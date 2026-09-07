@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates } from '@/core/services/masterDataService';
+import { getCommunityPostById, getCommunityReplies, createCommunityReply } from '@/core/services/communityService';
 import { CommunityPost, CommunityReply } from '@/core/types/community';
 import { Governorate } from '@/core/types/masterData';
 import { auth } from '@/core/firebase/config';
@@ -29,12 +30,12 @@ export default function CommunityPostPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const p = await MasterDataService.getCommunityPostById(id);
+      const p = await getCommunityPostById(id);
       if (p && p.status === 'APPROVED') {
         setPost(p);
         const [govs, repliesList] = await Promise.all([
-          MasterDataService.getGovernorates(),
-          MasterDataService.getCommunityReplies(id),
+          getGovernorates(),
+          getCommunityReplies(id),
         ]);
         setGovernorate(govs.find((g) => g.id === p.governorateId) || null);
         setReplies(repliesList);
@@ -66,7 +67,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ id: st
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      const reply = await MasterDataService.createCommunityReply(post.id, post.replyCount, {
+      const reply = await createCommunityReply(post.id, post.replyCount, {
         authorName: form.authorName.trim(),
         body: form.body.trim(),
       });

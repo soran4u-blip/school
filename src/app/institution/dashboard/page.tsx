@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
+import { getInstitutionById, saveInstitution, deleteInstitution, getInstitutionVerificationDocuments, saveInstitutionVerificationDocuments } from '@/core/services/institutionService';
+import { getInstitutionInquiries, updateInquiryStatus, getApprovedReviews, replyToReview } from '@/core/services/reviewService';
+import { getInstitutionJobs, getInstitutionJobApplications, updateJob, createJob } from '@/core/services/jobService';
+import { getThreadMessages, sendInstitutionMessage } from '@/core/services/messagingService';
 import Link from 'next/link';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Inquiry, Review } from '@/core/types/review';
@@ -105,15 +109,15 @@ export default function InstitutionDashboardPage() {
         if (!id) return;
         setInstitutionId(id);
         const [inst, govs, cats, taxes, instInquiries, instReviews, verifDocs, instJobs, instApplications] = await Promise.all([
-          MasterDataService.getInstitutionById(id),
-          MasterDataService.getGovernorates(false),
-          MasterDataService.getCategories(false),
-          MasterDataService.getTaxonomies(undefined, false),
-          MasterDataService.getInstitutionInquiries(id),
-          MasterDataService.getApprovedReviews(id),
-          MasterDataService.getInstitutionVerificationDocuments(id),
-          MasterDataService.getInstitutionJobs(id),
-          MasterDataService.getInstitutionJobApplications(id),
+          getInstitutionById(id),
+          getGovernorates(false),
+          getCategories(false),
+          getTaxonomies(undefined, false),
+          getInstitutionInquiries(id),
+          getApprovedReviews(id),
+          getInstitutionVerificationDocuments(id),
+          getInstitutionJobs(id),
+          getInstitutionJobApplications(id),
         ]);
         setInstitution(inst);
         setFacilitiesText((inst?.facilities || []).join(', '));
@@ -153,8 +157,8 @@ export default function InstitutionDashboardPage() {
         programs,
       };
       await Promise.all([
-        MasterDataService.saveInstitution(updated),
-        MasterDataService.saveInstitutionVerificationDocuments(institution.id, verificationDocuments),
+        saveInstitution(updated),
+        saveInstitutionVerificationDocuments(institution.id, verificationDocuments),
       ]);
       setMessage({ text: t('تم حفظ التغييرات بنجاح', 'Changes saved successfully'), type: 'success' });
     } catch {
@@ -173,7 +177,7 @@ export default function InstitutionDashboardPage() {
     if (!threadMessages[inquiryId]) {
       setLoadingThreadId(inquiryId);
       try {
-        const messages = await MasterDataService.getThreadMessages(inquiryId);
+        const messages = await getThreadMessages(inquiryId);
         setThreadMessages((prev) => ({ ...prev, [inquiryId]: messages }));
       } finally {
         setLoadingThreadId(null);
@@ -186,11 +190,11 @@ export default function InstitutionDashboardPage() {
     if (!text || !institution) return;
     setSendingThreadId(inquiry.id);
     try {
-      const sent = await MasterDataService.sendInstitutionMessage(inquiry, institution.name.en || institution.name.ar, text);
+      const sent = await sendInstitutionMessage(inquiry, institution.name.en || institution.name.ar, text);
       setThreadMessages((prev) => ({ ...prev, [inquiry.id]: [...(prev[inquiry.id] || []), sent] }));
       setMessageDrafts((prev) => ({ ...prev, [inquiry.id]: '' }));
       if (inquiry.status === 'NEW') {
-        await MasterDataService.updateInquiryStatus(inquiry.id, 'CONTACTED');
+        await updateInquiryStatus(inquiry.id, 'CONTACTED');
         setInquiries((prev) => prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'CONTACTED' } : i)));
       }
     } finally {
@@ -203,10 +207,10 @@ export default function InstitutionDashboardPage() {
     setSavingJob(true);
     try {
       if ('id' in editingJob) {
-        await MasterDataService.updateJob(editingJob.id, editingJob);
+        await updateJob(editingJob.id, editingJob);
         setJobs((prev) => prev.map((j) => (j.id === editingJob.id ? { ...j, ...editingJob } : j)));
       } else {
-        const created = await MasterDataService.createJob({
+        const created = await createJob({
           ...editingJob,
           posterName: institution.name.en || institution.name.ar,
           posterLogoUrl: institution.logoUrl,
@@ -223,12 +227,12 @@ export default function InstitutionDashboardPage() {
   };
 
   const handleJobStatus = async (jobId: string, status: Job['status']) => {
-    await MasterDataService.updateJob(jobId, { status });
+    await updateJob(jobId, { status });
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status } : j)));
   };
 
   const handleInquiryStatus = async (inquiryId: string, status: Inquiry['status']) => {
-    await MasterDataService.updateInquiryStatus(inquiryId, status);
+    await updateInquiryStatus(inquiryId, status);
     setInquiries((prev) => prev.map((i) => (i.id === inquiryId ? { ...i, status } : i)));
   };
 
@@ -237,7 +241,7 @@ export default function InstitutionDashboardPage() {
     if (!text) return;
     setReplyingReviewId(reviewId);
     try {
-      await MasterDataService.replyToReview(reviewId, text);
+      await replyToReview(reviewId, text);
       setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: { text, createdAt: new Date().toISOString() } } : r)));
       setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
     } finally {
@@ -278,7 +282,7 @@ export default function InstitutionDashboardPage() {
     }
     setPausing(true);
     try {
-      await MasterDataService.saveInstitution({ ...institution, status });
+      await saveInstitution({ ...institution, status });
       setInstitution({ ...institution, status });
       setMessage({
         text: status === 'SUSPENDED'
@@ -311,7 +315,7 @@ export default function InstitutionDashboardPage() {
     try {
       const credential = EmailAuthProvider.credential(user.email, deletePassword);
       await reauthenticateWithCredential(user, credential);
-      await MasterDataService.deleteInstitution(institutionId);
+      await deleteInstitution(institutionId);
       await deleteUser(user);
       router.push('/');
     } catch {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getJobById, getInstitutionJobApplications, updateJobApplicationStatus, updateJobApplicationNotes } from '@/core/services/jobService';
 import { Job, JobApplication } from '@/core/types/job';
 import { resolveDownloadURL } from '@/core/firebase/storage';
 import {
@@ -61,8 +61,8 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
         if (!institutionId) return;
 
         const [jobDoc, allApps] = await Promise.all([
-          MasterDataService.getJobById(jobId),
-          MasterDataService.getInstitutionJobApplications(institutionId),
+          getJobById(jobId),
+          getInstitutionJobApplications(institutionId),
         ]);
 
         if (!jobDoc || jobDoc.institutionId !== institutionId) {
@@ -95,14 +95,14 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
   }, [jobId]);
 
   const handleMoveStage = async (applicationId: string, status: JobApplication['status']) => {
-    await MasterDataService.updateJobApplicationStatus(applicationId, status);
+    await updateJobApplicationStatus(applicationId, status);
     setApplications((prev) => prev.map((a) => (a.id === applicationId ? { ...a, status } : a)));
   };
 
   const handleSaveNotes = async (applicationId: string) => {
     setSavingNotesId(applicationId);
     try {
-      await MasterDataService.updateJobApplicationNotes(applicationId, notesDrafts[applicationId] || '');
+      await updateJobApplicationNotes(applicationId, notesDrafts[applicationId] || '');
       setApplications((prev) => prev.map((a) => (a.id === applicationId ? { ...a, internalNotes: notesDrafts[applicationId] } : a)));
     } finally {
       setSavingNotesId(null);

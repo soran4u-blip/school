@@ -7,7 +7,8 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getCategories, getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getInstitutions } from '@/core/services/institutionService';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { 
@@ -50,17 +51,17 @@ function ExploreContent() {
     async function loadMaster() {
       setLoading(true);
       const [cats, govs, accs, currs] = await Promise.all([
-        MasterDataService.getCategories(),
-        MasterDataService.getGovernorates(),
-        MasterDataService.getTaxonomies('ACCREDITATION'),
-        MasterDataService.getTaxonomies('CURRICULUM'),
+        getCategories(),
+        getGovernorates(),
+        getTaxonomies('ACCREDITATION'),
+        getTaxonomies('CURRICULUM'),
       ]);
       setCategories(cats);
       setGovernorates(govs);
       setAccreditations(accs);
       setCurricula(currs);
 
-      const insts = await MasterDataService.getInstitutions({});
+      const insts = await getInstitutions({});
       setInstitutions(insts);
       setLoading(false);
     }

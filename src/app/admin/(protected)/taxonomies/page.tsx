@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getTaxonomies, saveTaxonomy } from '@/core/services/masterDataService';
 import { TaxonomyItem, TaxonomyType } from '@/core/types/masterData';
 import { 
   Tags, 
@@ -37,7 +37,7 @@ export default function AdminTaxonomiesPage() {
   });
 
   const loadData = async () => {
-    const list = await MasterDataService.getTaxonomies(undefined, false);
+    const list = await getTaxonomies(undefined, false);
     setTaxonomies(list);
   };
 
@@ -67,7 +67,7 @@ export default function AdminTaxonomiesPage() {
       displayOrder: Number(form.displayOrder) || taxonomies.length + 1,
     };
 
-    await MasterDataService.saveTaxonomy(item);
+    await saveTaxonomy(item);
     setMessage({ text: t('تم حفظ التصنيف بنجاح', 'Taxonomy saved successfully'), type: 'success' });
     setIsAdding(false);
     setIsEditing(false);

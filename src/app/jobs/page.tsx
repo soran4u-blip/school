@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
+import { getActiveJobs } from '@/core/services/jobService';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Job } from '@/core/types/job';
 import {
@@ -47,12 +48,12 @@ function JobsContent() {
     async function load() {
       setLoading(true);
       const [govs, subs] = await Promise.all([
-        MasterDataService.getGovernorates(),
-        MasterDataService.getTaxonomies('SUBJECT'),
+        getGovernorates(),
+        getTaxonomies('SUBJECT'),
       ]);
       setGovernorates(govs);
       setSubjects(subs);
-      const list = await MasterDataService.getActiveJobs();
+      const list = await getActiveJobs();
       setJobs(list);
       setLoading(false);
     }

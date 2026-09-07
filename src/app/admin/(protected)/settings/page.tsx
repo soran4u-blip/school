@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getSystemSettings, updateSystemSettings } from '@/core/services/masterDataService';
 import { SystemSettings } from '@/core/types/masterData';
 import { Settings, Save, AlertCircle, CheckCircle2, Megaphone } from 'lucide-react';
 
@@ -13,7 +13,7 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     async function loadSettings() {
-      const s = await MasterDataService.getSystemSettings();
+      const s = await getSystemSettings();
       setSettings(s);
     }
     loadSettings();
@@ -23,7 +23,7 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     if (!settings) return;
 
-    await MasterDataService.updateSystemSettings(settings);
+    await updateSystemSettings(settings);
     setMessage({ text: t('تم حفظ إعدادات النظام بنجاح وتطبيقها فورياً', 'System settings saved successfully'), type: 'success' });
   };
 

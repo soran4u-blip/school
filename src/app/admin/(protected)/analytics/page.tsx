@@ -2,7 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getInstitutions } from '@/core/services/institutionService';
+import { getTutors } from '@/core/services/tutorService';
+import { getAllEmployers } from '@/core/services/employerService';
+import { getAllApplications } from '@/core/services/applicationService';
+import { getAllJobs, getAllJobApplications } from '@/core/services/jobService';
+import { getAllReviews, getAllInquiries } from '@/core/services/reviewService';
+import { getAllCommunityPosts } from '@/core/services/communityService';
+import { getGovernorates } from '@/core/services/masterDataService';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
 import { Employer } from '@/core/types/employer';
@@ -99,16 +106,16 @@ export default function AdminAnalyticsPage() {
         communityPosts,
         governorates,
       ] = await Promise.all([
-        MasterDataService.getInstitutions({ status: 'ALL' }),
-        MasterDataService.getTutors({ status: 'ALL' }),
-        MasterDataService.getAllEmployers(),
-        MasterDataService.getAllApplications(),
-        MasterDataService.getAllJobs(),
-        MasterDataService.getAllJobApplications(),
-        MasterDataService.getAllReviews(),
-        MasterDataService.getAllInquiries(),
-        MasterDataService.getAllCommunityPosts(),
-        MasterDataService.getGovernorates(false),
+        getInstitutions({ status: 'ALL' }),
+        getTutors({ status: 'ALL' }),
+        getAllEmployers(),
+        getAllApplications(),
+        getAllJobs(),
+        getAllJobApplications(),
+        getAllReviews(),
+        getAllInquiries(),
+        getAllCommunityPosts(),
+        getGovernorates(false),
       ]);
       setData({
         institutions,

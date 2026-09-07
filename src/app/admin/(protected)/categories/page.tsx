@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getCategories, saveCategory } from '@/core/services/masterDataService';
 import { Category } from '@/core/types/masterData';
 import { 
   FolderTree, 
@@ -38,7 +38,7 @@ export default function AdminCategoriesPage() {
   });
 
   const loadCategories = async () => {
-    const list = await MasterDataService.getCategories(false);
+    const list = await getCategories(false);
     setCategories(list);
   };
 
@@ -70,7 +70,7 @@ export default function AdminCategoriesPage() {
       institutionsCount: form.institutionsCount || 0,
     };
 
-    await MasterDataService.saveCategory(cat);
+    await saveCategory(cat);
     setMessage({ text: t('تم حفظ الفئة بنجاح في قاعدة البيانات', 'Category saved successfully'), type: 'success' });
     setIsAdding(false);
     setIsEditing(false);

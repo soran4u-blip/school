@@ -6,7 +6,9 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { MasterDataService } from '@/core/services/masterDataService';
+import { getGovernorateById, getTaxonomies } from '@/core/services/masterDataService';
+import { getTutorById } from '@/core/services/tutorService';
+import { getApprovedTutorReviews, createReview } from '@/core/services/reviewService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
@@ -123,14 +125,14 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
     async function load() {
       setLoading(true);
       try {
-        const tut = await MasterDataService.getTutorById(resolvedParams.id);
+        const tut = await getTutorById(resolvedParams.id);
         if (tut) {
           setTutor(tut);
           const [gov, taxes, levels, revs] = await Promise.all([
-            MasterDataService.getGovernorateById(tut.governorateId),
-            MasterDataService.getTaxonomies('SUBJECT', false),
-            MasterDataService.getTaxonomies('STUDENT_LEVEL', false),
-            MasterDataService.getApprovedTutorReviews(tut.id).catch(() => []),
+            getGovernorateById(tut.governorateId),
+            getTaxonomies('SUBJECT', false),
+            getTaxonomies('STUDENT_LEVEL', false),
+            getApprovedTutorReviews(tut.id).catch(() => []),
           ]);
           setGovernorate(gov);
           setSubjects(taxes.filter((tx) => tut.subjectIds.includes(tx.id)));
@@ -176,7 +178,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
-      await MasterDataService.createReview({
+      await createReview({
         tutorId: tutor.id,
         reviewerName: reviewForm.reviewerName.trim(),
         rating: reviewForm.rating,
