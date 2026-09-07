@@ -1,10 +1,31 @@
 # Eduraq — Iraq Education Directory
 ## Session Continuity Progress Ledger
-**Last Updated:** 2026-09-04 (Session 3 — Phase 5 + Post-Launch Hardening + Tutor Booking System + Workflow Enhancements + Production Deploy Complete) | **Stack:** Next.js 16.3.4 + Firebase + Tailwind CSS v4 + TypeScript  
-**Build Status:** ✅ `npm run build` PASSED — 28/28 routes compiled (0 TypeScript errors) | ✅ `npm test` — 7/7 passing  
+**Last Updated:** 2026-09-07 (Session 4 — Jobs Board: Institution Postings + Guest ATS Applications) | **Stack:** Next.js 16.3.4 + Firebase + Tailwind CSS v4 + TypeScript  
+**Build Status:** ✅ `npm run build` PASSED — 0 TypeScript errors | ✅ `npm test` — 7/7 passing  
 **Live Site:** ✅ **https://school--school-4bcd6.us-east4.hosted.app** — deployed via Firebase App Hosting, auto-deploys on push to `main`/`master` (kept in sync, see Phase 9)  
 **Live Firebase:** `firestore.rules` (covers tutor reviews too) + `storage.rules` + `bookings` composite index deployed to project `school-4bcd6`. Anonymous Auth confirmed enabled and working.  
 **GitHub:** https://github.com/soran4u-blip/school (branches `main` and `master` — kept identical; App Hosting backend "school" in `us-east4` watches this repo)
+
+---
+
+## ✅ PHASE 10: Jobs Board (Institution Postings + Guest ATS Applications) — COMPLETE
+
+Institutions post job openings and manage a lightweight ATS pipeline; job seekers browse and apply with no account required, mirroring the existing guest trust model (reviews/inquiries) rather than adding a new account type.
+
+- [x] `src/core/types/job.ts` — `Job` (institution-owned posting, `DRAFT|ACTIVE|CLOSED`) and `JobApplication` (`SUBMITTED|REVIEWING|SHORTLISTED|REJECTED|HIRED`, with a private `internalNotes` field never exposed to the applicant).
+- [x] `firestore.rules` — `jobs/{jobId}` (public read when `ACTIVE`, owner/admin otherwise) and `jobApplications/{id}` (open `create` gated by anonymous auth + `isValidJobApplication()`, read/update scoped to the owning institution). Threads reuse the existing `institutionId`-keyed thread model verbatim — no schema change needed.
+- [x] `storage.rules` — `job-applications/{institutionId}/{jobId}/{fileName}` for resumes; write is open to any authenticated (anonymous) guest, read restricted to the owning institution/admin, same posture as verification docs.
+- [x] `src/core/services/masterDataService.ts` — straight Firestore CRUD for jobs/applications (no in-memory seed fallback, unlike institutions/tutors, since postings are dynamic) plus `sendJobApplicationMessage()` reusing the existing generic thread-messaging helper.
+- [x] Public: `/jobs` (faceted directory: governorate, employment type, remote, subject) and `/jobs/[id]` (detail + apply form with resume upload, cover letter, honeypot + cooldown spam guard, anonymous-auth submit — same pattern as the review form).
+- [x] `/my-applications` — phone-lookup page (no account) to track application status and message institutions, mirroring `/my-bookings`. New API routes `/api/job-applications/lookup` and `/api/job-applications/[id]/messages`.
+- [x] Institution dashboard: new **Jobs** tab (post/edit/publish/close, applicant counts) in `institution/dashboard/page.tsx`, plus a new nested route `institution/dashboard/jobs/[jobId]` — a full-width Kanban-style ATS board (drag-free, dropdown-driven stage moves), per-applicant message thread, and private notes.
+- [x] `/admin/jobs` — read-only platform-wide oversight list (all institutions' postings + applicant counts), added to the admin sidebar.
+- [x] Discoverability: "Jobs" link added to `Navbar.tsx` (desktop + mobile) and `Footer.tsx` ("Job Openings" + "My Job Applications").
+- [x] **Deployed `firestore.rules` and `storage.rules` live** to project `school-4bcd6` via `firebase deploy --only firestore:rules` / `--only storage:rules` (the CLI is now authenticated in this environment, unlike earlier sessions — no REST API workaround needed this time).
+- [x] **Bug found and fixed (rules)**: `isValidJobApplication()` originally required `coverLetter` to always be a string, but the field is optional in the apply form — omitted-field submissions were rejected. Fixed with `.get('coverLetter', '')` instead of direct field access.
+- [x] **Bug found and fixed (query/rules mismatch)**: `getJobApplications(jobId)` queried `where('jobId','==',jobId)`, but the security rule checks `resource.data.institutionId` — Firestore rejects a list query outright when its `where` field doesn't match the field a data-dependent rule inspects, regardless of what the matched documents actually contain. Fixed by scoping the ATS page's fetch through the already-correct `getInstitutionJobApplications(institutionId)` and filtering to one job client-side, instead of adding a second query shape.
+- [x] **Latent bug found and fixed (pre-existing, not Jobs-specific)**: `MasterDataService`'s shared `sendOwnerMessage()` (used by tutor/institution reply-to-thread everywhere) did a `getDoc` to check whether a thread already existed before creating it — but Firestore denies reading a **nonexistent** document under this rule shape, since the rule can't evaluate `resource.data` on nothing. This was invisible until now because a guest's first message always went through an Admin-SDK route that bypasses rules, guaranteeing the thread already existed by the time an owner replied. Job applications have no such guaranteed first guest message (the institution messages first), which surfaced it. Fixed by treating a denied existence check as "doesn't exist yet" rather than letting it throw — benefits inquiries/bookings too, not just jobs.
+- [x] Verified live end-to-end via a disposable test institution + superadmin account (created, exercised, then fully deleted): post job (DRAFT→ACTIVE) → guest applies with no login → institution sees it in the ATS board → moves it through stages → messages the applicant → guest sees the status change and reply via `/my-applications` → admin oversight page shows the same data read-only. Confirmed `internalNotes` never leaks to the guest-facing lookup API.
 
 ---
 
