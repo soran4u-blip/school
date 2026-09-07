@@ -9,6 +9,7 @@ import { MasterDataService } from '@/core/services/masterDataService';
 import { Job, JobApplication } from '@/core/types/job';
 import { Institution } from '@/core/types/institution';
 import { ThreadMessage } from '@/core/types/message';
+import { resolveDownloadURL } from '@/core/firebase/storage';
 import {
   ArrowRight, Phone, FileText, MessageCircle, Send, StickyNote, AlertCircle,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
   const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
   const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+  const [resumeDownloadUrls, setResumeDownloadUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -71,6 +73,14 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
         const notes: Record<string, string> = {};
         for (const a of apps) notes[a.id] = a.internalNotes || '';
         setNotesDrafts(notes);
+
+        // resumeUrl on the doc is a storage path, not a URL — the applicant who uploaded it had
+        // no read access to resolve it themselves. The institution does, so resolve it here.
+        const withResumes = apps.filter((a) => a.resumeUrl);
+        const resolved = await Promise.all(withResumes.map((a) => resolveDownloadURL(a.resumeUrl!).catch(() => null)));
+        const urls: Record<string, string> = {};
+        withResumes.forEach((a, i) => { if (resolved[i]) urls[a.id] = resolved[i]!; });
+        setResumeDownloadUrls(urls);
       } catch {
         setError(t('تعذر تحميل بيانات المتقدمين', 'Failed to load applicant data'));
       } finally {
@@ -175,9 +185,9 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
                           <span>{app.phone}</span>
                         </div>
                         {app.resumeUrl && (
-                          <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] text-blue-700 hover:underline font-bold">
+                          <a href={resumeDownloadUrls[app.id] || '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] text-blue-700 hover:underline font-bold">
                             <FileText className="w-3 h-3" />
-                            <span>{t('عرض السيرة الذاتية', 'View Resume')}</span>
+                            <span>{resumeDownloadUrls[app.id] ? t('عرض السيرة الذاتية', 'View Resume') : t('جاري تحميل السيرة...', 'Loading resume...')}</span>
                           </a>
                         )}
                         {app.coverLetter && (

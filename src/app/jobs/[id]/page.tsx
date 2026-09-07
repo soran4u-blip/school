@@ -12,7 +12,7 @@ import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { auth } from '@/core/firebase/config';
 import { signInAnonymously } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
-import { uploadImage } from '@/core/firebase/storage';
+import { uploadFileOnly } from '@/core/firebase/storage';
 import {
   MapPin,
   Building2,
@@ -94,8 +94,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         await signInAnonymously(auth);
       }
       const path = `job-applications/${job.institutionId}/${job.id}/${Date.now()}-${file.name}`;
-      const url = await uploadImage(file, path);
-      setResumeUrl(url);
+      await uploadFileOnly(file, path);
+      setResumeUrl(path);
       setResumeFileName(file.name);
     } catch {
       setError(t('تعذر رفع الملف', 'Failed to upload resume'));

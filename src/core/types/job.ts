@@ -31,6 +31,9 @@ export interface JobApplication {
   fullName: string;
   phone: string;
   email?: string;
+  // Storage path (not a resolved download URL) — the applicant who uploads it has no read access
+  // under storage.rules, only write. Resolve via resolveDownloadURL() from a session that does
+  // (the owning institution), never store a pre-resolved URL here.
   resumeUrl?: string;
   coverLetter?: string;
   status: 'SUBMITTED' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'HIRED';
