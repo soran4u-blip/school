@@ -1,7 +1,6 @@
 import { Firestore } from 'firebase-admin/firestore';
 import { Booking } from '@/core/types/booking';
 import { Inquiry } from '@/core/types/review';
-import { JobApplication } from '@/core/types/job';
 import { Thread, ThreadMessage } from '@/core/types/message';
 
 export const MAX_MESSAGE_LENGTH = 2000;
@@ -29,14 +28,6 @@ export async function loadInquiryAndVerifyPhone(adminDb: Firestore, inquiryId: s
   const inquiry = snap.data() as Inquiry;
   if (inquiry.phone !== phone) return null;
   return inquiry;
-}
-
-export async function loadJobApplicationAndVerifyPhone(adminDb: Firestore, applicationId: string, phone: string): Promise<JobApplication | null> {
-  const snap = await adminDb.collection('jobApplications').doc(applicationId).get();
-  if (!snap.exists) return null;
-  const application = snap.data() as JobApplication;
-  if (application.phone !== phone) return null;
-  return application;
 }
 
 export async function listThreadMessages(adminDb: Firestore, contextId: string): Promise<ThreadMessage[]> {

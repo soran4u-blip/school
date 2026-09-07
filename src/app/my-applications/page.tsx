@@ -5,8 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { Search, Briefcase, MessageSquare, MessageCircle, Send } from 'lucide-react';
-import { ThreadMessage } from '@/core/types/message';
+import { Search, Briefcase, MessageSquare } from 'lucide-react';
 
 interface LookupApplication {
   id: string;
@@ -33,11 +32,6 @@ export default function MyApplicationsPage() {
   const [applications, setApplications] = useState<LookupApplication[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
-  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
-  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
-  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
-  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,44 +53,6 @@ export default function MyApplicationsPage() {
     }
   };
 
-  const toggleThread = async (applicationId: string) => {
-    if (expandedThreadId === applicationId) {
-      setExpandedThreadId(null);
-      return;
-    }
-    setExpandedThreadId(applicationId);
-    if (!threadMessages[applicationId]) {
-      setLoadingThreadId(applicationId);
-      try {
-        const res = await fetch(`/api/job-applications/${applicationId}/messages?phone=${encodeURIComponent(phone.trim())}`);
-        const data = await res.json();
-        if (data.success) setThreadMessages((prev) => ({ ...prev, [applicationId]: data.messages }));
-      } finally {
-        setLoadingThreadId(null);
-      }
-    }
-  };
-
-  const handleSendMessage = async (applicationId: string) => {
-    const text = messageDrafts[applicationId]?.trim();
-    if (!text) return;
-    setSendingThreadId(applicationId);
-    try {
-      const res = await fetch(`/api/job-applications/${applicationId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), text, senderName: 'Applicant' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setThreadMessages((prev) => ({ ...prev, [applicationId]: [...(prev[applicationId] || []), data.message] }));
-        setMessageDrafts((prev) => ({ ...prev, [applicationId]: '' }));
-      }
-    } finally {
-      setSendingThreadId(null);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Navbar />
@@ -104,7 +60,7 @@ export default function MyApplicationsPage() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('طلبات التوظيف الخاصة بي', 'My Job Applications')}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('أدخل رقم هاتفك لعرض طلبات التوظيف الخاصة بك ومراسلة المؤسسات.', 'Enter your phone number to view your job applications and message institutions.')}</p>
+          <p className="text-sm text-slate-500 mt-1">{t('أدخل رقم هاتفك لعرض حالة طلبات التوظيف الخاصة بك.', 'Enter your phone number to view the status of your job applications.')}</p>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -136,7 +92,7 @@ export default function MyApplicationsPage() {
           ) : (
             <div className="space-y-3">
               {applications.map((a) => (
-                <div key={a.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div key={a.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -153,67 +109,18 @@ export default function MyApplicationsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => toggleThread(a.id)}
-                        className={`p-2 rounded-lg ${expandedThreadId === a.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
-                        title={t('مراسلة المؤسسة', 'Message institution')}
+                    {a.institutionWhatsapp && (
+                      <a
+                        href={`https://wa.me/${a.institutionWhatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
+                        title={t('واتساب', 'WhatsApp')}
                       >
-                        <MessageCircle className="w-4 h-4" />
-                      </button>
-                      {a.institutionWhatsapp && (
-                        <a
-                          href={`https://wa.me/${a.institutionWhatsapp}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                          title={t('واتساب', 'WhatsApp')}
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </a>
-                      )}
-                    </div>
+                        <MessageSquare className="w-4 h-4" />
+                      </a>
+                    )}
                   </div>
-
-                  {expandedThreadId === a.id && (
-                    <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
-                      <div className="max-h-56 overflow-y-auto space-y-2">
-                        {loadingThreadId === a.id ? (
-                          <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
-                        ) : (threadMessages[a.id]?.length || 0) === 0 ? (
-                          <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
-                        ) : (
-                          threadMessages[a.id].map((msg) => (
-                            <div key={msg.id} className={`flex ${msg.senderRole === 'student' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[75%] px-3 py-2 rounded-xl text-xs ${
-                                msg.senderRole === 'student' ? 'bg-[#0B192C] text-white' : 'bg-white border border-slate-200 text-slate-700'
-                              }`}>
-                                <p>{msg.text}</p>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={messageDrafts[a.id] || ''}
-                          onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [a.id]: e.target.value }))}
-                          onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(a.id); }}
-                          placeholder={t('اكتب رسالة...', 'Write a message...')}
-                          className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                        />
-                        <button
-                          onClick={() => handleSendMessage(a.id)}
-                          disabled={sendingThreadId === a.id || !messageDrafts[a.id]?.trim()}
-                          className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                          title={t('إرسال', 'Send')}
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

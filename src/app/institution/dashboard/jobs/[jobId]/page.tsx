@@ -7,11 +7,9 @@ import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { MasterDataService } from '@/core/services/masterDataService';
 import { Job, JobApplication } from '@/core/types/job';
-import { Institution } from '@/core/types/institution';
-import { ThreadMessage } from '@/core/types/message';
 import { resolveDownloadURL } from '@/core/firebase/storage';
 import {
-  ArrowRight, Phone, FileText, MessageCircle, Send, StickyNote, AlertCircle,
+  ArrowRight, Phone, FileText, StickyNote, AlertCircle,
 } from 'lucide-react';
 
 const STAGES: JobApplication['status'][] = ['SUBMITTED', 'REVIEWING', 'SHORTLISTED', 'REJECTED', 'HIRED'];
@@ -28,17 +26,11 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
   const { jobId } = use(params);
   const { language, t } = useLanguage();
 
-  const [institution, setInstitution] = useState<Institution | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
-  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
-  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
-  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
-  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
   const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [resumeDownloadUrls, setResumeDownloadUrls] = useState<Record<string, string>>({});
@@ -55,8 +47,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
         const institutionId = tokenResult.claims.institutionId as string | undefined;
         if (!institutionId) return;
 
-        const [inst, jobDoc, allApps] = await Promise.all([
-          MasterDataService.getInstitutionById(institutionId),
+        const [jobDoc, allApps] = await Promise.all([
           MasterDataService.getJobById(jobId),
           MasterDataService.getInstitutionJobApplications(institutionId),
         ]);
@@ -67,7 +58,6 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
         }
 
         const apps = allApps.filter((a) => a.jobId === jobId);
-        setInstitution(inst);
         setJob(jobDoc);
         setApplications(apps);
         const notes: Record<string, string> = {};
@@ -103,39 +93,6 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
       setApplications((prev) => prev.map((a) => (a.id === applicationId ? { ...a, internalNotes: notesDrafts[applicationId] } : a)));
     } finally {
       setSavingNotesId(null);
-    }
-  };
-
-  const toggleThread = async (applicationId: string) => {
-    if (expandedThreadId === applicationId) {
-      setExpandedThreadId(null);
-      return;
-    }
-    setExpandedThreadId(applicationId);
-    if (!threadMessages[applicationId]) {
-      setLoadingThreadId(applicationId);
-      try {
-        const messages = await MasterDataService.getThreadMessages(applicationId);
-        setThreadMessages((prev) => ({ ...prev, [applicationId]: messages }));
-      } finally {
-        setLoadingThreadId(null);
-      }
-    }
-  };
-
-  const handleSendMessage = async (application: JobApplication) => {
-    const text = messageDrafts[application.id]?.trim();
-    if (!text || !institution) return;
-    setSendingThreadId(application.id);
-    try {
-      const sent = await MasterDataService.sendJobApplicationMessage(application, institution.name.en || institution.name.ar, text);
-      setThreadMessages((prev) => ({ ...prev, [application.id]: [...(prev[application.id] || []), sent] }));
-      setMessageDrafts((prev) => ({ ...prev, [application.id]: '' }));
-      if (application.status === 'SUBMITTED') {
-        await handleMoveStage(application.id, 'REVIEWING');
-      }
-    } finally {
-      setSendingThreadId(null);
     }
   };
 
@@ -219,55 +176,6 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ jobId:
                           />
                           {savingNotesId === app.id && <span className="text-[10px] text-slate-400">{t('جاري الحفظ...', 'Saving...')}</span>}
                         </div>
-
-                        <button
-                          onClick={() => toggleThread(app.id)}
-                          className={`w-full flex items-center justify-center gap-1.5 text-[11px] font-bold py-1.5 rounded-lg ${
-                            expandedThreadId === app.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                          }`}
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span>{t('مراسلة المتقدم', 'Message applicant')}</span>
-                        </button>
-
-                        {expandedThreadId === app.id && (
-                          <div className="bg-white rounded-lg p-2 space-y-2 border border-slate-200">
-                            <div className="max-h-40 overflow-y-auto space-y-1.5">
-                              {loadingThreadId === app.id ? (
-                                <p className="text-[10px] text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
-                              ) : (threadMessages[app.id]?.length || 0) === 0 ? (
-                                <p className="text-[10px] text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
-                              ) : (
-                                threadMessages[app.id].map((msg) => (
-                                  <div key={msg.id} className={`flex ${msg.senderRole === 'institution' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] px-2 py-1.5 rounded-lg text-[11px] ${
-                                      msg.senderRole === 'institution' ? 'bg-[#0B192C] text-white' : 'bg-slate-100 text-slate-700'
-                                    }`}>
-                                      <p>{msg.text}</p>
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="text"
-                                value={messageDrafts[app.id] || ''}
-                                onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [app.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(app); }}
-                                placeholder={t('اكتب رسالة...', 'Write a message...')}
-                                className="flex-1 px-2 py-1.5 text-[11px] border border-slate-200 rounded-lg"
-                              />
-                              <button
-                                onClick={() => handleSendMessage(app)}
-                                disabled={sendingThreadId === app.id || !messageDrafts[app.id]?.trim()}
-                                className="p-1.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                              >
-                                <Send className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))
                   )}

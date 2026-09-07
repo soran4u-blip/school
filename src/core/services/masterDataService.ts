@@ -769,13 +769,4 @@ export class MasterDataService {
       text
     );
   }
-
-  static async sendJobApplicationMessage(application: JobApplication, senderName: string, text: string): Promise<ThreadMessage> {
-    return this.sendOwnerMessage(
-      { id: application.id, institutionId: application.institutionId, participantPhones: [application.phone] },
-      'institution',
-      senderName,
-      text
-    );
-  }
 }
