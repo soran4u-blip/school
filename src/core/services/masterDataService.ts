@@ -13,6 +13,7 @@ import { Review, Inquiry } from '../types/review';
 import { Application } from '../types/application';
 import { Booking } from '../types/booking';
 import { Job, JobApplication } from '../types/job';
+import { CommunityPost, CommunityReply } from '../types/community';
 import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
 import { 
@@ -704,6 +705,68 @@ export class MasterDataService {
   static async getAllJobApplications(): Promise<JobApplication[]> {
     const snap = await getDocs(collection(db, 'jobApplications'));
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as JobApplication));
+  }
+
+  /* =========================================================
+     COMMUNITY DISCUSSION BOARDS (governorate-scoped Q&A)
+  ========================================================= */
+  static async createCommunityPost(post: Omit<CommunityPost, 'id' | 'createdAt' | 'status' | 'replyCount'>): Promise<CommunityPost> {
+    const ref = doc(collection(db, 'communityPosts'));
+    const newPost: CommunityPost = { ...post, id: ref.id, status: 'PENDING', replyCount: 0, createdAt: new Date().toISOString() };
+    await setDoc(ref, newPost);
+    return newPost;
+  }
+
+  // Public feed — jobs are dynamic like Jobs/Inquiries so no in-memory fallback. Filtered only by
+  // status in the query (the field firestore.rules' read check inspects); governorateId is
+  // filtered client-side, same approach as getActiveJobs().
+  static async getApprovedCommunityPosts(governorateId?: string): Promise<CommunityPost[]> {
+    const q = query(collection(db, 'communityPosts'), where('status', '==', 'APPROVED'));
+    const snap = await getDocs(q);
+    let posts = snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityPost));
+    if (governorateId) posts = posts.filter(p => p.governorateId === governorateId);
+    return posts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  // Direct getDoc, bypassing the bulk-query status restriction — so a still-PENDING post is still
+  // reachable by whoever posted it (informational) or the admin queue, same reasoning as
+  // getJobById/getInstitutionById.
+  static async getCommunityPostById(id: string): Promise<CommunityPost | null> {
+    const snap = await getDoc(doc(db, 'communityPosts', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as CommunityPost) : null;
+  }
+
+  static async getAllCommunityPosts(): Promise<CommunityPost[]> {
+    const snap = await getDocs(collection(db, 'communityPosts'));
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as CommunityPost))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async updateCommunityPostStatus(id: string, status: CommunityPost['status']): Promise<void> {
+    await updateDoc(doc(db, 'communityPosts', id), { status });
+  }
+
+  static async deleteCommunityPost(id: string): Promise<void> {
+    await deleteDoc(doc(db, 'communityPosts', id));
+  }
+
+  static async getCommunityReplies(postId: string): Promise<CommunityReply[]> {
+    const q = query(collection(db, 'communityPosts', postId, 'replies'), orderBy('createdAt', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as CommunityReply);
+  }
+
+  static async createCommunityReply(postId: string, currentReplyCount: number, reply: Omit<CommunityReply, 'id' | 'createdAt'>): Promise<CommunityReply> {
+    const replyRef = doc(collection(db, 'communityPosts', postId, 'replies'));
+    const newReply: CommunityReply = { ...reply, id: replyRef.id, createdAt: new Date().toISOString() };
+    await setDoc(replyRef, newReply);
+    await updateDoc(doc(db, 'communityPosts', postId), { replyCount: currentReplyCount + 1 });
+    return newReply;
+  }
+
+  static async deleteCommunityReply(postId: string, replyId: string): Promise<void> {
+    await deleteDoc(doc(db, 'communityPosts', postId, 'replies', replyId));
   }
 
   /* =========================================================

@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Briefcase,
   UserCheck,
+  Users,
   ChevronDown,
   Menu,
   X
@@ -60,6 +61,7 @@ export default function Navbar() {
   const isExploreActive = pathname === '/explore';
   const isJobsActive = pathname === '/jobs';
   const isTutorsActive = pathname === '/tutors';
+  const isCommunityActive = pathname === '/community';
 
   const navPill = (active: boolean) =>
     `flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors ${
@@ -173,6 +175,11 @@ export default function Navbar() {
                 <UserCheck className="w-3.5 h-3.5" />
                 {t('الأساتذة', 'Tutors')}
               </Link>
+
+              <Link href="/community" className={navPill(isCommunityActive)}>
+                <Users className="w-3.5 h-3.5" />
+                {t('المجتمع', 'Community')}
+              </Link>
             </div>
 
             <div className="justify-self-end">
@@ -252,6 +259,14 @@ export default function Navbar() {
             className="block text-sm font-bold text-[#0B192C] py-2"
           >
             {t('الأساتذة الخصوصيون', 'Private Tutors')}
+          </Link>
+
+          <Link
+            href="/community"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold text-[#0B192C] py-2"
+          >
+            {t('مجتمع الأهالي', 'Community')}
           </Link>
 
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">

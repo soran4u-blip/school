@@ -199,6 +199,48 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // Community discussion boards (governorate-scoped Q&A). New threads are moderated (public UGC,
+    // not scoped to one institution the way inquiries/reviews are); replies go live immediately
+    // once their parent thread is approved, so ongoing moderation stays light.
+    function isValidCommunityPost() {
+      let d = request.resource.data;
+      return d.governorateId is string && d.governorateId.size() > 0
+        && exists(/databases/$(database)/documents/locations_governorates/$(d.governorateId))
+        && d.authorName is string && d.authorName.size() > 0 && d.authorName.size() <= 100
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 150
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 3000
+        && d.replyCount == 0
+        && d.status == 'PENDING';
+    }
+
+    // A guest reply bumps the parent post's replyCount by exactly 1 — the only field a non-admin
+    // is ever allowed to touch on a community post.
+    function isGuestAddingReplyCount() {
+      return resource.data.status == 'APPROVED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount'])
+        && request.resource.data.replyCount == resource.data.replyCount + 1;
+    }
+
+    match /communityPosts/{postId} {
+      allow create: if isAuthenticated() && isValidCommunityPost();
+      allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
+      allow update: if isSuperAdmin() || (isAuthenticated() && isGuestAddingReplyCount());
+      allow delete: if isSuperAdmin();
+
+      function isValidCommunityReply() {
+        let d = request.resource.data;
+        return d.authorName is string && d.authorName.size() > 0 && d.authorName.size() <= 100
+          && d.body is string && d.body.size() > 0 && d.body.size() <= 2000
+          && get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
+      }
+
+      match /replies/{replyId} {
+        allow read: if isSuperAdmin() || get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
+        allow create: if isAuthenticated() && isValidCommunityReply();
+        allow delete: if isSuperAdmin();
+      }
+    }
+
     // Messaging: one thread per context (a Booking, an Inquiry, or a JobApplication), doc id ==
     // that context's id. The tutor/institution owner is authenticated and reads/writes directly
     // here. Guests (students/parents/applicants) have no account requirement, so their side goes

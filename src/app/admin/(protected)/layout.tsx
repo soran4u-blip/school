@@ -23,7 +23,8 @@ import {
   MessageSquareText,
   Calendar,
   FileCheck2,
-  Briefcase
+  Briefcase,
+  Users
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -35,14 +36,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function loadPendingCounts() {
       try {
-        const [applications, reviews, inquiries] = await Promise.all([
+        const [applications, reviews, inquiries, communityPosts] = await Promise.all([
           MasterDataService.getAllApplications(),
           MasterDataService.getAllReviews(),
           MasterDataService.getAllInquiries(),
+          MasterDataService.getAllCommunityPosts(),
         ]);
         setPendingCounts({
           '/admin/applications': applications.filter((a) => a.status === 'PENDING').length,
           '/admin/reviews': reviews.filter((r) => r.status === 'PENDING').length + inquiries.filter((i) => i.status === 'NEW').length,
+          '/admin/community': communityPosts.filter((p) => p.status === 'PENDING').length,
         });
       } catch {
         // Non-critical — sidebar just won't show counts this load.
@@ -109,6 +112,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/reviews',
       label: { ar: 'التقييمات والاستفسارات', en: 'Reviews & Inquiries' },
       icon: MessageSquareText,
+    },
+    {
+      href: '/admin/community',
+      label: { ar: 'مجتمع الأهالي', en: 'Community' },
+      icon: Users,
     },
     {
       href: '/admin/settings',

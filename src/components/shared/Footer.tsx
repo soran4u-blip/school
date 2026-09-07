@@ -117,6 +117,11 @@ export default function Footer() {
                   {t('طلبات التوظيف الخاصة بي', 'My Job Applications')}
                 </Link>
               </li>
+              <li>
+                <Link href="/community" className="hover:text-white transition-colors">
+                  {t('مجتمع الأهالي', 'Community')}
+                </Link>
+              </li>
               <li className="pt-2 text-xs text-slate-400">
                 <div className="flex items-center gap-2 mb-1">
                   <Mail className="w-3.5 h-3.5" />
