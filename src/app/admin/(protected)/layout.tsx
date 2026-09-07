@@ -24,7 +24,8 @@ import {
   Calendar,
   FileCheck2,
   Briefcase,
-  Users
+  Users,
+  BarChart3
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -66,6 +67,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       label: { ar: 'لوحة المؤشرات', en: 'Dashboard' },
       icon: LayoutDashboard,
       exact: true,
+    },
+    {
+      href: '/admin/analytics',
+      label: { ar: 'التحليلات', en: 'Analytics' },
+      icon: BarChart3,
     },
     {
       href: '/admin/locations',
