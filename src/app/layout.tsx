@@ -4,7 +4,7 @@ import { LanguageProvider } from '@/core/context/LanguageContext';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = 'Eduraq | دليل العراق التعليمي - المدارس، الجامعات، والأساتذة';
-const description = 'الدليل الوطني الموحد للتعليم في العراق. اكتشف المدارس المعتمدة، الجامعات، المعاهد، ومدرسي الدروس الخصوصية في كافة المحافظات العراقية.';
+const description = 'منصة العراق لاكتشاف التعليم واتخاذ القرار: قارن المدارس والجامعات، اقرأ التقييمات، واسأل مجتمعك — قبل أن تقرر.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

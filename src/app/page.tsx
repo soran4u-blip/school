@@ -118,20 +118,20 @@ export default function HomePage() {
         <div className="relative max-w-5xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-[#1E3E62]/80 border border-slate-700/80 px-4 py-1.5 rounded-full text-xs font-bold text-amber-300 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-[#F1C40F]" />
-            <span>{t('المنصة الوطنية الأولى المعتمدة في العراق', 'Iraq\'s Premier Accredited Education Platform')}</span>
+            <span>{t('منصة العراق لاكتشاف التعليم واتخاذ القرار', 'Iraq\'s Education Discovery & Decision Platform')}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
             {t(
-              'اكتشف مستقبلك التعليمي في العراق بكل ثقة',
-              'Discover Accredited Education in Iraq with Confidence'
+              'اكتشف الخيار الأنسب... واتخذ القرار الصحيح',
+              'Find the Right School. Make the Right Decision.'
             )}
           </h1>
 
           <p className="text-sm sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
             {t(
-              'دليلك الشامل للجامعات المعترف بها، المدارس الدولية والأهلية، معاهد التدريب، ونخبة أساتذة السادس الإعدادي في كافة المحافظات.',
-              'Your official gateway to accredited universities, international K-12 schools, training centers, and vetted private tutors across all 18 governorates.'
+              'قارن بين المدارس، اطّلع على تقييمات حقيقية، اسأل مجتمعك المحلي، واحجز مدرّسك — كل ما تحتاجه قبل اتخاذ القرار، في جميع المحافظات الـ18.',
+              'Compare schools, read real reviews, ask your community, and book a tutor — everything you need before you commit, across all 18 governorates.'
             )}
           </p>
 
