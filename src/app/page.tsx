@@ -9,6 +9,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { getCategories, getGovernorates, getQuickSearchTags, getSystemSettings } from '@/core/services/masterDataService';
 import { getInstitutions } from '@/core/services/institutionService';
 import { getTutors } from '@/core/services/tutorService';
+import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
 import { 
   Governorate, 
   Category, 
@@ -72,13 +73,17 @@ export default function HomePage() {
     loadHomeData();
   }, []);
 
-  const handleHeroSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitHeroSearch = () => {
     const params = new URLSearchParams();
     if (searchKeyword.trim()) params.append('q', searchKeyword.trim());
     if (searchCategory) params.append('category', searchCategory);
     if (searchGovernorate) params.append('governorate', searchGovernorate);
     window.location.href = `/explore?${params.toString()}`;
+  };
+
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitHeroSearch();
   };
 
   const getCategoryIcon = (iconName: string) => {
@@ -143,12 +148,15 @@ export default function HomePage() {
             {/* Input Keyword */}
             <div className="flex items-center gap-2.5 px-4 w-full sm:flex-1 py-1.5">
               <Search className="w-5 h-5 text-slate-400 shrink-0" />
-              <input
-                type="text"
+              <SearchAutocomplete
                 value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                onChange={setSearchKeyword}
+                onSubmit={submitHeroSearch}
                 placeholder={t('ابحث عن اسم المدرسة، الجامعة، التخصص، أو الأستاذ...', 'Search school, university, major, or tutor...')}
-                className="w-full text-xs sm:text-sm bg-transparent border-none outline-hidden placeholder:text-slate-400 font-medium"
+                className="w-full"
+                inputClassName="w-full text-xs sm:text-sm bg-transparent border-none outline-hidden placeholder:text-slate-400 font-medium"
+                preloadedInstitutions={featuredInstitutions}
+                preloadedTutors={featuredTutors}
               />
             </div>
 

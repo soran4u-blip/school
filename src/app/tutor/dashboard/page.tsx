@@ -442,6 +442,28 @@ export default function TutorDashboardPage() {
               />
             </div>
 
+            {/* Location for "near me" search — no map, just a one-tap browser geolocation capture */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!navigator.geolocation) return;
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => setTutor({ ...tutor, coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude } }),
+                    () => alert(t('تعذر الوصول إلى الموقع', 'Could not access your location'))
+                  );
+                }}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
+              >
+                {t('استخدام موقعي الحالي', 'Use My Current Location')}
+              </button>
+              <span className="text-xs text-slate-500">
+                {tutor.coordinates
+                  ? t('تم تحديد الموقع — سيظهر في نتائج "القريب مني"', 'Location set — you\'ll appear in "Near Me" search results')
+                  : t('لم يتم تحديد الموقع — الظهور حسب المحافظة فقط', 'Not set — only governorate-level matching for now')}
+              </span>
+            </div>
+
             {/* Delivery Mode */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">{t('طريقة التدريس', 'Delivery Mode')}</label>

@@ -35,6 +35,7 @@ export async function getTutors(filter?: {
   subjectId?: string;
   isVerified?: boolean;
   status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
+  keyword?: string;
 }): Promise<Tutor[]> {
   let list = await getMergedTutors();
   if (filter?.status === 'ALL') {
@@ -53,6 +54,15 @@ export async function getTutors(filter?: {
     }
     if (filter.isVerified !== undefined) {
       list = list.filter(t => t.isVerified === filter.isVerified);
+    }
+    if (filter.keyword) {
+      const kw = filter.keyword.toLowerCase().trim();
+      list = list.filter(t =>
+        t.fullName.ar.toLowerCase().includes(kw) ||
+        t.fullName.en.toLowerCase().includes(kw) ||
+        t.title.ar.toLowerCase().includes(kw) ||
+        t.title.en.toLowerCase().includes(kw)
+      );
     }
   }
   return list;

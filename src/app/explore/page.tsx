@@ -11,19 +11,22 @@ import { getCategories, getGovernorates, getTaxonomies } from '@/core/services/m
 import { getInstitutions } from '@/core/services/institutionService';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
-import { 
-  Search, 
-  MapPin, 
-  ShieldCheck, 
-  Star, 
-  SlidersHorizontal, 
-  X, 
-  ChevronDown, 
-  Check, 
+import { haversineDistanceKm, resolveCoordinates } from '@/core/utils/geo';
+import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
+import {
+  Search,
+  MapPin,
+  ShieldCheck,
+  Star,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  Check,
   ExternalLink,
   MessageSquare,
   ArrowUpDown,
-  RotateCcw
+  RotateCcw,
+  Navigation
 } from 'lucide-react';
 
 function ExploreContent() {
@@ -44,8 +47,22 @@ function ExploreContent() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [selectedAccreditations, setSelectedAccreditations] = useState<string[]>([]);
   const [selectedCurricula, setSelectedCurricula] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'recommended' | 'rating' | 'tuition_asc'>('recommended');
+  const [sortBy, setSortBy] = useState<'recommended' | 'rating' | 'tuition_asc' | 'reviews_desc' | 'distance_asc'>('recommended');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Price range (currency-scoped — no FX conversion, entries in the other currency are excluded
+  // while a range is active)
+  const [priceCurrency, setPriceCurrency] = useState<'IQD' | 'USD'>('IQD');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+
+  // Rating threshold
+  const [minRating, setMinRating] = useState(0);
+
+  // Near me — no map, just a browser-geolocation distance filter
+  const [nearMeCoords, setNearMeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearMeError, setNearMeError] = useState('');
+  const [radiusKm, setRadiusKm] = useState(25);
 
   useEffect(() => {
     async function loadMaster() {
@@ -94,6 +111,20 @@ function ExploreContent() {
       const matchTag = inst.tagline.ar.toLowerCase().includes(q) || inst.tagline.en.toLowerCase().includes(q);
       if (!matchName && !matchDesc && !matchTag) return false;
     }
+    if (minRating > 0 && inst.metrics.ratingAvg < minRating) {
+      return false;
+    }
+    if (priceMin || priceMax) {
+      if (inst.tuition.currency !== priceCurrency) return false;
+      const min = priceMin ? Number(priceMin) : 0;
+      const max = priceMax ? Number(priceMax) : Infinity;
+      if (inst.tuition.max < min || inst.tuition.min > max) return false;
+    }
+    if (nearMeCoords) {
+      const gov = governorates.find(g => g.id === inst.governorateId);
+      const coords = resolveCoordinates(inst, gov ? { lat: gov.lat, lng: gov.lng } : undefined);
+      if (!coords || haversineDistanceKm(nearMeCoords, coords) > radiusKm) return false;
+    }
     return true;
   });
 
@@ -105,8 +136,40 @@ function ExploreContent() {
     if (sortBy === 'tuition_asc') {
       return a.tuition.min - b.tuition.min;
     }
+    if (sortBy === 'reviews_desc') {
+      return b.metrics.reviewCount - a.metrics.reviewCount;
+    }
+    if (sortBy === 'distance_asc' && nearMeCoords) {
+      const govA = governorates.find(g => g.id === a.governorateId);
+      const govB = governorates.find(g => g.id === b.governorateId);
+      const coordsA = resolveCoordinates(a, govA ? { lat: govA.lat, lng: govA.lng } : undefined);
+      const coordsB = resolveCoordinates(b, govB ? { lat: govB.lat, lng: govB.lng } : undefined);
+      const distA = coordsA ? haversineDistanceKm(nearMeCoords, coordsA) : Infinity;
+      const distB = coordsB ? haversineDistanceKm(nearMeCoords, coordsB) : Infinity;
+      return distA - distB;
+    }
     return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
   });
+
+  const toggleNearMe = () => {
+    if (nearMeCoords) {
+      setNearMeCoords(null);
+      setNearMeError('');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setNearMeError(t('المتصفح لا يدعم تحديد الموقع', 'Location not supported by this browser'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setNearMeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setNearMeError('');
+        setSortBy('distance_asc');
+      },
+      () => setNearMeError(t('تعذر الوصول إلى الموقع', 'Could not access your location'))
+    );
+  };
 
   const toggleAccreditation = (id: string) => {
     setSelectedAccreditations((prev) =>
@@ -127,6 +190,11 @@ function ExploreContent() {
     setVerifiedOnly(false);
     setSelectedAccreditations([]);
     setSelectedCurricula([]);
+    setPriceMin('');
+    setPriceMax('');
+    setMinRating(0);
+    setNearMeCoords(null);
+    setNearMeError('');
   };
 
   return (
@@ -202,15 +270,107 @@ function ExploreContent() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2">{t('البحث بالاسم أو الكلمة المفتاحية', 'Keyword Search')}</label>
                 <div className="relative">
-                  <input
-                    type="text"
+                  <SearchAutocomplete
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={setSearchQuery}
+                    onSubmit={() => {}}
                     placeholder={t('مثال: بغداد، طب، بريطاني...', 'e.g. Medicine, British...')}
-                    className="w-full text-xs px-3 py-2.5 ps-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 font-medium"
+                    className="w-full"
+                    inputClassName="w-full text-xs px-3 py-2.5 ps-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 font-medium"
+                    preloadedInstitutions={institutions}
                   />
-                  <Search className="w-4 h-4 text-slate-400 absolute top-3 start-3" />
+                  <Search className="w-4 h-4 text-slate-400 absolute top-3 start-3 pointer-events-none" />
                 </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-700">{t('الميزانية السنوية', 'Annual Budget')}</label>
+                  <div className="flex rounded-lg overflow-hidden border border-slate-200 text-[10px] font-bold">
+                    {(['IQD', 'USD'] as const).map((cur) => (
+                      <button
+                        key={cur}
+                        type="button"
+                        onClick={() => setPriceCurrency(cur)}
+                        className={`px-2 py-1 ${priceCurrency === cur ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-500'}`}
+                      >
+                        {cur}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    placeholder={t('من', 'Min')}
+                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-blue-600"
+                  />
+                  <span className="text-slate-300 text-xs">—</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    placeholder={t('إلى', 'Max')}
+                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Rating Threshold */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">{t('الحد الأدنى للتقييم', 'Minimum Rating')}</label>
+                <div className="flex gap-2">
+                  {[0, 3, 4].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setMinRating(r)}
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                        minRating === r ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {r === 0 ? (
+                        t('الكل', 'Any')
+                      ) : (
+                        <>
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          {r}+
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Near Me */}
+              <div>
+                <button
+                  type="button"
+                  onClick={toggleNearMe}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
+                    nearMeCoords ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>{nearMeCoords ? t('القريب مني مفعّل', 'Near Me is on') : t('البحث بالقرب مني', 'Search Near Me')}</span>
+                </button>
+                {nearMeCoords && (
+                  <select
+                    value={radiusKm}
+                    onChange={(e) => setRadiusKm(Number(e.target.value))}
+                    className="w-full mt-2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 cursor-pointer focus:outline-blue-600"
+                  >
+                    {[5, 10, 25, 50, 100].map((km) => (
+                      <option key={km} value={km}>{t(`ضمن ${km} كم`, `Within ${km} km`)}</option>
+                    ))}
+                  </select>
+                )}
+                {nearMeError && <p className="text-[11px] text-rose-600 mt-1.5">{nearMeError}</p>}
               </div>
 
               {/* Categories Filter */}
@@ -363,7 +523,9 @@ function ExploreContent() {
                 >
                   <option value="recommended">{t('الموصى به (مميز)', 'Recommended')}</option>
                   <option value="rating">{t('الأعلى تقييماً', 'Highest Rated')}</option>
+                  <option value="reviews_desc">{t('الأكثر تقييمات', 'Most Reviewed')}</option>
                   <option value="tuition_asc">{t('الأقل قسطاً', 'Lowest Tuition')}</option>
+                  {nearMeCoords && <option value="distance_asc">{t('الأقرب مسافة', 'Nearest Distance')}</option>}
                 </select>
               </div>
             </div>

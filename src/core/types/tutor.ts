@@ -17,6 +17,7 @@ export interface Tutor {
 
   governorateId: string;
   cityId?: string;
+  coordinates?: { lat: number; lng: number }; // set via a one-tap "Use my location" in the tutor dashboard, no map/geocoding
 
   hourlyRate: {
     iqd: number; // e.g. 35000 — price for a 1:1 individual session
