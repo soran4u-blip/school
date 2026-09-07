@@ -13,6 +13,7 @@ import {
   PlusCircle,
   ShieldCheck,
   UserCheck,
+  Briefcase,
   Menu,
   X
 } from 'lucide-react';
@@ -73,6 +74,13 @@ export default function Navbar() {
               className={`text-sm font-semibold transition-colors ${pathname === '/explore' ? 'text-[#0B192C] border-b-2 border-[#0B192C] pb-1' : 'text-slate-600 hover:text-[#1E3E62]'}`}
             >
               {t('استكشف الكل', 'Explore All')}
+            </Link>
+            <Link
+              href="/jobs"
+              className={`text-sm font-semibold transition-colors flex items-center gap-1 ${pathname === '/jobs' ? 'text-[#0B192C] border-b-2 border-[#0B192C] pb-1' : 'text-slate-600 hover:text-[#1E3E62]'}`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              {t('الوظائف', 'Jobs')}
             </Link>
             {categories.slice(0, 5).map((cat) => (
               <Link
@@ -165,6 +173,13 @@ export default function Navbar() {
             className="block text-sm font-bold text-[#0B192C] py-1.5"
           >
             {t('استكشف كافة المؤسسات', 'Explore All Listings')}
+          </Link>
+          <Link
+            href="/jobs"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold text-[#0B192C] py-1.5"
+          >
+            {t('الوظائف الشاغرة', 'Job Openings')}
           </Link>
           {categories.map((cat) => (
             <Link

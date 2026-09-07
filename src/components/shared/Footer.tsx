@@ -107,6 +107,16 @@ export default function Footer() {
                   {t('حجوزاتي', 'My Bookings')}
                 </Link>
               </li>
+              <li>
+                <Link href="/jobs" className="hover:text-white transition-colors">
+                  {t('الوظائف الشاغرة', 'Job Openings')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/my-applications" className="hover:text-white transition-colors">
+                  {t('طلبات التوظيف الخاصة بي', 'My Job Applications')}
+                </Link>
+              </li>
               <li className="pt-2 text-xs text-slate-400">
                 <div className="flex items-center gap-2 mb-1">
                   <Mail className="w-3.5 h-3.5" />

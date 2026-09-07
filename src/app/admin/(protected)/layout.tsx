@@ -22,7 +22,8 @@ import {
   LogOut,
   MessageSquareText,
   Calendar,
-  FileCheck2
+  FileCheck2,
+  Briefcase
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -93,6 +94,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/bookings',
       label: { ar: 'كافة الحجوزات', en: 'All Bookings' },
       icon: Calendar,
+    },
+    {
+      href: '/admin/jobs',
+      label: { ar: 'الوظائف الشاغرة', en: 'Job Postings' },
+      icon: Briefcase,
     },
     {
       href: '/admin/applications',

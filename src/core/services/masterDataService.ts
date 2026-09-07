@@ -12,6 +12,7 @@ import { Tutor } from '../types/tutor';
 import { Review, Inquiry } from '../types/review';
 import { Application } from '../types/application';
 import { Booking } from '../types/booking';
+import { Job, JobApplication } from '../types/job';
 import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
 import { 
@@ -617,6 +618,95 @@ export class MasterDataService {
   }
 
   /* =========================================================
+     JOBS & JOB APPLICATIONS
+  ========================================================= */
+  static async createJob(job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<Job> {
+    const ref = doc(collection(db, 'jobs'));
+    const now = new Date().toISOString();
+    const newJob: Job = { ...job, id: ref.id, createdAt: now, updatedAt: now };
+    const payload = Object.fromEntries(Object.entries(newJob).filter(([, v]) => v !== undefined));
+    await setDoc(ref, payload);
+    return newJob;
+  }
+
+  static async updateJob(id: string, patch: Partial<Job>): Promise<void> {
+    await updateDoc(doc(db, 'jobs', id), { ...patch, updatedAt: new Date().toISOString() });
+  }
+
+  // Direct getDoc, bypassing any bulk-query restriction — mirrors getInstitutionById/getTutorById
+  // so an owner can load their own DRAFT/CLOSED job even though a bulk unfiltered query would
+  // otherwise be denied for a non-ACTIVE doc.
+  static async getJobById(id: string): Promise<Job | null> {
+    const snap = await getDoc(doc(db, 'jobs', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Job) : null;
+  }
+
+  static async getInstitutionJobs(institutionId: string): Promise<Job[]> {
+    const q = query(collection(db, 'jobs'), where('institutionId', '==', institutionId));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Job))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  // Public directory of open jobs — jobs are dynamic/time-sensitive so (unlike institutions/tutors)
+  // there's no in-memory seed fallback here, just a straight Firestore query on the one indexable
+  // field (status) with the rest filtered client-side, same approach the /tutors listing uses.
+  static async getActiveJobs(filters?: { governorateId?: string; employmentType?: Job['employmentType']; isRemote?: boolean; subjectId?: string }): Promise<Job[]> {
+    const q = query(collection(db, 'jobs'), where('status', '==', 'ACTIVE'));
+    const snap = await getDocs(q);
+    let jobs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Job));
+    if (filters?.governorateId) jobs = jobs.filter(j => j.governorateId === filters.governorateId);
+    if (filters?.employmentType) jobs = jobs.filter(j => j.employmentType === filters.employmentType);
+    if (filters?.isRemote) jobs = jobs.filter(j => j.isRemote);
+    if (filters?.subjectId) jobs = jobs.filter(j => j.subjectIds?.includes(filters.subjectId!));
+    return jobs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async createJobApplication(app: Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<JobApplication> {
+    const ref = doc(collection(db, 'jobApplications'));
+    const now = new Date().toISOString();
+    const newApp: JobApplication = { ...app, id: ref.id, status: 'SUBMITTED', createdAt: now, updatedAt: now };
+    const payload = Object.fromEntries(Object.entries(newApp).filter(([, v]) => v !== undefined));
+    await setDoc(ref, payload);
+    return newApp;
+  }
+
+  // All applications across every job this institution owns — a unified applicants inbox.
+  // Filtered by institutionId (not jobId) because firestore.rules' read check is keyed off
+  // resource.data.institutionId — Firestore requires a query's `where` field to match the field
+  // a data-dependent rule checks, or it rejects the query outright without evaluating documents.
+  // Callers that need one job's applications should filter this list by jobId client-side.
+  static async getInstitutionJobApplications(institutionId: string): Promise<JobApplication[]> {
+    const q = query(collection(db, 'jobApplications'), where('institutionId', '==', institutionId));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as JobApplication))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async updateJobApplicationStatus(id: string, status: JobApplication['status']): Promise<void> {
+    await updateDoc(doc(db, 'jobApplications', id), { status, updatedAt: new Date().toISOString() });
+  }
+
+  static async updateJobApplicationNotes(id: string, internalNotes: string): Promise<void> {
+    await updateDoc(doc(db, 'jobApplications', id), { internalNotes, updatedAt: new Date().toISOString() });
+  }
+
+  // Platform-wide oversight (superadmin only, per firestore.rules).
+  static async getAllJobs(): Promise<Job[]> {
+    const snap = await getDocs(collection(db, 'jobs'));
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Job))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  static async getAllJobApplications(): Promise<JobApplication[]> {
+    const snap = await getDocs(collection(db, 'jobApplications'));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as JobApplication));
+  }
+
+  /* =========================================================
      MESSAGING — one thread per context (a Booking or an Inquiry), doc id == that context's id.
      Tutor/institution owner side only — authenticated, direct via client SDK under
      firestore.rules. The guest (student/parent) side goes through /api/bookings/[id]/messages
@@ -641,8 +731,18 @@ export class MasterDataService {
 
     const message: ThreadMessage = { id: messageRef.id, senderRole, senderName, text, createdAt: now };
 
-    const existingThread = await getDoc(threadRef);
-    if (existingThread.exists()) {
+    // Reading a thread doc that doesn't exist yet is denied by firestore.rules (it can't evaluate
+    // resource.data on nothing), which only stayed invisible so far because a guest's first message
+    // — sent via the Admin SDK route, bypassing rules — always created the thread before an owner
+    // got here. Job applications have no such guaranteed first guest message, so treat a denied
+    // existence check the same as "doesn't exist yet" rather than letting it throw.
+    let existingThread;
+    try {
+      existingThread = await getDoc(threadRef);
+    } catch {
+      existingThread = null;
+    }
+    if (existingThread?.exists()) {
       await updateDoc(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140) });
     } else {
       const newThread: Thread = { ...thread, lastMessageAt: now, lastMessagePreview: text.slice(0, 140), createdAt: now };
@@ -664,6 +764,15 @@ export class MasterDataService {
   static async sendInstitutionMessage(inquiry: Inquiry, senderName: string, text: string): Promise<ThreadMessage> {
     return this.sendOwnerMessage(
       { id: inquiry.id, institutionId: inquiry.institutionId, participantPhones: [inquiry.phone] },
+      'institution',
+      senderName,
+      text
+    );
+  }
+
+  static async sendJobApplicationMessage(application: JobApplication, senderName: string, text: string): Promise<ThreadMessage> {
+    return this.sendOwnerMessage(
+      { id: application.id, institutionId: application.institutionId, participantPhones: [application.phone] },
       'institution',
       senderName,
       text

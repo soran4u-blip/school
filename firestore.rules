@@ -164,12 +164,47 @@ service cloud.firestore {
       allow read, update, delete: if isSuperAdmin();
     }
 
-    // Messaging: one thread per context (a Booking or an Inquiry), doc id == that context's id.
-    // The tutor/institution owner is authenticated and reads/writes directly here. Guests
-    // (students/parents) have no account requirement, so their side goes entirely through the
-    // Admin SDK API routes (/api/bookings/[id]/messages, /api/inquiries/[id]/messages), which
-    // verify their phone against the booking/inquiry before touching these docs — the same
-    // guest pattern already used for booking cancel/lookup. `.get(key, null)` is used instead of
+    // Jobs (institution postings). Anyone can browse ACTIVE jobs; owner/admin see DRAFT/CLOSED too.
+    match /jobs/{jobId} {
+      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerInstitution(resource.data.institutionId);
+      allow write: if isSuperAdmin() || isOwnerInstitution(resource.data.institutionId) || isOwnerInstitution(request.resource.data.institutionId);
+    }
+
+    // Job Applications (guest apply, no account required — same trust model as Inquiries, but
+    // gated behind anonymous auth like Reviews since a resume file is attached). Only the owning
+    // institution or admin can read/triage; the applicant's own view goes through the phone-verified
+    // Admin SDK route (/api/job-applications/lookup), same guest pattern as booking lookup.
+    function isValidJobApplication() {
+      let d = request.resource.data;
+      return d.jobId is string && d.jobId.size() > 0
+        && exists(/databases/$(database)/documents/jobs/$(d.jobId))
+        && get(/databases/$(database)/documents/jobs/$(d.jobId)).data.status == 'ACTIVE'
+        && d.institutionId is string && d.institutionId.size() > 0
+        && d.fullName is string && d.fullName.size() > 0 && d.fullName.size() <= 100
+        && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
+        && d.get('coverLetter', '') is string && d.get('coverLetter', '').size() <= 3000
+        && d.status == 'SUBMITTED';
+    }
+
+    function isInstitutionUpdatingOwnJobApplication() {
+      return isOwnerInstitution(resource.data.institutionId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'internalNotes', 'updatedAt']);
+    }
+
+    match /jobApplications/{applicationId} {
+      allow create: if isAuthenticated() && isValidJobApplication();
+      allow read: if isSuperAdmin() || isOwnerInstitution(resource.data.institutionId);
+      allow update: if isSuperAdmin() || isInstitutionUpdatingOwnJobApplication();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Messaging: one thread per context (a Booking, an Inquiry, or a JobApplication), doc id ==
+    // that context's id. The tutor/institution owner is authenticated and reads/writes directly
+    // here. Guests (students/parents/applicants) have no account requirement, so their side goes
+    // entirely through the Admin SDK API routes (/api/bookings/[id]/messages,
+    // /api/inquiries/[id]/messages, /api/job-applications/[id]/messages), which
+    // verify their phone against the booking/inquiry/application before touching these docs — the
+    // same guest pattern already used for booking cancel/lookup. `.get(key, null)` is used instead of
     // dot-notation because exactly one of tutorId/institutionId is ever set on a given thread,
     // and dot-notation access to a genuinely absent map key throws in this rules version.
     function isOwnerOfThread(data) {
