@@ -10,10 +10,13 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { getCategories, getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutions } from '@/core/services/institutionService';
+import { saveSearch } from '@/core/services/savedSearchService';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { haversineDistanceKm, resolveCoordinates } from '@/core/utils/geo';
 import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
+import { auth } from '@/core/firebase/config';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import {
   Search,
   MapPin,
@@ -27,7 +30,9 @@ import {
   MessageSquare,
   ArrowUpDown,
   RotateCcw,
-  Navigation
+  Navigation,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react';
 
 function ExploreContent() {
@@ -40,6 +45,14 @@ function ExploreContent() {
   const [curricula, setCurricula] = useState<TaxonomyItem[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [searchSaved, setSearchSaved] = useState(false);
+  const [savingSearch, setSavingSearch] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
+    return () => unsub();
+  }, []);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -507,10 +520,37 @@ function ExploreContent() {
             
             {/* Sort & Count Header */}
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs font-bold text-slate-700">
-                {t('تم العثور على', 'Found')}{' '}
-                <span className="text-blue-700 font-black text-sm">{sorted.length}</span>{' '}
-                {t('مؤسسة تعليمية معتمدة', 'accredited educational listings')}
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-bold text-slate-700">
+                  {t('تم العثور على', 'Found')}{' '}
+                  <span className="text-blue-700 font-black text-sm">{sorted.length}</span>{' '}
+                  {t('مؤسسة تعليمية معتمدة', 'accredited educational listings')}
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!currentUser) {
+                      window.location.href = `/login?redirect=${encodeURIComponent(localeHref('/explore', language))}`;
+                      return;
+                    }
+                    setSavingSearch(true);
+                    try {
+                      const label = [
+                        selectedCategory !== 'all' && categories.find((c) => c.slug === selectedCategory)?.name[language === 'en' ? 'en' : 'ar'],
+                        selectedGov !== 'all' && governorates.find((g) => g.id === selectedGov)?.name[language === 'en' ? 'en' : 'ar'],
+                        searchQuery.trim(),
+                      ].filter(Boolean).join(' • ') || t('بحث بدون فلاتر', 'Unfiltered search');
+                      await saveSearch(currentUser.uid, label, window.location.pathname + window.location.search);
+                      setSearchSaved(true);
+                    } finally {
+                      setSavingSearch(false);
+                    }
+                  }}
+                  disabled={savingSearch || searchSaved}
+                  className="flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 disabled:opacity-60"
+                >
+                  {searchSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                  {searchSaved ? t('تم الحفظ', 'Saved') : t('حفظ هذا البحث', 'Save this search')}
+                </button>
               </div>
 
               {/* Sort selector */}

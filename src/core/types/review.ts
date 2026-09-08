@@ -7,6 +7,11 @@ export interface Review {
   rating: number; // 1-5
   comment: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  // Set only by the Admin SDK (/api/reviews), never by a client create — see firestore.rules'
+  // isValidReview(). `verified` is true only when the reviewer had a real completed/confirmed
+  // booking with this tutor at submission time.
+  studentId?: string;
+  verified?: boolean;
   createdAt: string;
   // A single public reply from whoever is being reviewed (tutor or institution). Not a
   // back-and-forth thread, just one owner response, same as most review platforms.

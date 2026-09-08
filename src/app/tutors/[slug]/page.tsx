@@ -184,15 +184,30 @@ export default function TutorProfilePage({ params }: { params: Promise<{ slug: s
 
     setReviewSubmitting(true);
     try {
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
+      // A real, logged-in student submits through the server route, which checks for an actual
+      // completed booking and marks the review "Verified" if one exists — a trust signal the
+      // plain anonymous-guest path below can never claim.
+      if (currentUser && !currentUser.isAnonymous) {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tutorId: tutor.id, rating: reviewForm.rating, comment: reviewForm.comment.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed');
+        }
+      } else {
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+        await createReview({
+          tutorId: tutor.id,
+          reviewerName: reviewForm.reviewerName.trim(),
+          rating: reviewForm.rating,
+          comment: reviewForm.comment.trim(),
+        });
       }
-      await createReview({
-        tutorId: tutor.id,
-        reviewerName: reviewForm.reviewerName.trim(),
-        rating: reviewForm.rating,
-        comment: reviewForm.comment.trim(),
-      });
       markSubmitted('tutor-review');
       setReviewSubmitted(true);
       setReviewForm({ reviewerName: '', rating: 5, comment: '', hp: '' });
@@ -509,7 +524,15 @@ export default function TutorProfilePage({ params }: { params: Promise<{ slug: s
               reviews.map((rev) => (
                 <div key={rev.id} className="py-4 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
+                      {rev.verified && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title={t('طالب حجز فعلياً درساً مع هذا الأستاذ', 'This student had a real booking with this tutor')}>
+                          <ShieldCheck className="w-2.5 h-2.5" />
+                          {t('طالب موثّق', 'Verified Student')}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star key={i} className={`w-3.5 h-3.5 ${i < rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />

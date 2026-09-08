@@ -63,4 +63,14 @@ env:
   # Server-only secret — create it first with `firebase apphosting:secrets:set`.
   - variable: FIREBASE_SERVICE_ACCOUNT_KEY
     secret: firebase-service-account-key
-    availability: [RUNTIME]
+    availability: [ RUNTIME ]
+
+  # Web push (native browser Push API — no third-party notification service needed). Public key
+  # is safe to expose to the client; the private key is a server-only secret.
+  - variable: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    value: BCEprbsmTiJVf7V4Rz89i-Lc0p5t0VlOdFfsjNZNXISX-8fcsKfTE1hJfFATMaNq8KdsYcwVwb6DIMqeQzeuX48
+    availability: [ BUILD, RUNTIME ]
+
+  - variable: VAPID_PRIVATE_KEY
+    secret: vapid-private-key
+    availability: [ RUNTIME ]

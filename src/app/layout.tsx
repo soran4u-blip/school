@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
 import ErrorReporter from '@/components/shared/ErrorReporter';
+import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = 'Eduraq | دليل العراق التعليمي - المدارس، الجامعات، والأساتذة';
@@ -26,6 +27,15 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  manifest: '/manifest.json',
+  icons: {
+    icon: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0B192C',
 };
 
 // Unlocks Google's sitelinks search box (a search field shown directly under the site's result).
@@ -54,6 +64,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <ErrorReporter />
+        <ServiceWorkerRegistrar />
         <LanguageProvider>
           {children}
         </LanguageProvider>

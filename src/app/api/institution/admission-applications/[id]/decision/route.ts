@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { AdmissionApplication, AdmissionApplicationStatus } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
+import { sendPushToStudent } from '@/core/server/push';
+
+const DECISION_LABEL: Record<string, string> = {
+  ACCEPTED: 'Accepted',
+  REJECTED: 'Rejected',
+  WAITLISTED: 'Waitlisted',
+};
 
 const SESSION_COOKIE_NAME = 'session';
 const VALID_STATUSES: AdmissionApplicationStatus[] = ['UNDER_REVIEW', 'ACCEPTED', 'WAITLISTED', 'REJECTED'];
@@ -91,6 +98,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       tx.update(appRef, update);
       return { ...application, ...update };
     });
+
+    if (DECISION_LABEL[status]) {
+      const programName = result.programName?.en || result.programName?.ar || 'your program';
+      sendPushToStudent(adminDb, result.studentId, {
+        title: `Application ${DECISION_LABEL[status]}`,
+        body: `Your application to ${programName} has been ${DECISION_LABEL[status].toLowerCase()}.`,
+        url: '/account',
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, application: result });
   } catch (e: any) {

@@ -41,7 +41,12 @@ service cloud.firestore {
         && d.reviewerName is string && d.reviewerName.size() > 0 && d.reviewerName.size() <= 100
         && d.rating is int && d.rating >= 1 && d.rating <= 5
         && d.comment is string && d.comment.size() > 0 && d.comment.size() <= 2000
-        && d.status == 'PENDING';
+        && d.status == 'PENDING'
+        // The "Verified Student" badge can only be granted by the Admin SDK (/api/reviews),
+        // which checks for a real completed booking first — a client-side create must never be
+        // able to self-report as verified.
+        && d.get('verified', false) == false
+        && d.get('studentId', null) == null;
     }
 
     function isValidInquiry() {
@@ -314,6 +319,19 @@ service cloud.firestore {
     // client-side Firestore query).
     match /students/{studentId} {
       allow read, write: if isSuperAdmin() || isOwner(studentId);
+
+      // Web push subscriptions — Admin SDK only (/api/push/subscribe, /api/push/unsubscribe),
+      // never touched by the client SDK directly.
+      match /pushSubscriptions/{subId} {
+        allow read, write: if false;
+      }
+
+      // Saved searches — a manual "bookmark this filter combination" convenience, no automatic
+      // matching/alerting yet (that would need a scheduled job to check for new listings, out of
+      // scope for now). Plain owner-scoped CRUD, same as the student doc itself.
+      match /savedSearches/{searchId} {
+        allow read, write: if isSuperAdmin() || isOwner(studentId);
+      }
     }
 
     // In-house error log (no third-party monitoring account needed) — written only via the

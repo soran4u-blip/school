@@ -5,13 +5,16 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { Calendar, Users, User, MessageSquare, MessageCircle, Send, AlertCircle, Save, GraduationCap, X, Building2, FileX } from 'lucide-react';
+import { Calendar, Users, User, MessageSquare, MessageCircle, Send, AlertCircle, Save, GraduationCap, X, Building2, FileX, Bookmark } from 'lucide-react';
 import { ThreadMessage } from '@/core/types/message';
 import { Student } from '@/core/types/student';
 import { getStudent, saveStudentProfile } from '@/core/services/studentService';
 import { getTaxonomies } from '@/core/services/masterDataService';
 import { TaxonomyItem } from '@/core/types/masterData';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
+import NotificationsToggle from '@/components/shared/NotificationsToggle';
+import { SavedSearch } from '@/core/types/savedSearch';
+import { getSavedSearches, deleteSavedSearch } from '@/core/services/savedSearchService';
 
 interface AccountBooking {
   id: string;
@@ -103,6 +106,8 @@ export default function AccountPage() {
 
   const [admissionApplications, setAdmissionApplications] = useState<AccountAdmissionApplication[] | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[] | null>(null);
+  const [deletingSearchId, setDeletingSearchId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -112,14 +117,16 @@ export default function AccountPage() {
       }
       setUid(user.uid);
       try {
-        const [bookingsRes, inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels] = await Promise.all([
+        const [bookingsRes, inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels, searches] = await Promise.all([
           fetch('/api/account/bookings'),
           fetch('/api/account/inquiries'),
           fetch('/api/account/admission-applications'),
           getStudent(user.uid),
           getTaxonomies('SUBJECT'),
           getTaxonomies('STUDENT_LEVEL'),
+          getSavedSearches(user.uid),
         ]);
+        setSavedSearches(searches);
         const bookingsData = await bookingsRes.json();
         if (!bookingsRes.ok || !bookingsData.success) {
           setError(bookingsData.error || t('تعذر تحميل الحجوزات', 'Failed to load bookings'));
@@ -163,6 +170,17 @@ export default function AccountPage() {
       setAdmissionApplications((prev) => prev?.map((a) => (a.id === applicationId ? { ...a, status: 'WITHDRAWN' } : a)) || null);
     } finally {
       setWithdrawingId(null);
+    }
+  };
+
+  const handleDeleteSearch = async (id: string) => {
+    if (!uid) return;
+    setDeletingSearchId(id);
+    try {
+      await deleteSavedSearch(uid, id);
+      setSavedSearches((prev) => prev?.filter((s) => s.id !== id) || null);
+    } finally {
+      setDeletingSearchId(null);
     }
   };
 
@@ -287,6 +305,8 @@ export default function AccountPage() {
         <p className="text-xs text-slate-500 mt-1">{t('جميع حجوزاتك واستفساراتك ومراسلاتك مع الأساتذة والمؤسسات في مكان واحد.', 'All your bookings, inquiries, and conversations with tutors and institutions in one place.')}</p>
       </div>
 
+      <NotificationsToggle />
+
       {error && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800 flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
@@ -370,6 +390,31 @@ export default function AccountPage() {
             <Save className="w-3.5 h-3.5" />
             {t('حفظ الملف الشخصي', 'Save Profile')}
           </button>
+        </div>
+      )}
+
+      {savedSearches && savedSearches.length > 0 && (
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          <h2 className="text-sm font-extrabold text-[#0B192C] flex items-center gap-2">
+            <Bookmark className="w-4 h-4 text-blue-600" />
+            {t('عمليات البحث المحفوظة', 'Saved Searches')}
+          </h2>
+          <div className="space-y-2">
+            {savedSearches.map((s) => (
+              <div key={s.id} className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <Link href={s.path} className="text-xs font-bold text-blue-700 hover:underline flex-1 truncate">
+                  {s.label}
+                </Link>
+                <button
+                  onClick={() => handleDeleteSearch(s.id)}
+                  disabled={deletingSearchId === s.id}
+                  className="p-1.5 text-slate-300 hover:text-rose-600 disabled:opacity-60 shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
