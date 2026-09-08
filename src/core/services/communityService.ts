@@ -1,18 +1,13 @@
 import { CommunityPost, CommunityReply } from '../types/community';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
-import { slugify } from '@/lib/slug';
 
 /* =========================================================
    COMMUNITY DISCUSSION BOARDS (governorate-scoped Q&A)
 ========================================================= */
-export async function createCommunityPost(post: Omit<CommunityPost, 'id' | 'createdAt' | 'status' | 'replyCount'>): Promise<CommunityPost> {
-  const ref = doc(collection(db, 'communityPosts'));
-  const slug = slugify(post.title, ref.id.slice(-6), 'post');
-  const newPost: CommunityPost = { ...post, id: ref.id, slug, status: 'PENDING', replyCount: 0, createdAt: new Date().toISOString() };
-  await setDoc(ref, newPost);
-  return newPost;
-}
+// Post creation now goes exclusively through the Admin SDK (/api/community-posts) — see
+// firestore.rules' `communityPosts` match block — since it needs to rate-limit by IP rather
+// than trust freely-mintable anonymous Firebase Auth sessions.
 
 // Public feed — jobs are dynamic like Jobs/Inquiries so no in-memory fallback. Filtered only by
 // status in the query (the field firestore.rules' read check inspects); governorateId is

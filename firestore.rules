@@ -30,25 +30,6 @@ service cloud.firestore {
       return isOwnerInstitution(data.get('institutionId', null)) || isOwnerEmployer(data.get('employerId', null));
     }
 
-    function isValidReview() {
-      let d = request.resource.data;
-      return (
-        (d.institutionId is string && d.institutionId.size() > 0
-          && exists(/databases/$(database)/documents/institutions/$(d.institutionId)))
-        || (d.tutorId is string && d.tutorId.size() > 0
-          && exists(/databases/$(database)/documents/tutors/$(d.tutorId)))
-      )
-        && d.reviewerName is string && d.reviewerName.size() > 0 && d.reviewerName.size() <= 100
-        && d.rating is int && d.rating >= 1 && d.rating <= 5
-        && d.comment is string && d.comment.size() > 0 && d.comment.size() <= 2000
-        && d.status == 'PENDING'
-        // The "Verified Student" badge can only be granted by the Admin SDK (/api/reviews),
-        // which checks for a real completed booking first — a client-side create must never be
-        // able to self-report as verified.
-        && d.get('verified', false) == false
-        && d.get('studentId', null) == null;
-    }
-
     function isValidInquiry() {
       let d = request.resource.data;
       return d.institutionId is string && d.institutionId.size() > 0
@@ -149,7 +130,10 @@ service cloud.firestore {
       allow create: if false;
     }
 
-    // User Reviews (Public read approved, Authenticated create)
+    // User Reviews (Public read approved). Creation is Admin SDK only (/api/reviews) — it needs
+    // to rate-limit by uid/IP and check real proof of interaction (a booking or an accepted
+    // admission application) before granting the "Verified Student" badge, neither of which a
+    // bare client-side create could safely enforce.
     function isOwnerReplyingToOwnApprovedReview() {
       let d = resource.data;
       return (
@@ -162,7 +146,7 @@ service cloud.firestore {
 
     match /reviews/{reviewId} {
       allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
-      allow create: if isAuthenticated() && isValidReview();
+      allow create: if false;
       allow update: if isSuperAdmin() || isOwnerReplyingToOwnApprovedReview();
       allow delete: if isSuperAdmin();
     }
@@ -195,36 +179,20 @@ service cloud.firestore {
       allow write: if isSuperAdmin() || isOwnerOfJob(resource.data) || isOwnerOfJob(request.resource.data);
     }
 
-    // Job Applications (guest apply, no account required — same trust model as Inquiries, but
-    // gated behind anonymous auth like Reviews since a resume file is attached). Only the owning
-    // institution/employer or admin can read/triage; the applicant's own view goes through the
-    // phone-verified Admin SDK route (/api/job-applications/lookup), same guest pattern as booking
-    // lookup. The application's institutionId/employerId must match whichever the referenced job
-    // actually has set, so a client can't fake ownership onto a different institution/employer.
-    function isValidJobApplication() {
-      let d = request.resource.data;
-      let job = get(/databases/$(database)/documents/jobs/$(d.jobId)).data;
-      return d.jobId is string && d.jobId.size() > 0
-        && exists(/databases/$(database)/documents/jobs/$(d.jobId))
-        && job.status == 'ACTIVE'
-        && (
-          (job.get('institutionId', null) != null && d.get('institutionId', null) == job.institutionId && d.get('employerId', null) == null)
-          || (job.get('employerId', null) != null && d.get('employerId', null) == job.employerId && d.get('institutionId', null) == null)
-        )
-        && d.fullName is string && d.fullName.size() > 0 && d.fullName.size() <= 100
-        && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
-        && d.resumeUrl is string && d.resumeUrl.size() > 0
-        && d.get('coverLetter', '') is string && d.get('coverLetter', '').size() <= 3000
-        && d.status == 'SUBMITTED';
-    }
-
+    // Job Applications (guest apply, no account required). Creation is Admin SDK only
+    // (/api/job-applications) — see below — so it can be rate-limited by IP; only the owning
+    // institution/employer or admin can read/triage, and the applicant's own view goes through
+    // the phone-verified Admin SDK route (/api/job-applications/lookup), same guest pattern as
+    // booking lookup used to be.
     function isOwnerUpdatingOwnJobApplication() {
       return isOwnerOfJob(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'internalNotes', 'updatedAt']);
     }
 
     match /jobApplications/{applicationId} {
-      allow create: if isAuthenticated() && isValidJobApplication();
+      // Admin SDK only (/api/job-applications) — rate-limited by IP rather than trusting
+      // freely-mintable anonymous Firebase Auth sessions.
+      allow create: if false;
       allow read: if isSuperAdmin() || isOwnerOfJob(resource.data);
       allow update: if isSuperAdmin() || isOwnerUpdatingOwnJobApplication();
       allow delete: if isSuperAdmin();
@@ -248,17 +216,8 @@ service cloud.firestore {
 
     // Community discussion boards (governorate-scoped Q&A). New threads are moderated (public UGC,
     // not scoped to one institution the way inquiries/reviews are); replies go live immediately
-    // once their parent thread is approved, so ongoing moderation stays light.
-    function isValidCommunityPost() {
-      let d = request.resource.data;
-      return d.governorateId is string && d.governorateId.size() > 0
-        && exists(/databases/$(database)/documents/locations_governorates/$(d.governorateId))
-        && d.authorName is string && d.authorName.size() > 0 && d.authorName.size() <= 100
-        && d.title is string && d.title.size() > 0 && d.title.size() <= 150
-        && d.body is string && d.body.size() > 0 && d.body.size() <= 3000
-        && d.replyCount == 0
-        && d.status == 'PENDING';
-    }
+    // once their parent thread is approved, so ongoing moderation stays light. Post creation
+    // itself is Admin SDK only (/api/community-posts) — see the match block below.
 
     // A guest reply bumps the parent post's replyCount by exactly 1 — the only field a non-admin
     // is ever allowed to touch on a community post.
@@ -269,7 +228,9 @@ service cloud.firestore {
     }
 
     match /communityPosts/{postId} {
-      allow create: if isAuthenticated() && isValidCommunityPost();
+      // Admin SDK only (/api/community-posts) — rate-limited by IP rather than trusting
+      // freely-mintable anonymous Firebase Auth sessions.
+      allow create: if false;
       allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
       allow update: if isSuperAdmin() || (isAuthenticated() && isGuestAddingReplyCount());
       allow delete: if isSuperAdmin();
@@ -340,6 +301,12 @@ service cloud.firestore {
     match /errorLogs/{errorId} {
       allow read: if isSuperAdmin();
       allow write: if false;
+    }
+
+    // Server-side rate-limit counters (checkRateLimit()) — internal bookkeeping only, never
+    // read or written by any client.
+    match /rateLimits/{key} {
+      allow read, write: if false;
     }
   }
 }

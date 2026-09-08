@@ -9,13 +9,13 @@ import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorateById, getCategories } from '@/core/services/masterDataService';
 import { getInstitutionBySlug } from '@/core/services/institutionService';
-import { getApprovedReviews, createReview, createInquiry } from '@/core/services/reviewService';
+import { getApprovedReviews, createInquiry } from '@/core/services/reviewService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
 import { auth } from '@/core/firebase/config';
-import { onAuthStateChanged, signInAnonymously, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
@@ -235,15 +235,24 @@ export default function InstitutionProfilePage({
 
     setReviewSubmitting(true);
     try {
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
-      }
-      await createReview({
-        institutionId: institution.id,
-        reviewerName: reviewForm.reviewerName.trim(),
-        rating: reviewForm.rating,
-        comment: reviewForm.comment.trim(),
+      // Always goes through the server route now (firestore.rules denies client-side review
+      // creates entirely). A real, logged-in student is checked for an actual ACCEPTED admission
+      // application and gets the "Verified" badge; a guest is rate-limited by IP instead of uid
+      // and never verified.
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: institution.id,
+          rating: reviewForm.rating,
+          comment: reviewForm.comment.trim(),
+          ...(!(currentUser && !currentUser.isAnonymous) && { reviewerName: reviewForm.reviewerName.trim() }),
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed');
+      }
       markSubmitted('review');
       setReviewSubmitted(true);
       setReviewForm({ reviewerName: '', rating: 5, comment: '', hp: '' });
@@ -635,7 +644,15 @@ export default function InstitutionProfilePage({
                     reviews.map((rev) => (
                       <div key={rev.id} className="py-4 space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
+                            {rev.verified && (
+                              <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title={t('طالب مقبول فعلياً في هذه المؤسسة', 'This student was actually accepted at this institution')}>
+                                <ShieldCheck className="w-2.5 h-2.5" />
+                                {t('طالب موثّق', 'Verified Student')}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-0.5">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star key={i} className={`w-3.5 h-3.5 ${i < rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />

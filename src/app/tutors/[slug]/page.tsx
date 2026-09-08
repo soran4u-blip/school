@@ -10,12 +10,12 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { getGovernorateById, getTaxonomies } from '@/core/services/masterDataService';
 import { getTutorBySlug } from '@/core/services/tutorService';
-import { getApprovedTutorReviews, createReview } from '@/core/services/reviewService';
+import { getApprovedTutorReviews } from '@/core/services/reviewService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
 import { auth } from '@/core/firebase/config';
-import { onAuthStateChanged, signInAnonymously, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import {
   MapPin,
@@ -184,29 +184,23 @@ export default function TutorProfilePage({ params }: { params: Promise<{ slug: s
 
     setReviewSubmitting(true);
     try {
-      // A real, logged-in student submits through the server route, which checks for an actual
-      // completed booking and marks the review "Verified" if one exists — a trust signal the
-      // plain anonymous-guest path below can never claim.
-      if (currentUser && !currentUser.isAnonymous) {
-        const res = await fetch('/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tutorId: tutor.id, rating: reviewForm.rating, comment: reviewForm.comment.trim() }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || 'Failed');
-        }
-      } else {
-        if (!auth.currentUser) {
-          await signInAnonymously(auth);
-        }
-        await createReview({
+      // Always goes through the server route now (firestore.rules denies client-side review
+      // creates entirely — see isValidReview()). A real, logged-in student is checked for an
+      // actual completed booking and gets the "Verified" badge; a guest is rate-limited by IP
+      // instead of uid and never verified.
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           tutorId: tutor.id,
-          reviewerName: reviewForm.reviewerName.trim(),
           rating: reviewForm.rating,
           comment: reviewForm.comment.trim(),
-        });
+          ...(!(currentUser && !currentUser.isAnonymous) && { reviewerName: reviewForm.reviewerName.trim() }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed');
       }
       markSubmitted('tutor-review');
       setReviewSubmitted(true);

@@ -9,7 +9,7 @@ import { getTutorById, saveTutor, getTutorVerificationDocuments, saveTutorVerifi
 import { getTutorBookings, updateBookingStatus } from '@/core/services/bookingService';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getApprovedTutorReviews, replyToReview } from '@/core/services/reviewService';
-import { getThreadMessages, sendTutorMessage } from '@/core/services/messagingService';
+import { getThreadMessages } from '@/core/services/messagingService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
 import { ThreadMessage } from '@/core/types/message';
@@ -138,7 +138,12 @@ export default function TutorDashboardPage() {
   const removeBlockedDate = (date: string) => setUnavailableDates(unavailableDates.filter((d) => d !== date));
 
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
-    await updateBookingStatus(booking.id, status);
+    const res = await fetch(`/api/tutor/bookings/${booking.id}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) return;
     setBookings(bookings.map(b => (b.id === booking.id ? { ...b, status } : b)));
   };
 
@@ -164,8 +169,14 @@ export default function TutorDashboardPage() {
     if (!text || !tutor) return;
     setSendingThreadId(booking.id);
     try {
-      const sent = await sendTutorMessage(booking, tutor.fullName.en || tutor.fullName.ar, text);
-      setThreadMessages((prev) => ({ ...prev, [booking.id]: [...(prev[booking.id] || []), sent] }));
+      const res = await fetch(`/api/tutor/bookings/${booking.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, senderName: tutor.fullName.en || tutor.fullName.ar }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) return;
+      setThreadMessages((prev) => ({ ...prev, [booking.id]: [...(prev[booking.id] || []), data.message] }));
       setMessageDrafts((prev) => ({ ...prev, [booking.id]: '' }));
     } finally {
       setSendingThreadId(null);

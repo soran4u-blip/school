@@ -7,7 +7,7 @@ import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
-import { getJobBySlug, createJobApplication } from '@/core/services/jobService';
+import { getJobBySlug } from '@/core/services/jobService';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { Job } from '@/core/types/job';
 import { Institution } from '@/core/types/institution';
@@ -132,20 +132,22 @@ export default function JobDetailPage({ params }: { params: Promise<{ slug: stri
 
     setSubmitting(true);
     try {
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
-      }
-      await createJobApplication({
-        jobId: job.id,
-        ...(job.institutionId && { institutionId: job.institutionId }),
-        ...(job.employerId && { employerId: job.employerId }),
-        jobTitle: job.title,
-        fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        ...(form.email.trim() && { email: form.email.trim() }),
-        ...(form.coverLetter.trim() && { coverLetter: form.coverLetter.trim() }),
-        ...(resumeUrl && { resumeUrl }),
+      const res = await fetch('/api/job-applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          fullName: form.fullName.trim(),
+          phone: form.phone.trim(),
+          ...(form.email.trim() && { email: form.email.trim() }),
+          ...(form.coverLetter.trim() && { coverLetter: form.coverLetter.trim() }),
+          resumeUrl,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed');
+      }
       markSubmitted('job-application');
       setSubmitted(true);
       setForm({ fullName: '', phone: '', email: '', coverLetter: '', hp: '' });

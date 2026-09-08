@@ -76,14 +76,9 @@ export async function getActiveJobs(filters?: { governorateId?: string; employme
   return jobs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function createJobApplication(app: Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<JobApplication> {
-  const ref = doc(collection(db, 'jobApplications'));
-  const now = new Date().toISOString();
-  const newApp: JobApplication = { ...app, id: ref.id, status: 'SUBMITTED', createdAt: now, updatedAt: now };
-  const payload = Object.fromEntries(Object.entries(newApp).filter(([, v]) => v !== undefined));
-  await setDoc(ref, payload);
-  return newApp;
-}
+// Application creation now goes exclusively through the Admin SDK (/api/job-applications) — see
+// firestore.rules' `jobApplications` match block — since it needs to rate-limit by IP rather
+// than trust freely-mintable anonymous Firebase Auth sessions.
 
 // All applications across every job this institution owns — a unified applicants inbox.
 // Filtered by institutionId (not jobId) because firestore.rules' read check is keyed off

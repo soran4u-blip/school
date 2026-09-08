@@ -5,12 +5,9 @@ import { collection, getDocs, doc, setDoc, updateDoc, query, where } from 'fireb
 /* =========================================================
    REVIEWS
 ========================================================= */
-export async function createReview(review: Omit<Review, 'id' | 'createdAt' | 'status'>): Promise<Review> {
-  const ref = doc(collection(db, 'reviews'));
-  const newReview: Review = { ...review, id: ref.id, status: 'PENDING', createdAt: new Date().toISOString() };
-  await setDoc(ref, newReview);
-  return newReview;
-}
+// Review creation now goes exclusively through the Admin SDK (/api/reviews) — see
+// firestore.rules' `reviews` match block — since it needs to rate-limit submissions and check
+// real proof of interaction before granting the "Verified Student" badge.
 
 export async function getApprovedReviews(institutionId: string): Promise<Review[]> {
   const q = query(

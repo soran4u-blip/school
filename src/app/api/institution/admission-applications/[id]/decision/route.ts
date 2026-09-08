@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { AdmissionApplication, AdmissionApplicationStatus } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 import { sendPushToStudent } from '@/core/server/push';
+import { computeCapacityUpdate } from '@/lib/admissionLogic';
 
 const DECISION_LABEL: Record<string, string> = {
   ACCEPTED: 'Accepted',
@@ -74,16 +75,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const programIndex = (institution.programs || []).findIndex((p) => p.id === application.programId);
         if (programIndex === -1) throw new Error('Program not found');
         const program = institution.programs![programIndex];
-
-        if (becomingAccepted && program.capacity != null && (program.acceptedCount || 0) >= program.capacity) {
-          throw new Error('This program has no remaining seats');
-        }
+        const newAcceptedCount = computeCapacityUpdate(program, wasAccepted, becomingAccepted);
 
         const programs = [...institution.programs!];
-        programs[programIndex] = {
-          ...program,
-          acceptedCount: Math.max(0, (program.acceptedCount || 0) + (becomingAccepted ? 1 : -1)),
-        };
+        programs[programIndex] = { ...program, acceptedCount: newAcceptedCount! };
         tx.update(instRef, { programs });
       }
 

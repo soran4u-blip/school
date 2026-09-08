@@ -6,10 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates } from '@/core/services/masterDataService';
-import { createCommunityPost } from '@/core/services/communityService';
 import { Governorate } from '@/core/types/masterData';
-import { auth } from '@/core/firebase/config';
-import { signInAnonymously } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -45,15 +42,20 @@ export default function NewCommunityPostPage() {
 
     setSubmitting(true);
     try {
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
-      }
-      await createCommunityPost({
-        governorateId: form.governorateId,
-        authorName: form.authorName.trim(),
-        title: form.title.trim(),
-        body: form.body.trim(),
+      const res = await fetch('/api/community-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          governorateId: form.governorateId,
+          authorName: form.authorName.trim(),
+          title: form.title.trim(),
+          body: form.body.trim(),
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed');
+      }
       markSubmitted('community-post');
       setSubmitted(true);
     } catch {

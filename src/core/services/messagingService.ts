@@ -1,4 +1,3 @@
-import { Booking } from '../types/booking';
 import { Inquiry } from '../types/review';
 import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
@@ -50,14 +49,9 @@ async function sendOwnerMessage(
   return message;
 }
 
-export async function sendTutorMessage(booking: Booking, senderName: string, text: string): Promise<ThreadMessage> {
-  return sendOwnerMessage(
-    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participants.map((p) => p.phone) },
-    'tutor',
-    senderName,
-    text
-  );
-}
+// A tutor sending a booking-thread message now goes through /api/tutor/bookings/[id]/messages
+// (Admin SDK) instead of this client-SDK path, since only the server can trigger a push
+// notification to the participant student(s).
 
 export async function sendInstitutionMessage(inquiry: Inquiry, senderName: string, text: string): Promise<ThreadMessage> {
   return sendOwnerMessage(

@@ -3,73 +3,107 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Review } from '@/core/types/review';
 import { Student } from '@/core/types/student';
 import { Booking } from '@/core/types/booking';
+import { AdmissionApplication } from '@/core/types/admission';
+import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 
 const SESSION_COOKIE_NAME = 'session';
 
-// POST /api/reviews — used only when a real, logged-in student submits a review (the anonymous
-// guest path still goes through the direct client-SDK createReview()). Checks for a real
-// completed/confirmed booking with this tutor and marks the review "verified" if one exists —
-// a trust signal a plain client write could never be allowed to self-report (see
-// firestore.rules' isValidReview()).
+// POST /api/reviews — the sole path for creating a review now (firestore.rules denies client
+// creates entirely; see isValidReview()'s comment). Two identities are handled:
+//   - a real, logged-in student: rate-limited by uid, checked for real proof of interaction and
+//     marked "verified" if found (a CONFIRMED/COMPLETED booking for a tutor review, an ACCEPTED
+//     admission application for an institution review) — a trust signal a plain client write
+//     could never self-report.
+//   - a guest (no session): rate-limited by IP instead, reviewerName taken from the request body,
+//     never verified. This replaces the old anonymous-Firebase-Auth guest path, which had no
+//     real rate limiting (an attacker can mint anonymous auth sessions freely).
 export async function POST(request: NextRequest) {
   if (!adminAuth || !adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  let studentId: string | null = null;
+  if (sessionCookie) {
+    try {
+      const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+      if (decoded.role === 'student') {
+        studentId = decoded.uid;
+      }
+    } catch {
+      // Invalid/expired session cookie — fall through and treat as a guest.
+    }
   }
 
-  let studentId: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-    studentId = decoded.uid;
-  } catch {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  const rateLimitKey = studentId ? `review:student:${studentId}` : `review:ip:${getClientIp(request)}`;
+  const rateLimit = await checkRateLimit(adminDb, rateLimitKey, { max: 5, windowMinutes: 60 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ success: false, error: 'Too many reviews submitted recently. Please try again later.' }, { status: 429 });
   }
 
   const body = await request.json().catch(() => null);
   const tutorId: string | undefined = body?.tutorId;
+  const institutionId: string | undefined = body?.institutionId;
   const rating: number = Number(body?.rating);
   const comment: string | undefined = body?.comment?.trim();
+  const guestReviewerName: string | undefined = body?.reviewerName?.trim();
 
-  if (!tutorId || !comment || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+  if ((!tutorId && !institutionId) || (tutorId && institutionId)) {
+    return NextResponse.json({ success: false, error: 'Exactly one of tutorId/institutionId is required' }, { status: 400 });
+  }
+  if (!comment || !Number.isInteger(rating) || rating < 1 || rating > 5) {
     return NextResponse.json({ success: false, error: 'Missing or invalid fields' }, { status: 400 });
   }
   if (comment.length > 2000) {
     return NextResponse.json({ success: false, error: 'Comment is too long' }, { status: 400 });
   }
-
-  const tutorSnap = await adminDb.collection('tutors').doc(tutorId).get();
-  if (!tutorSnap.exists) {
-    return NextResponse.json({ success: false, error: 'Tutor not found' }, { status: 404 });
+  if (!studentId && (!guestReviewerName || guestReviewerName.length > 100)) {
+    return NextResponse.json({ success: false, error: 'Missing or invalid reviewer name' }, { status: 400 });
   }
 
-  const studentSnap = await adminDb.collection('students').doc(studentId).get();
-  const student = studentSnap.exists ? (studentSnap.data() as Student) : null;
+  const student = studentId ? (await adminDb.collection('students').doc(studentId).get()).data() as Student | undefined : undefined;
 
-  const bookingsSnap = await adminDb
-    .collection('bookings')
-    .where('tutorId', '==', tutorId)
-    .where('participantStudentIds', 'array-contains', studentId)
-    .get();
-  const verified = bookingsSnap.docs.some((d) => {
-    const b = d.data() as Booking;
-    return b.status === 'CONFIRMED' || b.status === 'COMPLETED';
-  });
+  let verified = false;
+
+  if (tutorId) {
+    const tutorSnap = await adminDb.collection('tutors').doc(tutorId).get();
+    if (!tutorSnap.exists) {
+      return NextResponse.json({ success: false, error: 'Tutor not found' }, { status: 404 });
+    }
+    if (studentId) {
+      const bookingsSnap = await adminDb
+        .collection('bookings')
+        .where('tutorId', '==', tutorId)
+        .where('participantStudentIds', 'array-contains', studentId)
+        .get();
+      verified = bookingsSnap.docs.some((d) => {
+        const b = d.data() as Booking;
+        return b.status === 'CONFIRMED' || b.status === 'COMPLETED';
+      });
+    }
+  } else {
+    const instSnap = await adminDb.collection('institutions').doc(institutionId!).get();
+    if (!instSnap.exists) {
+      return NextResponse.json({ success: false, error: 'Institution not found' }, { status: 404 });
+    }
+    if (studentId) {
+      const applicationsSnap = await adminDb
+        .collection('admissionApplications')
+        .where('institutionId', '==', institutionId)
+        .where('studentId', '==', studentId)
+        .get();
+      verified = applicationsSnap.docs.some((d) => (d.data() as AdmissionApplication).status === 'ACCEPTED');
+    }
+  }
 
   const now = new Date().toISOString();
   const ref = adminDb.collection('reviews').doc();
   const review: Review = {
     id: ref.id,
-    tutorId,
-    studentId,
+    ...(tutorId ? { tutorId } : { institutionId }),
+    ...(studentId && { studentId }),
     verified,
-    reviewerName: student?.fullName || 'Student',
+    reviewerName: studentId ? student?.fullName || 'Student' : guestReviewerName!,
     rating,
     comment,
     status: 'PENDING',
