@@ -6,9 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
-import { getAllApplications } from '@/core/services/applicationService';
-import { getAllReviews, getAllInquiries } from '@/core/services/reviewService';
-import { getAllCommunityPosts } from '@/core/services/communityService';
+import { getPendingApplicationsCount } from '@/core/services/applicationService';
+import { getPendingReviewsCount, getNewInquiriesCount } from '@/core/services/reviewService';
+import { getPendingCommunityPostsCount } from '@/core/services/communityService';
 import {
   GraduationCap,
   LayoutDashboard,
@@ -40,16 +40,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function loadPendingCounts() {
       try {
-        const [applications, reviews, inquiries, communityPosts] = await Promise.all([
-          getAllApplications(),
-          getAllReviews(),
-          getAllInquiries(),
-          getAllCommunityPosts(),
+        const [applicationsCount, reviewsCount, inquiriesCount, communityPostsCount] = await Promise.all([
+          getPendingApplicationsCount(),
+          getPendingReviewsCount(),
+          getNewInquiriesCount(),
+          getPendingCommunityPostsCount(),
         ]);
         setPendingCounts({
-          '/admin/applications': applications.filter((a) => a.status === 'PENDING').length,
-          '/admin/reviews': reviews.filter((r) => r.status === 'PENDING').length + inquiries.filter((i) => i.status === 'NEW').length,
-          '/admin/community': communityPosts.filter((p) => p.status === 'PENDING').length,
+          '/admin/applications': applicationsCount,
+          '/admin/reviews': reviewsCount + inquiriesCount,
+          '/admin/community': communityPostsCount,
         });
       } catch {
         // Non-critical — sidebar just won't show counts this load.

@@ -4,6 +4,8 @@ import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
 import { Student } from '@/core/types/student';
 import { dayOfWeekFromDate, addDaysToDateString, isWithinAvailability } from '@/lib/bookingLogic';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { bookingSchema } from '@/core/validation/schemas';
 
 const MAX_RECURRING_WEEKS = 12;
 const SESSION_COOKIE_NAME = 'session';
@@ -35,19 +37,10 @@ export async function POST(request: NextRequest) {
   }
   const student = studentSnap.data() as Student;
 
-  const body = await request.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, bookingSchema);
+  if (parsed.error) return parsed.error;
+  const { tutorId, date, startTime, endTime, type, joinBookingId, subjectId, recurring, weeks } = parsed.data;
 
-  const { tutorId, date, startTime, endTime, type, joinBookingId, subjectId, recurring, weeks } = body;
-
-  if (!tutorId || !date || !startTime || !endTime) {
-    return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-  }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return NextResponse.json({ success: false, error: 'Invalid date format' }, { status: 400 });
-  }
   if (new Date(`${date}T00:00:00`) < new Date(new Date().toDateString())) {
     return NextResponse.json({ success: false, error: 'Cannot book a past date' }, { status: 400 });
   }

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
-import { AdmissionApplication, AdmissionApplicationStatus } from '@/core/types/admission';
+import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 import { sendPushToStudent } from '@/core/server/push';
 import { computeCapacityUpdate } from '@/lib/admissionLogic';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { admissionDecisionSchema } from '@/core/validation/schemas';
 
 const DECISION_LABEL: Record<string, string> = {
   ACCEPTED: 'Accepted',
@@ -12,7 +14,6 @@ const DECISION_LABEL: Record<string, string> = {
 };
 
 const SESSION_COOKIE_NAME = 'session';
-const VALID_STATUSES: AdmissionApplicationStatus[] = ['UNDER_REVIEW', 'ACCEPTED', 'WAITLISTED', 'REJECTED'];
 
 // POST /api/institution/admission-applications/[id]/decision — the owning institution moves an
 // application to a new status. Runs as a transaction because accepting an applicant has to
@@ -40,13 +41,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
-  const status: AdmissionApplicationStatus | undefined = body?.status;
-  const decisionNote: string | undefined = body?.decisionNote?.trim();
-
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, admissionDecisionSchema);
+  if (parsed.error) return parsed.error;
+  const { status, decisionNote } = parsed.data;
 
   const { id } = await params;
   const appRef = adminDb.collection('admissionApplications').doc(id);

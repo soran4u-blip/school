@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/core/firebase/admin';
 import { Job, JobApplication } from '@/core/types/job';
 import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
+import { FieldValue } from 'firebase-admin/firestore';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { jobApplicationSchema } from '@/core/validation/schemas';
 
 // POST /api/job-applications — Admin SDK only now (firestore.rules denies client creates), so an
 // applicant is rate-limited by IP rather than relying on freely-mintable anonymous Firebase Auth
@@ -17,20 +20,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Too many applications submitted recently. Please try again later.' }, { status: 429 });
   }
 
-  const body = await request.json().catch(() => null);
-  const jobId: string | undefined = body?.jobId;
-  const fullName: string | undefined = body?.fullName?.trim();
-  const phone: string | undefined = body?.phone?.trim();
-  const email: string | undefined = body?.email?.trim();
-  const coverLetter: string | undefined = body?.coverLetter?.trim();
-  const resumeUrl: string | undefined = body?.resumeUrl;
-
-  if (!jobId || !fullName || !phone || !resumeUrl) {
-    return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-  }
-  if (fullName.length > 100 || phone.length > 30 || (coverLetter && coverLetter.length > 3000)) {
-    return NextResponse.json({ success: false, error: 'One or more fields are too long' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, jobApplicationSchema);
+  if (parsed.error) return parsed.error;
+  const { jobId, fullName, phone, email, coverLetter, resumeUrl } = parsed.data;
 
   const jobSnap = await adminDb.collection('jobs').doc(jobId).get();
   if (!jobSnap.exists) {
@@ -59,6 +51,9 @@ export async function POST(request: NextRequest) {
     updatedAt: now,
   };
   await ref.set(application);
+  // Atomic field increment — no read-modify-write race, and no reason to fail the submission if
+  // this denormalized counter update has a transient issue.
+  await adminDb.collection('jobs').doc(jobId).update({ applicantCount: FieldValue.increment(1) }).catch(() => {});
 
   return NextResponse.json({ success: true, application });
 }

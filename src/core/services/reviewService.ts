@@ -1,6 +1,9 @@
 import { Review, Inquiry } from '../types/review';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import {
+  collection, getDocs, getCountFromServer, doc, setDoc, updateDoc, query, where, orderBy, limit, startAfter,
+  QueryDocumentSnapshot, DocumentData,
+} from 'firebase/firestore';
 
 /* =========================================================
    REVIEWS
@@ -38,6 +41,36 @@ export async function getAllReviews(): Promise<Review[]> {
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as Review))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// See getPendingApplicationsCount — same reasoning, same sidebar-badge call site.
+export async function getPendingReviewsCount(): Promise<number> {
+  const snap = await getCountFromServer(query(collection(db, 'reviews'), where('status', '==', 'PENDING')));
+  return snap.data().count;
+}
+
+// See getPendingApplications — same reasoning: the admin's actionable moderation queue, kept
+// full since it's small in practice, versus the paginated history below.
+export async function getPendingReviews(): Promise<Review[]> {
+  const snap = await getDocs(query(collection(db, 'reviews'), where('status', '==', 'PENDING')));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Review))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// See getApplicationsPage — same pagination approach.
+export async function getReviewsPage(
+  pageSize: number,
+  cursor?: QueryDocumentSnapshot<DocumentData>
+): Promise<{ items: Review[]; lastDoc: QueryDocumentSnapshot<DocumentData> | null; hasMore: boolean }> {
+  const constraints = [orderBy('createdAt', 'desc'), ...(cursor ? [startAfter(cursor)] : []), limit(pageSize + 1)];
+  const snap = await getDocs(query(collection(db, 'reviews'), ...constraints));
+  const docs = snap.docs.slice(0, pageSize);
+  return {
+    items: docs.map(d => ({ id: d.id, ...d.data() } as Review)),
+    lastDoc: docs.length ? docs[docs.length - 1] : null,
+    hasMore: snap.docs.length > pageSize,
+  };
 }
 
 export async function updateReviewStatus(id: string, status: Review['status'], review: Review): Promise<void> {
@@ -88,6 +121,26 @@ export async function getAllInquiries(): Promise<Inquiry[]> {
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as Inquiry))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function getNewInquiriesCount(): Promise<number> {
+  const snap = await getCountFromServer(query(collection(db, 'inquiries'), where('status', '==', 'NEW')));
+  return snap.data().count;
+}
+
+// See getApplicationsPage — same pagination approach.
+export async function getInquiriesPage(
+  pageSize: number,
+  cursor?: QueryDocumentSnapshot<DocumentData>
+): Promise<{ items: Inquiry[]; lastDoc: QueryDocumentSnapshot<DocumentData> | null; hasMore: boolean }> {
+  const constraints = [orderBy('createdAt', 'desc'), ...(cursor ? [startAfter(cursor)] : []), limit(pageSize + 1)];
+  const snap = await getDocs(query(collection(db, 'inquiries'), ...constraints));
+  const docs = snap.docs.slice(0, pageSize);
+  return {
+    items: docs.map(d => ({ id: d.id, ...d.data() } as Inquiry)),
+    lastDoc: docs.length ? docs[docs.length - 1] : null,
+    hasMore: snap.docs.length > pageSize,
+  };
 }
 
 export async function updateInquiryStatus(id: string, status: Inquiry['status']): Promise<void> {

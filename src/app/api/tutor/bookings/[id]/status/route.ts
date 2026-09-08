@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Booking } from '@/core/types/booking';
 import { sendPushToStudent } from '@/core/server/push';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { tutorBookingStatusSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
-const VALID_STATUSES: Booking['status'][] = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 
 const STATUS_LABEL: Record<string, string> = {
   CONFIRMED: 'Confirmed',
@@ -38,11 +39,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
-  const status: Booking['status'] | undefined = body?.status;
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, tutorBookingStatusSchema);
+  if (parsed.error) return parsed.error;
+  const { status } = parsed.data;
 
   const { id } = await params;
   const ref = adminDb.collection('bookings').doc(id);

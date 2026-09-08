@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { logServerError } from '@/core/server/errorLog';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { studentSignupSchema } from '@/core/validation/schemas';
 
 // Students self-register (no admin approval, unlike tutors) — this route runs immediately
 // after the client creates the Firebase Auth user, to attach the 'student' role + their phone
@@ -11,11 +13,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const body = await request.json().catch(() => null);
-  const { idToken, fullName, phone } = body || {};
-  if (!idToken || !fullName?.trim() || !phone?.trim()) {
-    return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, studentSignupSchema);
+  if (parsed.error) return parsed.error;
+  const { idToken, fullName, phone } = parsed.data;
 
   try {
     const decoded = await adminAuth.verifyIdToken(idToken);

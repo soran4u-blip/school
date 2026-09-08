@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import crypto from 'crypto';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { pushUnsubscribeSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -26,11 +28,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
-  const endpoint = body?.endpoint;
-  if (!endpoint) {
-    return NextResponse.json({ success: false, error: 'Missing endpoint' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, pushUnsubscribeSchema);
+  if (parsed.error) return parsed.error;
+  const { endpoint } = parsed.data;
 
   const subId = crypto.createHash('sha256').update(endpoint).digest('hex').slice(0, 32);
   await adminDb.collection('students').doc(studentId).collection('pushSubscriptions').doc(subId).delete();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
+import { computeCapacityUpdate } from '@/lib/admissionLogic';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         if (instSnap.exists) {
           const institution = instSnap.data() as Institution;
           const programs = (institution.programs || []).map((p) =>
-            p.id === application.programId ? { ...p, acceptedCount: Math.max(0, (p.acceptedCount || 0) - 1) } : p
+            p.id === application.programId ? { ...p, acceptedCount: computeCapacityUpdate(p, true, false)! } : p
           );
           tx.update(instRef, { programs });
         }

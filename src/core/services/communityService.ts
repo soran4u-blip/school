@@ -1,6 +1,6 @@
 import { CommunityPost, CommunityReply } from '../types/community';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, getCountFromServer, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 
 /* =========================================================
    COMMUNITY DISCUSSION BOARDS (governorate-scoped Q&A)
@@ -49,6 +49,12 @@ export async function getAllCommunityPosts(): Promise<CommunityPost[]> {
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as CommunityPost))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// See getPendingApplicationsCount — same reasoning, same sidebar-badge call site.
+export async function getPendingCommunityPostsCount(): Promise<number> {
+  const snap = await getCountFromServer(query(collection(db, 'communityPosts'), where('status', '==', 'PENDING')));
+  return snap.data().count;
 }
 
 export async function updateCommunityPostStatus(id: string, status: CommunityPost['status']): Promise<void> {

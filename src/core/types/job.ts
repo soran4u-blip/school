@@ -24,6 +24,7 @@ export interface Job {
   salaryCurrency?: 'USD' | 'IQD';
   applicationDeadline?: string; // 'YYYY-MM-DD'
   status: 'DRAFT' | 'ACTIVE' | 'CLOSED';
+  applicantCount?: number; // denormalized, incremented atomically by /api/job-applications — avoids scanning the whole jobApplications collection just to show a per-job count
   createdAt: string;
   updatedAt: string;
 }

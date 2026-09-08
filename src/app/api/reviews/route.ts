@@ -5,6 +5,8 @@ import { Student } from '@/core/types/student';
 import { Booking } from '@/core/types/booking';
 import { AdmissionApplication } from '@/core/types/admission';
 import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { reviewSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -41,23 +43,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Too many reviews submitted recently. Please try again later.' }, { status: 429 });
   }
 
-  const body = await request.json().catch(() => null);
-  const tutorId: string | undefined = body?.tutorId;
-  const institutionId: string | undefined = body?.institutionId;
-  const rating: number = Number(body?.rating);
-  const comment: string | undefined = body?.comment?.trim();
-  const guestReviewerName: string | undefined = body?.reviewerName?.trim();
+  const parsed = await parseJsonBody(request, reviewSchema);
+  if (parsed.error) return parsed.error;
+  const { tutorId, institutionId, rating, comment, reviewerName: guestReviewerName } = parsed.data;
 
-  if ((!tutorId && !institutionId) || (tutorId && institutionId)) {
-    return NextResponse.json({ success: false, error: 'Exactly one of tutorId/institutionId is required' }, { status: 400 });
-  }
-  if (!comment || !Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return NextResponse.json({ success: false, error: 'Missing or invalid fields' }, { status: 400 });
-  }
-  if (comment.length > 2000) {
-    return NextResponse.json({ success: false, error: 'Comment is too long' }, { status: 400 });
-  }
-  if (!studentId && (!guestReviewerName || guestReviewerName.length > 100)) {
+  if (!studentId && !guestReviewerName) {
     return NextResponse.json({ success: false, error: 'Missing or invalid reviewer name' }, { status: 400 });
   }
 

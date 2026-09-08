@@ -3,6 +3,8 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 import { Student } from '@/core/types/student';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { admissionApplicationSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 // Statuses that count as "already in progress" for a student re-applying to the same program.
@@ -38,17 +40,9 @@ export async function POST(request: NextRequest) {
   }
   const student = studentSnap.data() as Student;
 
-  const body = await request.json().catch(() => null);
-  const institutionId: string | undefined = body?.institutionId;
-  const programId: string | undefined = body?.programId;
-  const message: string | undefined = body?.message?.trim();
-  const documentUrls: string[] | undefined = Array.isArray(body?.documentUrls)
-    ? body.documentUrls.filter((u: unknown) => typeof u === 'string').slice(0, 10)
-    : undefined;
-
-  if (!institutionId || !programId) {
-    return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, admissionApplicationSchema);
+  if (parsed.error) return parsed.error;
+  const { institutionId, programId, message, documentUrls } = parsed.data;
 
   const instSnap = await adminDb.collection('institutions').doc(institutionId).get();
   if (!instSnap.exists) {

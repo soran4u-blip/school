@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/core/firebase/admin';
 import { loadInquiryAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { guestThreadMessageSchema } from '@/core/validation/schemas';
 
 // GET /api/inquiries/[id]/messages?phone=... — a guest (parent) reads their thread for this inquiry.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,14 +30,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
   const { id } = await params;
-  const body = await request.json().catch(() => null);
-  const phone = body?.phone?.trim();
-  const text = body?.text?.trim();
-  const senderName = body?.senderName?.trim() || 'Parent';
+  const parsed = await parseJsonBody(request, guestThreadMessageSchema);
+  if (parsed.error) return parsed.error;
+  const { phone, text, senderName = 'Parent' } = parsed.data;
 
-  if (!phone || !text) {
-    return NextResponse.json({ success: false, error: 'Missing phone or message text' }, { status: 400 });
-  }
   if (text.length > MAX_MESSAGE_LENGTH) {
     return NextResponse.json({ success: false, error: 'Message is too long' }, { status: 400 });
   }

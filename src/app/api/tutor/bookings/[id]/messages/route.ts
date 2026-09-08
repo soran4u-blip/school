@@ -3,6 +3,8 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Booking } from '@/core/types/booking';
 import { sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { sendPushToStudent } from '@/core/server/push';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { threadMessageSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -35,13 +37,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const { id } = await params;
-  const body = await request.json().catch(() => null);
-  const text = body?.text?.trim();
-  const senderName = body?.senderName?.trim() || 'Tutor';
+  const parsed = await parseJsonBody(request, threadMessageSchema);
+  if (parsed.error) return parsed.error;
+  const { text, senderName = 'Tutor' } = parsed.data;
 
-  if (!text) {
-    return NextResponse.json({ success: false, error: 'Missing message text' }, { status: 400 });
-  }
   if (text.length > MAX_MESSAGE_LENGTH) {
     return NextResponse.json({ success: false, error: 'Message is too long' }, { status: 400 });
   }

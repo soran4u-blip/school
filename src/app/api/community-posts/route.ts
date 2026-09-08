@@ -3,6 +3,8 @@ import { adminDb } from '@/core/firebase/admin';
 import { CommunityPost } from '@/core/types/community';
 import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 import { slugify } from '@/lib/slug';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { communityPostSchema } from '@/core/validation/schemas';
 
 // POST /api/community-posts — Admin SDK only now (firestore.rules denies client creates), so a
 // guest posting a question is rate-limited by IP rather than relying on freely-mintable
@@ -18,18 +20,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Too many posts submitted recently. Please try again later.' }, { status: 429 });
   }
 
-  const body = await request.json().catch(() => null);
-  const governorateId: string | undefined = body?.governorateId;
-  const authorName: string | undefined = body?.authorName?.trim();
-  const title: string | undefined = body?.title?.trim();
-  const postBody: string | undefined = body?.body?.trim();
-
-  if (!governorateId || !authorName || !title || !postBody) {
-    return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-  }
-  if (authorName.length > 100 || title.length > 150 || postBody.length > 3000) {
-    return NextResponse.json({ success: false, error: 'One or more fields are too long' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, communityPostSchema);
+  if (parsed.error) return parsed.error;
+  const { governorateId, authorName, title, body: postBody } = parsed.data;
 
   const govSnap = await adminDb.collection('locations_governorates').doc(governorateId).get();
   if (!govSnap.exists) {

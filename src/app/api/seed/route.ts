@@ -1,27 +1,31 @@
-import { NextResponse } from 'next/server';
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { NextRequest, NextResponse } from 'next/server';
+import { adminAuth, adminDb } from '@/core/firebase/admin';
 import seedData from '@/core/seed/seedData.json';
 
-// Initialize admin SDK inline (server-side only)
-function getAdminDb() {
-  let app: App;
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-    app = initializeApp({
-      credential: cert(serviceAccount),
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'school-4bcd6',
-    });
-  } else {
-    app = getApps()[0];
-  }
-  const dbName = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_NAME || 'schooldb';
-  return getFirestore(app, dbName);
-}
+const SESSION_COOKIE_NAME = 'session';
 
-export async function POST() {
+// This overwrites master data (governorates, categories, institutions...) wholesale — restricted
+// to superadmin so it can't be triggered by an unauthenticated POST against a guessable path.
+export async function POST(request: NextRequest) {
+  if (!adminAuth || !adminDb) {
+    return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
+  }
+
+  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
   try {
-    const db = getAdminDb();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    if (decoded.role !== 'superadmin') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const db = adminDb;
     const results: string[] = [];
 
     // 1. Seed Governorates

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getRecentErrorLogs, deleteErrorLog } from '@/core/services/errorLogService';
 import { ErrorLog } from '@/core/types/errorLog';
-import { Bug, Trash2, Monitor, Server } from 'lucide-react';
+import { Bug, Trash2, Monitor, Server, TriangleAlert, Flame } from 'lucide-react';
 
 export default function AdminErrorsPage() {
   const { t } = useLanguage();
@@ -46,7 +46,7 @@ export default function AdminErrorsPage() {
             {t('أخطاء النظام', 'System Errors')}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t('آخر 200 خطأ من العميل والخادم — لا حاجة لخدمة مراقبة خارجية.', 'The last 200 client- and server-side errors — no third-party monitoring service required.')}
+            {t('آخر 200 خطأ من العميل والخادم (مجمّعة حسب التكرار) — لا حاجة لخدمة مراقبة خارجية.', 'The last 200 client- and server-side errors, deduplicated by recurrence — no third-party monitoring service required.')}
           </p>
         </div>
         <select
@@ -77,8 +77,16 @@ export default function AdminErrorsPage() {
                 ) : (
                   <Server className="w-4 h-4 text-rose-500 shrink-0" />
                 )}
+                {log.severity === 'fatal' ? (
+                  <Flame className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                ) : log.severity === 'warning' ? (
+                  <TriangleAlert className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                ) : null}
                 <span className="flex-1 text-xs font-mono text-slate-800 truncate">{log.message}</span>
-                <span className="text-[10px] text-slate-400 font-mono shrink-0">{log.createdAt.slice(0, 19).replace('T', ' ')}</span>
+                {log.count > 1 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">×{log.count}</span>
+                )}
+                <span className="text-[10px] text-slate-400 font-mono shrink-0">{(log.lastSeenAt || log.createdAt).slice(0, 19).replace('T', ' ')}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(log.id); }}
                   className="p-1.5 text-slate-300 hover:text-rose-600 shrink-0"
@@ -88,6 +96,7 @@ export default function AdminErrorsPage() {
               </div>
               {expandedId === log.id && (
                 <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-1.5 text-[11px] text-slate-600">
+                  <div><span className="font-bold">{t('أول ظهور:', 'First seen:')}</span> {log.createdAt.slice(0, 19).replace('T', ' ')}</div>
                   {log.url && <div><span className="font-bold">URL:</span> <span className="font-mono">{log.url}</span></div>}
                   {log.userAgent && <div><span className="font-bold">User Agent:</span> {log.userAgent}</div>}
                   {log.role && <div><span className="font-bold">Role:</span> {log.role}</div>}

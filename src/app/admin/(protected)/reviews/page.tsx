@@ -2,19 +2,29 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getAllReviews, getAllInquiries, updateReviewStatus, updateInquiryStatus } from '@/core/services/reviewService';
+import { getPendingReviews, getReviewsPage, getInquiriesPage, getNewInquiriesCount, updateReviewStatus, updateInquiryStatus } from '@/core/services/reviewService';
 import { getInstitutions } from '@/core/services/institutionService';
 import { getTutors } from '@/core/services/tutorService';
 import { Review, Inquiry } from '@/core/types/review';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
 import { MessageSquareText, Star, Check, X, Phone, Mail, Inbox, AlertCircle } from 'lucide-react';
+import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+
+const PAGE_SIZE = 25;
 
 export default function AdminReviewsPage() {
   const { language, t } = useLanguage();
   const [tab, setTab] = useState<'reviews' | 'inquiries'>('reviews');
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [pendingReviews, setPendingReviews] = useState<Review[]>([]);
+  const [reviewHistory, setReviewHistory] = useState<Review[]>([]);
+  const [reviewCursor, setReviewCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [newInquiriesCount, setNewInquiriesCount] = useState(0);
+  const [inquiryCursor, setInquiryCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreInquiries, setHasMoreInquiries] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,20 +34,54 @@ export default function AdminReviewsPage() {
     setLoading(true);
     setError('');
     try {
-      const [revs, inqs, insts, tuts] = await Promise.all([
-        getAllReviews(),
-        getAllInquiries(),
+      const [pending, reviewPage, inquiryPage, newInquiries, insts, tuts] = await Promise.all([
+        getPendingReviews(),
+        getReviewsPage(PAGE_SIZE),
+        getInquiriesPage(PAGE_SIZE),
+        getNewInquiriesCount(),
         getInstitutions({ status: 'ALL' }),
         getTutors({ status: 'ALL' }),
       ]);
-      setReviews(revs);
-      setInquiries(inqs);
+      setPendingReviews(pending);
+      setReviewHistory(reviewPage.items);
+      setReviewCursor(reviewPage.lastDoc);
+      setHasMoreReviews(reviewPage.hasMore);
+      setInquiries(inquiryPage.items);
+      setInquiryCursor(inquiryPage.lastDoc);
+      setHasMoreInquiries(inquiryPage.hasMore);
+      setNewInquiriesCount(newInquiries);
       setInstitutions(insts);
       setTutors(tuts);
     } catch {
       setError(t('تعذر تحميل البيانات. تأكد من تسجيل الدخول كسوبر أدمن.', 'Failed to load data. Make sure you are signed in as superadmin.'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreReviews = async () => {
+    if (!reviewCursor) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = await getReviewsPage(PAGE_SIZE, reviewCursor);
+      setReviewHistory((prev) => [...prev, ...nextPage.items]);
+      setReviewCursor(nextPage.lastDoc);
+      setHasMoreReviews(nextPage.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreInquiries = async () => {
+    if (!inquiryCursor) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = await getInquiriesPage(PAGE_SIZE, inquiryCursor);
+      setInquiries((prev) => [...prev, ...nextPage.items]);
+      setInquiryCursor(nextPage.lastDoc);
+      setHasMoreInquiries(nextPage.hasMore);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -68,8 +112,9 @@ export default function AdminReviewsPage() {
     await loadData();
   };
 
-  const pendingReviews = reviews.filter(r => r.status === 'PENDING');
-  const resolvedReviews = reviews.filter(r => r.status !== 'PENDING');
+  // reviewHistory is ordered purely by date and may include PENDING rows already shown above in
+  // the always-full moderation queue — drop them here to avoid duplicates.
+  const resolvedReviews = reviewHistory.filter(r => r.status !== 'PENDING');
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -101,7 +146,7 @@ export default function AdminReviewsPage() {
           onClick={() => setTab('inquiries')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'inquiries' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
         >
-          {t('الاستفسارات', 'Inquiries')} {inquiries.filter(i => i.status === 'NEW').length > 0 && <span className="ms-1 text-amber-400">({inquiries.filter(i => i.status === 'NEW').length})</span>}
+          {t('الاستفسارات', 'Inquiries')} {newInquiriesCount > 0 && <span className="ms-1 text-amber-400">({newInquiriesCount})</span>}
         </button>
       </div>
 
@@ -109,7 +154,7 @@ export default function AdminReviewsPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
           {loading ? (
             <div className="p-8 text-center text-xs text-slate-400">{t('جاري التحميل...', 'Loading...')}</div>
-          ) : reviews.length === 0 ? (
+          ) : pendingReviews.length === 0 && resolvedReviews.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد تقييمات بعد', 'No reviews yet')}</div>
           ) : (
             [...pendingReviews, ...resolvedReviews].map(rev => (
@@ -163,6 +208,18 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
+      {tab === 'reviews' && hasMoreReviews && (
+        <div className="text-center">
+          <button
+            onClick={loadMoreReviews}
+            disabled={loadingMore}
+            className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+          >
+            {loadingMore ? t('جاري التحميل...', 'Loading...') : t('تحميل المزيد', 'Load more')}
+          </button>
+        </div>
+      )}
+
       {tab === 'inquiries' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
           {loading ? (
@@ -203,6 +260,18 @@ export default function AdminReviewsPage() {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {tab === 'inquiries' && hasMoreInquiries && (
+        <div className="text-center">
+          <button
+            onClick={loadMoreInquiries}
+            disabled={loadingMore}
+            className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+          >
+            {loadingMore ? t('جاري التحميل...', 'Loading...') : t('تحميل المزيد', 'Load more')}
+          </button>
         </div>
       )}
     </div>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import crypto from 'crypto';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { pushSubscribeSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -28,11 +30,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
-  const subscription = body?.subscription;
-  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-    return NextResponse.json({ success: false, error: 'Invalid subscription' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, pushSubscribeSchema);
+  if (parsed.error) return parsed.error;
+  const { subscription } = parsed.data;
 
   const subId = crypto.createHash('sha256').update(subscription.endpoint).digest('hex').slice(0, 32);
   await adminDb

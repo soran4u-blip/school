@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/core/firebase/admin';
+import { parseJsonBody } from '@/core/validation/apiValidation';
+import { sessionLoginSchema } from '@/core/validation/schemas';
 
 const SESSION_COOKIE_NAME = 'session';
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
@@ -10,10 +12,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Admin SDK not initialized' }, { status: 500 });
   }
 
-  const { idToken } = await request.json();
-  if (!idToken) {
-    return NextResponse.json({ success: false, error: 'Missing idToken' }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, sessionLoginSchema);
+  if (parsed.error) return parsed.error;
+  const { idToken } = parsed.data;
 
   try {
     const decoded = await adminAuth.verifyIdToken(idToken);

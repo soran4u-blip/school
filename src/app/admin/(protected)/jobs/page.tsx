@@ -2,14 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getAllJobs, getAllJobApplications } from '@/core/services/jobService';
+import { getAllJobs } from '@/core/services/jobService';
 import { Job } from '@/core/types/job';
 import { Briefcase, Users, AlertCircle, ExternalLink } from 'lucide-react';
 
 export default function AdminJobsPage() {
   const { language, t } = useLanguage();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [filterPoster, setFilterPoster] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -19,14 +18,8 @@ export default function AdminJobsPage() {
       setLoading(true);
       setError('');
       try {
-        const [allJobs, allApplications] = await Promise.all([
-          getAllJobs(),
-          getAllJobApplications(),
-        ]);
+        const allJobs = await getAllJobs();
         setJobs(allJobs);
-        const counts: Record<string, number> = {};
-        for (const app of allApplications) counts[app.jobId] = (counts[app.jobId] || 0) + 1;
-        setApplicationCounts(counts);
       } catch {
         setError(t('تعذر تحميل البيانات. تأكد من تسجيل الدخول كسوبر أدمن.', 'Failed to load data. Make sure you are signed in as superadmin.'));
       } finally {
@@ -101,7 +94,7 @@ export default function AdminJobsPage() {
                 <div className="text-xs text-slate-500 font-semibold">{job.posterName || posterKey(job)}</div>
                 <div className="flex items-center gap-1 text-[11px] text-slate-500 font-semibold">
                   <Users className="w-3 h-3" />
-                  <span>{applicationCounts[job.id] || 0} {t('متقدم', 'applicants')}</span>
+                  <span>{job.applicantCount || 0} {t('متقدم', 'applicants')}</span>
                 </div>
               </div>
               <a

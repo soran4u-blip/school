@@ -295,12 +295,14 @@ service cloud.firestore {
       }
     }
 
-    // In-house error log (no third-party monitoring account needed) — written only via the
-    // Admin SDK (/api/errors for client-reported errors, logServerError() for server-side ones),
-    // never directly by a client, since a report can come from a fully logged-out visitor.
+    // In-house error log (no third-party monitoring account needed) — created/updated only via
+    // the Admin SDK (/api/errors for client-reported errors, logServerError() for server-side
+    // ones), never directly by a client, since a report can come from a fully logged-out visitor.
+    // Deleting (clearing a resolved entry from /admin/errors) is a direct client-SDK write though,
+    // same as every other admin moderation action in this file.
     match /errorLogs/{errorId} {
-      allow read: if isSuperAdmin();
-      allow write: if false;
+      allow read, delete: if isSuperAdmin();
+      allow create, update: if false;
     }
 
     // Server-side rate-limit counters (checkRateLimit()) — internal bookkeeping only, never
