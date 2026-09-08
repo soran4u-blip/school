@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getJobBySlug, createJobApplication } from '@/core/services/jobService';
 import { getInstitutionById } from '@/core/services/institutionService';
@@ -173,7 +174,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ slug: stri
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
           <h1 className="font-extrabold text-lg text-slate-800">{t('الوظيفة غير موجودة', 'Job Not Found')}</h1>
-          <Link href="/jobs" className="text-sm font-bold text-blue-700 hover:underline">{t('العودة لكل الوظائف', 'Back to all jobs')}</Link>
+          <Link href={localeHref('/jobs', language)} className="text-sm font-bold text-blue-700 hover:underline">{t('العودة لكل الوظائف', 'Back to all jobs')}</Link>
         </div>
         <Footer />
       </div>
@@ -198,7 +199,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ slug: stri
                     {language === 'en' ? job.title.en : job.title.ar}
                   </h1>
                   {institution ? (
-                    <Link href={`/institutions/${institution.slug}`} className="flex items-center gap-1.5 text-sm text-blue-700 font-bold hover:underline mt-1">
+                    <Link href={localeHref(`/institutions/${institution.slug}`, language)} className="flex items-center gap-1.5 text-sm text-blue-700 font-bold hover:underline mt-1">
                       <Building2 className="w-4 h-4" />
                       {language === 'en' ? institution.name.en : institution.name.ar}
                     </Link>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getCategories, getGovernorates } from '@/core/services/masterDataService';
 import { Category, Governorate } from '@/core/types/masterData';
 import { GraduationCap, ShieldCheck, Mail, Phone } from 'lucide-react';
@@ -62,7 +63,7 @@ export default function Footer() {
               {categories.map((cat) => (
                 <li key={cat.id}>
                   <Link
-                    href={`/explore?category=${cat.slug}`}
+                    href={`${localeHref('/explore', language)}?category=${cat.slug}`}
                     className="hover:text-white transition-colors"
                   >
                     {language === 'en' ? cat.name.en : cat.name.ar}
@@ -81,7 +82,7 @@ export default function Footer() {
               {governorates.map((gov) => (
                 <li key={gov.id}>
                   <Link
-                    href={`/explore?governorate=${gov.id}`}
+                    href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
                     className="hover:text-white transition-colors"
                   >
                     {language === 'en' ? gov.name.en : gov.name.ar}
@@ -108,7 +109,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/jobs" className="hover:text-white transition-colors">
+                <Link href={localeHref('/jobs', language)} className="hover:text-white transition-colors">
                   {t('الوظائف الشاغرة', 'Job Openings')}
                 </Link>
               </li>

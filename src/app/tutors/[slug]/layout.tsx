@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { getTutorBySlug } from '@/core/services/tutorService';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export async function generateMetadata({
   params,
 }: {
@@ -36,6 +38,10 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: `/tutors/${tutor.slug || tutor.id}`,
+      languages: {
+        'ar-IQ': `${siteUrl}/tutors/${tutor.slug || tutor.id}`,
+        en: `${siteUrl}/en/tutors/${tutor.slug || tutor.id}`,
+      },
     },
   };
 }

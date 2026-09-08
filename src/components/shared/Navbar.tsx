@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getCategories, getGovernorates } from '@/core/services/masterDataService';
 import { Category, Governorate } from '@/core/types/masterData';
 import {
@@ -146,7 +147,7 @@ export default function Navbar() {
       <div className="bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-6">
           <div className="hidden lg:grid grid-cols-3 items-center h-[76px]">
-            <Link href="/" className="justify-self-start flex items-center gap-2.5 group">
+            <Link href={localeHref('/', language)} className="justify-self-start flex items-center gap-2.5 group">
               <div className="w-9 h-9 rounded-lg bg-[#0B192C] flex items-center justify-center text-[#F1C40F] shadow-sm group-hover:bg-[#1E3E62] transition-colors">
                 <GraduationCap className="w-5 h-5" />
               </div>
@@ -174,7 +175,7 @@ export default function Navbar() {
                         {categories.map((cat) => (
                           <Link
                             key={cat.id}
-                            href={`/explore?category=${cat.slug}`}
+                            href={`${localeHref('/explore', language)}?category=${cat.slug}`}
                             onClick={() => setExploreOpen(false)}
                             className="block px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B192C] transition-colors"
                           >
@@ -191,7 +192,7 @@ export default function Navbar() {
                         {governorates.slice(0, 6).map((gov) => (
                           <Link
                             key={gov.id}
-                            href={`/explore?governorate=${gov.id}`}
+                            href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
                             onClick={() => setExploreOpen(false)}
                             className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B192C] transition-colors"
                           >
@@ -202,7 +203,7 @@ export default function Navbar() {
                       </div>
                     </div>
                     <Link
-                      href="/explore"
+                      href={localeHref('/explore', language)}
                       onClick={() => setExploreOpen(false)}
                       className="col-span-2 flex items-center justify-center gap-1.5 mt-1 pt-3 border-t border-slate-100 text-sm font-bold text-blue-700 hover:text-blue-900"
                     >
@@ -212,12 +213,12 @@ export default function Navbar() {
                 )}
               </div>
 
-              <Link href="/jobs" className={navPill(isJobsActive)}>
+              <Link href={localeHref('/jobs', language)} className={navPill(isJobsActive)}>
                 <Briefcase className="w-3.5 h-3.5" />
                 {t('الوظائف', 'Jobs')}
               </Link>
 
-              <Link href="/tutors" className={navPill(isTutorsActive)}>
+              <Link href={localeHref('/tutors', language)} className={navPill(isTutorsActive)}>
                 <UserCheck className="w-3.5 h-3.5" />
                 {t('الأساتذة', 'Tutors')}
               </Link>
@@ -241,7 +242,7 @@ export default function Navbar() {
 
           {/* Mobile bar */}
           <div className="flex lg:hidden items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+            <Link href={localeHref('/', language)} className="flex items-center gap-2.5 group shrink-0">
               <div className="w-9 h-9 rounded-lg bg-[#0B192C] flex items-center justify-center text-[#F1C40F] shadow-sm group-hover:bg-[#1E3E62] transition-colors">
                 <GraduationCap className="w-5 h-5" />
               </div>
@@ -272,7 +273,7 @@ export default function Navbar() {
           {mobileExploreOpen && (
             <div className="ps-3 space-y-0.5 pb-2">
               <Link
-                href="/explore"
+                href={localeHref('/explore', language)}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-sm font-semibold text-blue-700 py-1.5"
               >
@@ -281,7 +282,7 @@ export default function Navbar() {
               {categories.map((cat) => (
                 <Link
                   key={cat.id}
-                  href={`/explore?category=${cat.slug}`}
+                  href={`${localeHref('/explore', language)}?category=${cat.slug}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="block text-sm text-slate-600 py-1.5"
                 >
@@ -292,7 +293,7 @@ export default function Navbar() {
           )}
 
           <Link
-            href="/jobs"
+            href={localeHref('/jobs', language)}
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B192C] py-2"
           >
@@ -300,7 +301,7 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="/tutors"
+            href={localeHref('/tutors', language)}
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B192C] py-2"
           >

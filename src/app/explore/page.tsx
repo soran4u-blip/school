@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getCategories, getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutions } from '@/core/services/institutionService';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -575,7 +576,7 @@ function ExploreContent() {
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div>
-                              <Link href={`/institutions/${inst.slug}`}>
+                              <Link href={localeHref(`/institutions/${inst.slug}`, language)}>
                                 <h2 className="font-extrabold text-base sm:text-lg text-slate-900 hover:text-blue-700 transition-colors">
                                   {language === 'en' ? inst.name.en : inst.name.ar}
                                 </h2>
@@ -625,7 +626,7 @@ function ExploreContent() {
                             </a>
 
                             <Link
-                              href={`/institutions/${inst.slug}`}
+                              href={localeHref(`/institutions/${inst.slug}`, language)}
                               className="px-4 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
                             >
                               {t('التفاصيل والقبول', 'View Profile')}

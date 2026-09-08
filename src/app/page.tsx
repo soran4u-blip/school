@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getCategories, getGovernorates, getQuickSearchTags, getSystemSettings } from '@/core/services/masterDataService';
 import { getInstitutions } from '@/core/services/institutionService';
 import { getTutors } from '@/core/services/tutorService';
@@ -78,7 +79,7 @@ export default function HomePage() {
     if (searchKeyword.trim()) params.append('q', searchKeyword.trim());
     if (searchCategory) params.append('category', searchCategory);
     if (searchGovernorate) params.append('governorate', searchGovernorate);
-    window.location.href = `/explore?${params.toString()}`;
+    window.location.href = `${localeHref('/explore', language)}?${params.toString()}`;
   };
 
   const handleHeroSearch = (e: React.FormEvent) => {
@@ -213,7 +214,7 @@ export default function HomePage() {
             {quickTags.map((tag) => (
               <Link
                 key={tag.id}
-                href={`/explore?${tag.categoryId ? `category=${tag.categoryId}&` : ''}${tag.governorateId ? `governorate=${tag.governorateId}&` : ''}${tag.keyword ? `q=${tag.keyword}` : ''}`}
+                href={`${localeHref('/explore', language)}?${tag.categoryId ? `category=${tag.categoryId}&` : ''}${tag.governorateId ? `governorate=${tag.governorateId}&` : ''}${tag.keyword ? `q=${tag.keyword}` : ''}`}
                 className="px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-colors"
               >
                 {language === 'en' ? tag.label.en : tag.label.ar}
@@ -229,7 +230,7 @@ export default function HomePage() {
           {categories.map((cat) => (
             <Link
               key={cat.id}
-              href={`/explore?category=${cat.slug}`}
+              href={`${localeHref('/explore', language)}?category=${cat.slug}`}
               className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-xl hover:border-blue-400 hover:-translate-y-1 transition-all duration-200 flex flex-col items-center text-center group"
             >
               <div className="w-12 h-12 rounded-xl bg-slate-50 text-[#0B192C] group-hover:bg-[#0B192C] group-hover:text-[#F1C40F] transition-colors flex items-center justify-center mb-3 shadow-xs">
@@ -260,7 +261,7 @@ export default function HomePage() {
           </div>
 
           <Link
-            href="/explore"
+            href={localeHref('/explore', language)}
             className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 group self-start"
           >
             <span>{t('عرض جميع المؤسسات في الدليل', 'View All Listings')}</span>
@@ -323,7 +324,7 @@ export default function HomePage() {
                       <span>{gov ? (language === 'en' ? gov.name.en : gov.name.ar) : inst.governorateId}</span>
                     </div>
 
-                    <Link href={`/institutions/${inst.slug}`}>
+                    <Link href={localeHref(`/institutions/${inst.slug}`, language)}>
                       <h3 className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors leading-snug">
                         {language === 'en' ? inst.name.en : inst.name.ar}
                       </h3>
@@ -349,7 +350,7 @@ export default function HomePage() {
 
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/institutions/${inst.slug}`}
+                        href={localeHref(`/institutions/${inst.slug}`, language)}
                         className="flex-1 text-center py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
                       >
                         {t('التفاصيل والقبول', 'View Profile')}
@@ -391,7 +392,7 @@ export default function HomePage() {
             {governorates.map((gov) => (
               <Link
                 key={gov.id}
-                href={`/explore?governorate=${gov.id}`}
+                href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
                 className="p-3.5 bg-white rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 shadow-xs transition-all flex items-center justify-between group"
               >
                 <div>
@@ -425,7 +426,7 @@ export default function HomePage() {
           </div>
 
           <Link
-            href="/tutors"
+            href={localeHref('/tutors', language)}
             className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 group self-start"
           >
             <span>{t('عرض جميع الأساتذة الخصوصيين', 'Explore All Tutors')}</span>
@@ -453,7 +454,7 @@ export default function HomePage() {
                 <div className="flex-1 space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <Link href={`/tutors/${tutor.slug || tutor.id}`} className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors">
+                      <Link href={localeHref(`/tutors/${tutor.slug || tutor.id}`, language)} className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors">
                         {language === 'en' ? tutor.fullName.en : tutor.fullName.ar}
                       </Link>
                       <p className="text-xs font-semibold text-blue-700">
@@ -479,7 +480,7 @@ export default function HomePage() {
 
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/tutors/${tutor.slug || tutor.id}`}
+                        href={localeHref(`/tutors/${tutor.slug || tutor.id}`, language)}
                         className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                       >
                         <span>{t('احجز موعداً', 'Book Now')}</span>

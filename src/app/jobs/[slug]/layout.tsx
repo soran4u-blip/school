@@ -3,6 +3,8 @@ import { getJobBySlug } from '@/core/services/jobService';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 const EMPLOYMENT_TYPE_SCHEMA: Record<string, string> = {
   FULL_TIME: 'FULL_TIME',
   PART_TIME: 'PART_TIME',
@@ -42,6 +44,10 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: `/jobs/${job.slug || job.id}`,
+      languages: {
+        'ar-IQ': `${siteUrl}/jobs/${job.slug || job.id}`,
+        en: `${siteUrl}/en/jobs/${job.slug || job.id}`,
+      },
     },
   };
 }

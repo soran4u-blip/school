@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getTutors } from '@/core/services/tutorService';
 import { Tutor } from '@/core/types/tutor';
@@ -253,7 +254,7 @@ export default function TutorsListPage() {
               return (
                 <Link
                   key={tutor.id}
-                  href={`/tutors/${tutor.slug || tutor.id}`}
+                  href={localeHref(`/tutors/${tutor.slug || tutor.id}`, language)}
                   className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex gap-4 items-start"
                 >
                   <Image

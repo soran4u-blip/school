@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getActiveJobs } from '@/core/services/jobService';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -250,7 +251,7 @@ function JobsContent() {
                   return (
                     <Link
                       key={job.id}
-                      href={`/jobs/${job.slug || job.id}`}
+                      href={localeHref(`/jobs/${job.slug || job.id}`, language)}
                       className="block bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all p-5"
                     >
                       <div className="flex items-start justify-between gap-3 flex-wrap">

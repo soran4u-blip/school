@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { SupportedLanguage } from '../types/masterData';
 
 interface LanguageContextType {
@@ -12,15 +13,31 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// There is only ever ONE LanguageProvider, mounted once at the root — a second, nested instance
+// for the /en route tree was tried and reverted: both instances' `document.documentElement`
+// sync effects would fire on mount (child effects before parent effects in React), so the outer
+// (Arabic) provider always won the race and silently overwrote the inner one's lang/dir. Instead,
+// this single provider derives its starting language from the URL itself: any route under /en
+// pins English for the first render (matching what a crawler sees, since /en is exactly the
+// route tree that exists for that purpose) and skips the localStorage read that would otherwise
+// only apply to Arabic (unprefixed) routes. Manual toggling (setLanguage) still works and still
+// persists to localStorage as before; this only affects what the very first render shows.
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<SupportedLanguage>('ar');
+  const pathname = usePathname();
+  const isEnglishRoute = pathname === '/en' || pathname.startsWith('/en/');
+  const [language, setLanguageState] = useState<SupportedLanguage>(isEnglishRoute ? 'en' : 'ar');
 
+  // Re-syncs whenever a client-side navigation crosses the /en boundary (LanguageProvider lives
+  // in the root layout, so it stays mounted across every route change — this can't rely on
+  // mount-only initial state once the pathname changes under it).
   useEffect(() => {
-    const saved = localStorage.getItem('eduraq_lang') as SupportedLanguage;
-    if (saved && (saved === 'ar' || saved === 'en' || saved === 'ku')) {
-      setLanguageState(saved);
+    if (isEnglishRoute) {
+      setLanguageState('en');
+      return;
     }
-  }, []);
+    const saved = localStorage.getItem('eduraq_lang') as SupportedLanguage;
+    setLanguageState(saved && (saved === 'ar' || saved === 'en' || saved === 'ku') ? saved : 'ar');
+  }, [isEnglishRoute]);
 
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);

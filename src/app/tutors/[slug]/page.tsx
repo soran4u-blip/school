@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { getGovernorateById, getTaxonomies } from '@/core/services/masterDataService';
 import { getTutorBySlug } from '@/core/services/tutorService';
 import { getApprovedTutorReviews, createReview } from '@/core/services/reviewService';
@@ -293,7 +294,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ slug: s
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
           <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('الأستاذ غير موجود', 'Tutor Not Found')}</h1>
-          <Link href="/explore" className="px-5 py-2.5 bg-[#0B192C] text-white rounded-xl text-xs font-bold">
+          <Link href={localeHref('/explore', language)} className="px-5 py-2.5 bg-[#0B192C] text-white rounded-xl text-xs font-bold">
             {t('العودة إلى الدليل', 'Back to Directory')}
           </Link>
         </div>

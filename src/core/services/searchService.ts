@@ -1,6 +1,7 @@
 import { Institution } from '../types/institution';
 import { Tutor } from '../types/tutor';
 import { TaxonomyItem } from '../types/masterData';
+import { localeHref } from '@/lib/locale';
 
 export interface SearchSuggestion {
   type: 'institution' | 'tutor' | 'subject';
@@ -33,7 +34,7 @@ export function getSearchSuggestions(
         id: inst.id,
         label: language === 'en' ? inst.name.en : inst.name.ar,
         sublabel: language === 'en' ? inst.address.en : inst.address.ar,
-        href: `/institutions/${inst.slug}`,
+        href: localeHref(`/institutions/${inst.slug}`, language),
       });
     }
   }
@@ -46,7 +47,7 @@ export function getSearchSuggestions(
         id: tutor.id,
         label: language === 'en' ? tutor.fullName.en : tutor.fullName.ar,
         sublabel: language === 'en' ? tutor.title.en : tutor.title.ar,
-        href: `/tutors/${tutor.slug || tutor.id}`,
+        href: localeHref(`/tutors/${tutor.slug || tutor.id}`, language),
       });
     }
   }
@@ -58,7 +59,7 @@ export function getSearchSuggestions(
         type: 'subject',
         id: subject.id,
         label: language === 'en' ? subject.name.en : subject.name.ar,
-        href: `/explore?q=${encodeURIComponent(subject.name.en)}`,
+        href: `${localeHref('/explore', language)}?q=${encodeURIComponent(subject.name.en)}`,
       });
     }
   }

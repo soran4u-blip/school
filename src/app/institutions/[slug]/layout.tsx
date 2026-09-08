@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { getInstitutionBySlug } from '@/core/services/institutionService';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export async function generateMetadata({
   params,
 }: {
@@ -36,6 +38,10 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: `/institutions/${institution.slug}`,
+      languages: {
+        'ar-IQ': `${siteUrl}/institutions/${institution.slug}`,
+        en: `${siteUrl}/en/institutions/${institution.slug}`,
+      },
     },
   };
 }

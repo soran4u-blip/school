@@ -18,6 +18,7 @@ import { auth } from '@/core/firebase/config';
 import { onAuthStateChanged, signInAnonymously, User as FirebaseUser } from 'firebase/auth';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
+import { localeHref } from '@/lib/locale';
 import {
   MapPin,
   ShieldCheck,
@@ -302,7 +303,7 @@ export default function InstitutionProfilePage({
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
           <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('المؤسسة غير موجودة', 'Institution Not Found')}</h1>
           <p className="text-xs text-slate-500">{t('لم نتمكن من العثور على المؤسسة المطلوبة في دليل العراق.', 'The requested institution could not be found.')}</p>
-          <Link href="/explore" className="px-5 py-2.5 bg-[#0B192C] text-white rounded-xl text-xs font-bold">
+          <Link href={localeHref('/explore', language)} className="px-5 py-2.5 bg-[#0B192C] text-white rounded-xl text-xs font-bold">
             {t('العودة إلى الدليل', 'Back to Directory')}
           </Link>
         </div>
@@ -332,7 +333,7 @@ export default function InstitutionProfilePage({
           <div className="flex items-center gap-2 text-xs text-slate-300 font-semibold">
             <Link href="/" className="hover:text-white transition-colors">{t('الرئيسية', 'Home')}</Link>
             <span>/</span>
-            <Link href="/explore" className="hover:text-white transition-colors">{t('الدليل التعليمي', 'Directory')}</Link>
+            <Link href={localeHref('/explore', language)} className="hover:text-white transition-colors">{t('الدليل التعليمي', 'Directory')}</Link>
             <span>/</span>
             <span className="text-amber-300 font-bold">{language === 'en' ? institution.name.en : institution.name.ar}</span>
           </div>
