@@ -61,5 +61,14 @@ service firebase.storage {
       allow read: if isSuperAdmin() || isOwnerInstitution(ownerId) || isOwnerEmployer(ownerId);
       allow write: if request.auth != null && isValidResumeDoc();
     }
+
+    // Documents (transcripts, IDs, etc.) attached to an admission application. Unlike the
+    // job-application resume above, the applicant here is always a real logged-in student
+    // (bookings/admissions both require an account), so the path can embed and check their own
+    // uid directly rather than trusting ownership purely from the path shape.
+    match /admission-applications/{institutionId}/{programId}/{studentId}/{fileName} {
+      allow read: if isSuperAdmin() || isOwnerInstitution(institutionId);
+      allow write: if request.auth != null && request.auth.uid == studentId && isValidVerificationDoc();
+    }
   }
 }

@@ -136,8 +136,9 @@ service cloud.firestore {
     }
 
     // Tutoring Session Bookings (individual or group). Writes only via the Admin SDK
-    // API route (/api/bookings) so group-join price recalculation stays transactional
-    // and student contact info in `participants` isn't exposed to arbitrary readers.
+    // API route (/api/bookings), which requires a logged-in student session, so group-join
+    // price recalculation stays transactional and student contact info in `participants`
+    // isn't exposed to arbitrary readers.
     match /bookings/{bookingId} {
       allow read, update, delete: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
       allow create: if false;
@@ -224,6 +225,22 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // Admission Applications (a student applying to an institution's program). Unlike
+    // JobApplication above, creation and status decisions both go through Admin SDK API routes
+    // (/api/admission-applications, /api/institution/admission-applications/[id]/decision)
+    // instead of direct client writes — accepting an applicant has to atomically check and
+    // increment the program's capacity (a denormalized count on the Institution doc), which a
+    // bare security rule can't safely enforce across two documents against concurrent writers.
+    // The student side reads their own applications via /api/account/admission-applications
+    // (their uid is verified server-side from the session); direct client reads still work for
+    // the student's own docs below in case a future UI wants them, scoped by studentId.
+    match /admissionApplications/{applicationId} {
+      allow create: if false;
+      allow read: if isSuperAdmin() || isOwnerInstitution(resource.data.get('institutionId', null)) || isOwner(resource.data.get('studentId', null));
+      allow update: if false;
+      allow delete: if isSuperAdmin();
+    }
+
     // Community discussion boards (governorate-scoped Q&A). New threads are moderated (public UGC,
     // not scoped to one institution the way inquiries/reviews are); replies go live immediately
     // once their parent thread is approved, so ongoing moderation stays light.
@@ -268,11 +285,11 @@ service cloud.firestore {
 
     // Messaging: one thread per context (a Booking, an Inquiry, or a JobApplication), doc id ==
     // that context's id. The tutor/institution owner is authenticated and reads/writes directly
-    // here. Guests (students/parents/applicants) have no account requirement, so their side goes
-    // entirely through the Admin SDK API routes (/api/bookings/[id]/messages,
-    // /api/inquiries/[id]/messages, /api/job-applications/[id]/messages), which
-    // verify their phone against the booking/inquiry/application before touching these docs — the
-    // same guest pattern already used for booking cancel/lookup. `.get(key, null)` is used instead of
+    // here. The student side of booking threads goes through the account-authenticated
+    // /api/account/bookings/[id]/messages route (session-verified uid). Guests (parents/
+    // applicants) on inquiries/job applications still have no account requirement, so their side
+    // goes through /api/inquiries/[id]/messages or /api/job-applications/[id]/messages, which
+    // verify their phone against the inquiry/application before touching these docs. `.get(key, null)` is used instead of
     // dot-notation because exactly one of tutorId/institutionId is ever set on a given thread,
     // and dot-notation access to a genuinely absent map key throws in this rules version.
     function isOwnerOfThread(data) {
@@ -291,10 +308,10 @@ service cloud.firestore {
       }
     }
 
-    // Student accounts (phase 2 of messaging: optional, self-service — booking itself never
-    // requires one). Doc id == the student's own Auth uid, so isOwner() is a direct fit.
-    // Bookings/threads for a logged-in student are still read via /api/account/* (their phone
-    // lives in a server-set custom claim, not trusted from a client-side Firestore query).
+    // Student accounts — required to book a tutor. Doc id == the student's own Auth uid, so
+    // isOwner() is a direct fit. Bookings/threads for a logged-in student are still read via
+    // /api/account/* (their uid is verified server-side from the session, not trusted from a
+    // client-side Firestore query).
     match /students/{studentId} {
       allow read, write: if isSuperAdmin() || isOwner(studentId);
     }

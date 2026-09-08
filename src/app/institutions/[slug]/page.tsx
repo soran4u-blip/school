@@ -3,17 +3,20 @@
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorateById, getCategories } from '@/core/services/masterDataService';
 import { getInstitutionBySlug } from '@/core/services/institutionService';
 import { getApprovedReviews, createReview, createInquiry } from '@/core/services/reviewService';
-import { Institution } from '@/core/types/institution';
+import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
+import { AdmissionApplicationStatus } from '@/core/types/admission';
 import { auth } from '@/core/firebase/config';
-import { signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, User as FirebaseUser } from 'firebase/auth';
+import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import {
   MapPin,
@@ -33,9 +36,29 @@ import {
   GraduationCap,
   Sparkles,
   X,
-  Send
+  Send,
+  Paperclip,
+  FileText,
 } from 'lucide-react';
 import { formatCurrencyUSD } from '@/lib/utils';
+
+const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
+  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
+  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
+  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
+  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
+  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
+  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
+};
+
+const ADMISSION_STATUS_STYLES: Record<AdmissionApplicationStatus, string> = {
+  SUBMITTED: 'bg-blue-50 text-blue-700',
+  UNDER_REVIEW: 'bg-amber-50 text-amber-700',
+  WAITLISTED: 'bg-purple-50 text-purple-700',
+  ACCEPTED: 'bg-emerald-50 text-emerald-700',
+  REJECTED: 'bg-rose-50 text-rose-700',
+  WITHDRAWN: 'bg-slate-100 text-slate-500',
+};
 
 export default function InstitutionProfilePage({ 
   params 
@@ -43,6 +66,7 @@ export default function InstitutionProfilePage({
   params: Promise<{ slug: string }> 
 }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { language, t } = useLanguage();
 
   const [institution, setInstitution] = useState<Institution | null>(null);
@@ -50,6 +74,16 @@ export default function InstitutionProfilePage({
   const [category, setCategory] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'facilities' | 'admissions' | 'reviews'>('overview');
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [myApplicationStatus, setMyApplicationStatus] = useState<Record<string, AdmissionApplicationStatus>>({});
+
+  const [applyProgram, setApplyProgram] = useState<InstitutionProgram | null>(null);
+  const [applyForm, setApplyForm] = useState({ message: '' });
+  const [applyDocumentPaths, setApplyDocumentPaths] = useState<string[]>([]);
+  const [applyDocumentNames, setApplyDocumentNames] = useState<string[]>([]);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [applySubmitting, setApplySubmitting] = useState(false);
+  const [applyResult, setApplyResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewForm, setReviewForm] = useState({ reviewerName: '', rating: 5, comment: '', hp: '' });
@@ -81,6 +115,105 @@ export default function InstitutionProfilePage({
     }
     loadProfile();
   }, [resolvedParams.slug]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    async function loadMyApplications() {
+      if (!currentUser || !institution) return;
+      try {
+        const res = await fetch('/api/account/admission-applications');
+        const data = await res.json();
+        if (data.success) {
+          const statuses: Record<string, AdmissionApplicationStatus> = {};
+          for (const app of data.applications) {
+            if (app.institutionId === institution.id) statuses[app.programId] = app.status;
+          }
+          setMyApplicationStatus(statuses);
+        }
+      } catch {
+        // Best-effort — the Apply button just won't reflect an existing application if this fails.
+      }
+    }
+    loadMyApplications();
+  }, [currentUser, institution]);
+
+  const openApply = (program: InstitutionProgram) => {
+    if (!currentUser) {
+      router.push(`/login?redirect=${encodeURIComponent(`/institutions/${resolvedParams.slug}`)}`);
+      return;
+    }
+    setApplyProgram(program);
+    setApplyForm({ message: '' });
+    setApplyDocumentPaths([]);
+    setApplyDocumentNames([]);
+    setApplyResult(null);
+  };
+
+  const closeApply = () => {
+    setApplyProgram(null);
+    setApplyResult(null);
+  };
+
+  const handleApplyDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !applyProgram || !institution || !currentUser) return;
+
+    const allowed = ['image/', 'application/pdf'];
+    if (!allowed.some((prefix) => file.type.startsWith(prefix))) {
+      setApplyResult({ success: false, message: t('يرجى اختيار ملف PDF أو صورة', 'Please select a PDF or image file') });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setApplyResult({ success: false, message: t('الحد الأقصى لحجم الملف 5 ميغابايت', 'Max file size is 5MB') });
+      return;
+    }
+
+    setUploadingDocument(true);
+    try {
+      const path = `admission-applications/${institution.id}/${applyProgram.id}/${currentUser.uid}/${Date.now()}-${file.name}`;
+      await uploadFileOnly(file, path);
+      setApplyDocumentPaths((prev) => [...prev, path]);
+      setApplyDocumentNames((prev) => [...prev, file.name]);
+    } catch {
+      setApplyResult({ success: false, message: t('تعذر رفع الملف', 'Failed to upload the file') });
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleSubmitApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!institution || !applyProgram) return;
+    setApplySubmitting(true);
+    try {
+      const res = await fetch('/api/admission-applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: institution.id,
+          programId: applyProgram.id,
+          ...(applyForm.message.trim() && { message: applyForm.message.trim() }),
+          ...(applyDocumentPaths.length > 0 && { documentUrls: applyDocumentPaths }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setApplyResult({ success: false, message: data.error || t('تعذر إرسال طلبك', 'Failed to submit your application') });
+        return;
+      }
+      setApplyResult({ success: true, message: t('تم إرسال طلبك بنجاح! يمكنك متابعة حالته من حسابك.', 'Your application was submitted! You can track its status from your account.') });
+      setMyApplicationStatus((prev) => ({ ...prev, [applyProgram.id]: 'SUBMITTED' }));
+    } catch {
+      setApplyResult({ success: false, message: t('تعذر إرسال طلبك', 'Failed to submit your application') });
+    } finally {
+      setApplySubmitting(false);
+    }
+  };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,13 +546,29 @@ export default function InstitutionProfilePage({
                           )}
                         </div>
 
-                        <div className="text-end">
-                          <span className="block text-sm font-black text-[#0B192C]">
-                            ${prog.tuitionAnnual.amount.toLocaleString()} / {t('سنوياً', 'year')}
-                          </span>
-                          <span className="text-[10px] text-emerald-600 font-bold">
-                            {t('إمكانية التقسيط متاحة', 'Installments Available')}
-                          </span>
+                        <div className="text-end space-y-2">
+                          <div>
+                            <span className="block text-sm font-black text-[#0B192C]">
+                              ${prog.tuitionAnnual.amount.toLocaleString()} / {t('سنوياً', 'year')}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-bold">
+                              {t('إمكانية التقسيط متاحة', 'Installments Available')}
+                            </span>
+                          </div>
+                          {myApplicationStatus[prog.id] ? (
+                            <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full ${ADMISSION_STATUS_STYLES[myApplicationStatus[prog.id]]}`}>
+                              {language === 'en' ? ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].en : ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].ar}
+                            </span>
+                          ) : prog.isActive && prog.isAcceptingApplications !== false && (!prog.applicationDeadline || prog.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? (
+                            <button
+                              onClick={() => openApply(prog)}
+                              className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg text-xs font-bold transition-colors"
+                            >
+                              {t('التقديم الآن', 'Apply Now')}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] font-bold text-slate-400">{t('التقديم مغلق حالياً', 'Applications closed')}</span>
+                          )}
                         </div>
                       </div>
                     ))
@@ -706,6 +855,80 @@ export default function InstitutionProfilePage({
                   className="w-full py-3 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
                 >
                   {inquirySubmitting ? t('جاري الإرسال...', 'Sending...') : t('إرسال الطلب', 'Send Request')}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Apply Modal */}
+      {applyProgram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 relative">
+            <button onClick={closeApply} className="absolute top-4 end-4 text-slate-400 hover:text-slate-700">
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="text-base font-extrabold text-[#0B192C] mb-1">
+              {t('التقديم على', 'Apply to')} {language === 'en' ? applyProgram.name.en : applyProgram.name.ar}
+            </h3>
+            <p className="text-xs text-slate-500 mb-5">
+              {language === 'en' ? institution.name.en : institution.name.ar}
+            </p>
+
+            {applyResult?.success ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-800">
+                  {applyResult.message}
+                </div>
+                <Link
+                  href="/account"
+                  className="w-full py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                >
+                  {t('عرض طلباتي', 'View my applications')}
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitApply} className="space-y-3">
+                <textarea
+                  placeholder={t('رسالة تعريفية (اختياري)', 'Personal statement (optional)')}
+                  value={applyForm.message}
+                  onChange={(e) => setApplyForm({ message: e.target.value })}
+                  rows={4}
+                  className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl"
+                />
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 w-fit px-3.5 py-2 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>{uploadingDocument ? t('جاري الرفع...', 'Uploading...') : t('إرفاق مستند (اختياري)', 'Attach a document (optional)')}</span>
+                    <input type="file" accept="image/*,application/pdf" onChange={handleApplyDocument} disabled={uploadingDocument} className="hidden" />
+                  </label>
+                  {applyDocumentNames.length > 0 && (
+                    <ul className="text-[11px] text-slate-500 space-y-0.5">
+                      {applyDocumentNames.map((name, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <FileText className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {applyResult && !applyResult.success && (
+                  <div className="p-3 rounded-xl text-xs font-bold bg-rose-50 border border-rose-200 text-rose-800">
+                    {applyResult.message}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={applySubmitting || uploadingDocument}
+                  className="w-full py-3 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
+                >
+                  {applySubmitting ? t('جاري الإرسال...', 'Submitting...') : t('إرسال الطلب', 'Submit Application')}
                 </button>
               </form>
             )}

@@ -103,7 +103,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/my-bookings" className="hover:text-white transition-colors">
+                <Link href="/account" className="hover:text-white transition-colors">
                   {t('حجوزاتي', 'My Bookings')}
                 </Link>
               </li>

@@ -14,11 +14,11 @@ export interface ThreadContext {
   participantPhones: string[];
 }
 
-export async function loadBookingAndVerifyPhone(adminDb: Firestore, bookingId: string, phone: string): Promise<Booking | null> {
+export async function loadBookingAndVerifyStudent(adminDb: Firestore, bookingId: string, studentId: string): Promise<Booking | null> {
   const snap = await adminDb.collection('bookings').doc(bookingId).get();
   if (!snap.exists) return null;
   const booking = snap.data() as Booking;
-  if (!booking.participantPhones?.includes(phone)) return null;
+  if (!booking.participantStudentIds?.includes(studentId)) return null;
   return booking;
 }
 

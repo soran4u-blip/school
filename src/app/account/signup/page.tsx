@@ -87,7 +87,7 @@ function SignupForm() {
             {t('إنشاء حساب طالب', 'Create Student Account')}
           </p>
           <p className="text-[11px] text-slate-400 text-center mt-1.5">
-            {t('احفظ حجوزاتك وراسل أساتذتك — لا حاجة لحساب لإتمام الحجز نفسه.', 'Save your bookings and message your tutors — an account is optional, not required to book.')}
+            {t('أنشئ حساباً لحجز الدروس ومتابعتها ومراسلة أساتذتك.', 'Create an account to book sessions, track them, and message your tutors.')}
           </p>
         </div>
 

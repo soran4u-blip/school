@@ -12,6 +12,11 @@ export interface InstitutionProgram {
   durationYears: number;
   minBaccalaureateScore?: number; // e.g. 85 for Medicine/Pharmacy
   isActive: boolean;
+
+  isAcceptingApplications?: boolean; // institution toggle to pause new admissions; defaults true when isActive
+  applicationDeadline?: string; // 'YYYY-MM-DD'; omit for no deadline
+  capacity?: number; // seats available this admission cycle; omit for unlimited
+  acceptedCount?: number; // denormalized count of ACCEPTED applications, maintained transactionally
 }
 
 export interface InstitutionContact {

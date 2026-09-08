@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
-import { loadBookingAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
+import { loadBookingAndVerifyStudent, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 
 const SESSION_COOKIE_NAME = 'session';
 
-async function requireStudentPhone(request: NextRequest): Promise<string | null> {
+async function requireStudentId(request: NextRequest): Promise<string | null> {
   if (!adminAuth) return null;
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!sessionCookie) return null;
   try {
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student' || !decoded.phone) return null;
-    return decoded.phone as string;
+    if (decoded.role !== 'student') return null;
+    return decoded.uid;
   } catch {
     return null;
   }
 }
 
-// GET /api/account/bookings/[id]/messages — a logged-in student reads their thread, phone
+// GET /api/account/bookings/[id]/messages — a logged-in student reads their thread, identity
 // derived from their own session (never a client-supplied value).
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
-  const phone = await requireStudentPhone(request);
-  if (!phone) {
+  const studentId = await requireStudentId(request);
+  if (!studentId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   const { id } = await params;
-  const booking = await loadBookingAndVerifyPhone(adminDb, id, phone);
+  const booking = await loadBookingAndVerifyStudent(adminDb, id, studentId);
   if (!booking) {
     return NextResponse.json({ success: false, error: 'Booking not found' }, { status: 404 });
   }
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
-  const phone = await requireStudentPhone(request);
-  if (!phone) {
+  const studentId = await requireStudentId(request);
+  if (!studentId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -60,11 +60,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Message is too long' }, { status: 400 });
   }
 
-  const booking = await loadBookingAndVerifyPhone(adminDb, id, phone);
+  const booking = await loadBookingAndVerifyStudent(adminDb, id, studentId);
   if (!booking) {
     return NextResponse.json({ success: false, error: 'Booking not found' }, { status: 404 });
   }
 
-  const message = await sendThreadMessage(adminDb, booking, 'student', senderName, text);
+  const message = await sendThreadMessage(
+    adminDb,
+    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participants.map((p) => p.phone) },
+    'student',
+    senderName,
+    text
+  );
   return NextResponse.json({ success: true, message });
 }

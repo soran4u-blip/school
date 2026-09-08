@@ -7,9 +7,9 @@ import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy } f
 /* =========================================================
    MESSAGING — one thread per context (a Booking or an Inquiry), doc id == that context's id.
    Tutor/institution owner side only — authenticated, direct via client SDK under
-   firestore.rules. The guest (student/parent) side goes through /api/bookings/[id]/messages
-   or /api/inquiries/[id]/messages instead, since guests have no account to authenticate
-   against these rules directly.
+   firestore.rules. The student side (booking threads) goes through the account-authenticated
+   /api/account/bookings/[id]/messages route; the guest (parent/applicant) side of inquiries
+   still goes through /api/inquiries/[id]/messages, since inquiries remain phone-based.
 ========================================================= */
 export async function getThreadMessages(contextId: string): Promise<ThreadMessage[]> {
   const q = query(collection(db, 'threads', contextId, 'messages'), orderBy('createdAt', 'asc'));
@@ -52,7 +52,7 @@ async function sendOwnerMessage(
 
 export async function sendTutorMessage(booking: Booking, senderName: string, text: string): Promise<ThreadMessage> {
   return sendOwnerMessage(
-    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participantPhones },
+    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participants.map((p) => p.phone) },
     'tutor',
     senderName,
     text

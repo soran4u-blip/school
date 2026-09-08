@@ -5,10 +5,8 @@ import { Tutor } from '@/core/types/tutor';
 
 const SESSION_COOKIE_NAME = 'session';
 
-// GET /api/account/bookings — a logged-in student's own bookings, looked up by the phone
-// number on their account (stored in their custom claim at signup), not a client-supplied
-// value — proxy.ts already gates this path to role 'student', this route independently
-// re-verifies the session so it never trusts anything the client claims about itself.
+// GET /api/account/bookings — a logged-in student's own bookings, looked up by their account
+// uid (verified server-side from the session), never a client-supplied value.
 export async function GET(request: NextRequest) {
   if (!adminAuth || !adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
@@ -21,11 +19,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student' || !decoded.phone) {
+    if (decoded.role !== 'student') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const snap = await adminDb.collection('bookings').where('participantPhones', 'array-contains', decoded.phone).get();
+    const snap = await adminDb.collection('bookings').where('participantStudentIds', 'array-contains', decoded.uid).get();
     const tutorIds = [...new Set(snap.docs.map((d) => (d.data() as Booking).tutorId))];
     const tutors = new Map<string, Tutor>();
     await Promise.all(

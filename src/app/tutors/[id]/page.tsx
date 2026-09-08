@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
@@ -13,7 +14,7 @@ import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
 import { auth } from '@/core/firebase/config';
-import { signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, User as FirebaseUser } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import {
   MapPin,
@@ -85,6 +86,7 @@ function nextNDays(n: number): { date: string; dayOfWeek: number }[] {
 
 export default function TutorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { language, t } = useLanguage();
 
   const [tutor, setTutor] = useState<Tutor | null>(null);
@@ -93,11 +95,12 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
   const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [slotStatuses, setSlotStatuses] = useState<SlotStatus[]>([]);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
 
   const [selectedSlot, setSelectedSlot] = useState<DaySlot | null>(null);
   const [bookingMode, setBookingMode] = useState<'INDIVIDUAL' | 'GROUP' | null>(null);
   const [joinBookingId, setJoinBookingId] = useState<string | undefined>(undefined);
-  const [form, setForm] = useState({ name: '', phone: '', subjectId: '', recurring: false, weeks: 4 });
+  const [form, setForm] = useState({ subjectId: '', recurring: false, weeks: 4 });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; priceIqd?: number } | null>(null);
 
@@ -120,6 +123,11 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
       // Slot status is best-effort; leave slots rendering as open on failure.
     }
   };
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -198,10 +206,14 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
     slotStatuses.find((s) => s.date === date && s.startTime === startTime);
 
   const openBooking = (daySlot: DaySlot, mode: 'INDIVIDUAL' | 'GROUP', existingGroupId?: string) => {
+    if (!currentUser) {
+      router.push(`/login?redirect=${encodeURIComponent(`/tutors/${resolvedParams.id}`)}`);
+      return;
+    }
     setSelectedSlot(daySlot);
     setBookingMode(mode);
     setJoinBookingId(existingGroupId);
-    setForm({ name: '', phone: '', subjectId: subjects[0]?.id || '', recurring: false, weeks: 4 });
+    setForm({ subjectId: subjects[0]?.id || '', recurring: false, weeks: 4 });
     setResult(null);
   };
 
@@ -215,7 +227,6 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
   const submitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tutor || !selectedSlot || !bookingMode) return;
-    if (!form.name.trim() || !form.phone.trim()) return;
 
     setSubmitting(true);
     try {
@@ -228,8 +239,6 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
           startTime: selectedSlot.startTime,
           endTime: selectedSlot.endTime,
           type: bookingMode,
-          name: form.name.trim(),
-          phone: form.phone.trim(),
           joinBookingId,
           ...(form.subjectId && { subjectId: form.subjectId }),
           ...(bookingMode === 'INDIVIDUAL' && form.recurring && { recurring: true, weeks: form.weeks }),
@@ -617,7 +626,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
                 )}
                 {result.success && (
                   <Link
-                    href="/my-bookings"
+                    href="/account"
                     className="w-full py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
                   >
                     {t('عرض كافة حجوزاتي', 'View all my bookings')}
@@ -637,22 +646,6 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
                     ))}
                   </select>
                 )}
-                <input
-                  type="text"
-                  required
-                  placeholder={t('الاسم الكامل', 'Full name')}
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl"
-                />
-                <input
-                  type="text"
-                  required
-                  placeholder={t('رقم الهاتف', 'Phone number')}
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl font-mono"
-                />
                 {bookingMode === 'INDIVIDUAL' && (
                   <div className="p-3 bg-slate-50 rounded-xl space-y-2">
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/core/firebase/admin';
+import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
+import { Student } from '@/core/types/student';
 
 const MAX_RECURRING_WEEKS = 12;
+const SESSION_COOKIE_NAME = 'session';
 
 function dayOfWeekFromDate(dateStr: string): number {
   // Treat "YYYY-MM-DD" as a plain calendar date, not a timezone-sensitive instant —
@@ -30,18 +32,40 @@ function isWithinAvailability(tutor: Tutor, dayOfWeek: number, startTime: string
 }
 
 export async function POST(request: NextRequest) {
-  if (!adminDb) {
+  if (!adminAuth || !adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
+
+  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
+  }
+
+  let studentId: string;
+  try {
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    if (decoded.role !== 'student') {
+      return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
+    }
+    studentId = decoded.uid;
+  } catch {
+    return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
+  }
+
+  const studentSnap = await adminDb.collection('students').doc(studentId).get();
+  if (!studentSnap.exists) {
+    return NextResponse.json({ success: false, error: 'Student account not found' }, { status: 400 });
+  }
+  const student = studentSnap.data() as Student;
 
   const body = await request.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { tutorId, date, startTime, endTime, type, name, phone, joinBookingId, subjectId, recurring, weeks } = body;
+  const { tutorId, date, startTime, endTime, type, joinBookingId, subjectId, recurring, weeks } = body;
 
-  if (!tutorId || !date || !startTime || !endTime || !name?.trim() || !phone?.trim()) {
+  if (!tutorId || !date || !startTime || !endTime) {
     return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -68,7 +92,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Tutor is unavailable on this date' }, { status: 400 });
   }
 
-  const participant = { name: name.trim().slice(0, 100), phone: phone.trim().slice(0, 30) };
+  const participant = { studentId, name: student.fullName.slice(0, 100), phone: student.phone.slice(0, 30) };
 
   // --- Joining an existing open group ---
   if (joinBookingId) {
@@ -84,17 +108,20 @@ export async function POST(request: NextRequest) {
         if (booking.date !== date || booking.startTime !== startTime) {
           throw new Error('Group slot mismatch');
         }
+        if (booking.participantStudentIds?.includes(studentId)) {
+          throw new Error('You have already joined this group');
+        }
         if (booking.participants.length >= booking.maxGroupSize) {
           throw new Error('This group is already full');
         }
         const participants = [...booking.participants, participant];
-        const participantPhones = [...(booking.participantPhones || []), participant.phone];
+        const participantStudentIds = [...(booking.participantStudentIds || []), studentId];
         const pricePerStudent = {
           iqd: Math.round(tutor.groupRate.iqd / participants.length),
           usd: Math.round(tutor.groupRate.usd / participants.length),
         };
-        tx.update(ref, { participants, participantPhones, pricePerStudent });
-        return { ...booking, participants, participantPhones, pricePerStudent };
+        tx.update(ref, { participants, participantStudentIds, pricePerStudent });
+        return { ...booking, participants, participantStudentIds, pricePerStudent };
       });
       return NextResponse.json({ success: true, booking: result });
     } catch (e: any) {
@@ -119,7 +146,7 @@ export async function POST(request: NextRequest) {
       endTime,
       maxGroupSize: bookingType === 'GROUP' ? tutor.groupMaxSize || 4 : 1,
       participants: [participant],
-      participantPhones: [participant.phone],
+      participantStudentIds: [studentId],
       pricePerStudent: bookingType === 'GROUP' ? { ...tutor.groupRate } : { ...tutor.hourlyRate },
       status: 'PENDING',
       createdAt: now,

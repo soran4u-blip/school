@@ -9,6 +9,7 @@ import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/m
 import { getInstitutionById, saveInstitution, deleteInstitution, getInstitutionVerificationDocuments, saveInstitutionVerificationDocuments } from '@/core/services/institutionService';
 import { getInstitutionInquiries, updateInquiryStatus, getApprovedReviews, replyToReview } from '@/core/services/reviewService';
 import { getInstitutionJobs, getInstitutionJobApplications, updateJob, createJob } from '@/core/services/jobService';
+import { getInstitutionAdmissionApplications } from '@/core/services/admissionService';
 import { getThreadMessages, sendInstitutionMessage } from '@/core/services/messagingService';
 import Link from 'next/link';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
@@ -53,6 +54,7 @@ function emptyProgram(): InstitutionProgram {
     tuitionAnnual: { amount: 0, currency: 'USD' },
     durationYears: 4,
     isActive: true,
+    isAcceptingApplications: true,
   };
 }
 
@@ -72,6 +74,7 @@ export default function InstitutionDashboardPage() {
   const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobApplicationCounts, setJobApplicationCounts] = useState<Record<string, number>>({});
+  const [admissionApplicationCounts, setAdmissionApplicationCounts] = useState<Record<string, number>>({});
   const [editingJob, setEditingJob] = useState<Job | Omit<Job, 'id' | 'createdAt' | 'updatedAt'> | null>(null);
   const [savingJob, setSavingJob] = useState(false);
 
@@ -108,7 +111,7 @@ export default function InstitutionDashboardPage() {
         const id = tokenResult.claims.institutionId as string | undefined;
         if (!id) return;
         setInstitutionId(id);
-        const [inst, govs, cats, taxes, instInquiries, instReviews, verifDocs, instJobs, instApplications] = await Promise.all([
+        const [inst, govs, cats, taxes, instInquiries, instReviews, verifDocs, instJobs, instApplications, instAdmissionApplications] = await Promise.all([
           getInstitutionById(id),
           getGovernorates(false),
           getCategories(false),
@@ -118,6 +121,7 @@ export default function InstitutionDashboardPage() {
           getInstitutionVerificationDocuments(id),
           getInstitutionJobs(id),
           getInstitutionJobApplications(id),
+          getInstitutionAdmissionApplications(id),
         ]);
         setInstitution(inst);
         setFacilitiesText((inst?.facilities || []).join(', '));
@@ -132,6 +136,12 @@ export default function InstitutionDashboardPage() {
         const counts: Record<string, number> = {};
         for (const app of instApplications) counts[app.jobId] = (counts[app.jobId] || 0) + 1;
         setJobApplicationCounts(counts);
+        const admissionCounts: Record<string, number> = {};
+        for (const app of instAdmissionApplications) {
+          if (app.status === 'WITHDRAWN') continue;
+          admissionCounts[app.programId] = (admissionCounts[app.programId] || 0) + 1;
+        }
+        setAdmissionApplicationCounts(admissionCounts);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -891,6 +901,50 @@ export default function InstitutionDashboardPage() {
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('حذف', 'Remove')}</span>
                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('السعة (اختياري)', 'Capacity (optional)')}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder={t('غير محدود', 'Unlimited')}
+                        value={prog.capacity ?? ''}
+                        onChange={(e) => updateProgram(prog.id, { capacity: e.target.value === '' ? undefined : Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('آخر موعد للتقديم', 'Application Deadline')}</label>
+                      <input
+                        type="date"
+                        value={prog.applicationDeadline || ''}
+                        onChange={(e) => updateProgram(prog.id, { applicationDeadline: e.target.value || undefined })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                      />
+                    </div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 cursor-pointer self-end pb-1.5">
+                      <input
+                        type="checkbox"
+                        checked={prog.isAcceptingApplications !== false}
+                        onChange={(e) => updateProgram(prog.id, { isAcceptingApplications: e.target.checked })}
+                        className="rounded text-emerald-600"
+                      />
+                      <span>{t('يقبل الطلبات حالياً', 'Accepting applications')}</span>
+                    </label>
+                    <div className="flex flex-col items-start justify-end gap-1">
+                      <span className="text-[11px] font-bold text-slate-600">
+                        {prog.acceptedCount || 0}{prog.capacity != null ? ` / ${prog.capacity}` : ''} {t('مقبول', 'accepted')}
+                      </span>
+                      <Link
+                        href={`/institution/dashboard/programs/${prog.id}`}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{admissionApplicationCounts[prog.id] || 0} {t('متقدم', 'applicants')}</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

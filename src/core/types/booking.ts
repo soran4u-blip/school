@@ -1,6 +1,7 @@
 export interface BookingParticipant {
-  name: string;
-  phone: string;
+  studentId: string; // the booking student's account uid — identity source, not client-supplied
+  name: string; // snapshot of the student's fullName at booking time
+  phone: string; // snapshot of the student's phone at booking time, for the tutor to contact them
 }
 
 export interface Booking {
@@ -14,7 +15,7 @@ export interface Booking {
   endTime: string; // 'HH:MM'
   maxGroupSize: number; // snapshot of the tutor's setting at booking time; 1 for INDIVIDUAL
   participants: BookingParticipant[];
-  participantPhones: string[]; // denormalized from participants[].phone, for lookup-by-phone queries
+  participantStudentIds: string[]; // denormalized from participants[].studentId, for lookup-by-account queries
   pricePerStudent: {
     iqd: number;
     usd: number;

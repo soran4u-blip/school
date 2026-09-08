@@ -5,8 +5,13 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { Calendar, Users, User, MessageSquare, MessageCircle, Send, AlertCircle } from 'lucide-react';
+import { Calendar, Users, User, MessageSquare, MessageCircle, Send, AlertCircle, Save, GraduationCap, X, Building2, FileX } from 'lucide-react';
 import { ThreadMessage } from '@/core/types/message';
+import { Student } from '@/core/types/student';
+import { getStudent, saveStudentProfile } from '@/core/services/studentService';
+import { getTaxonomies } from '@/core/services/masterDataService';
+import { TaxonomyItem } from '@/core/types/masterData';
+import { AdmissionApplicationStatus } from '@/core/types/admission';
 
 interface AccountBooking {
   id: string;
@@ -34,17 +39,60 @@ interface AccountInquiry {
   createdAt: string;
 }
 
+interface AccountAdmissionApplication {
+  id: string;
+  institutionId: string;
+  institutionName: { ar: string; en: string } | null;
+  institutionSlug: string | null;
+  programId: string;
+  programName: { ar: string; en: string };
+  status: AdmissionApplicationStatus;
+  message: string | null;
+  decisionNote: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
+  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
+  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
+  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
+  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
+  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
+  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
+};
+
+const ADMISSION_STATUS_STYLES: Record<AdmissionApplicationStatus, string> = {
+  SUBMITTED: 'bg-blue-50 text-blue-700',
+  UNDER_REVIEW: 'bg-amber-50 text-amber-700',
+  WAITLISTED: 'bg-purple-50 text-purple-700',
+  ACCEPTED: 'bg-emerald-50 text-emerald-700',
+  REJECTED: 'bg-rose-50 text-rose-700',
+  WITHDRAWN: 'bg-slate-100 text-slate-500',
+};
+
 export default function AccountPage() {
   const { language, t } = useLanguage();
   const [bookings, setBookings] = useState<AccountBooking[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
   const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
   const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
   const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
+
+  const [uid, setUid] = useState<string | null>(null);
+  const [student, setStudent] = useState<Student | null>(null);
+  const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
+  const [studentLevels, setStudentLevels] = useState<TaxonomyItem[]>([]);
+  const [profileSchool, setProfileSchool] = useState('');
+  const [profileLevelId, setProfileLevelId] = useState('');
+  const [profileSubjectIds, setProfileSubjectIds] = useState<string[]>([]);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
 
   const [inquiries, setInquiries] = useState<AccountInquiry[] | null>(null);
   const [expandedInquiryThreadId, setExpandedInquiryThreadId] = useState<string | null>(null);
@@ -53,16 +101,24 @@ export default function AccountPage() {
   const [inquiryMessageDrafts, setInquiryMessageDrafts] = useState<Record<string, string>>({});
   const [sendingInquiryThreadId, setSendingInquiryThreadId] = useState<string | null>(null);
 
+  const [admissionApplications, setAdmissionApplications] = useState<AccountAdmissionApplication[] | null>(null);
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setLoading(false);
         return;
       }
+      setUid(user.uid);
       try {
-        const [bookingsRes, inquiriesRes] = await Promise.all([
+        const [bookingsRes, inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels] = await Promise.all([
           fetch('/api/account/bookings'),
           fetch('/api/account/inquiries'),
+          fetch('/api/account/admission-applications'),
+          getStudent(user.uid),
+          getTaxonomies('SUBJECT'),
+          getTaxonomies('STUDENT_LEVEL'),
         ]);
         const bookingsData = await bookingsRes.json();
         if (!bookingsRes.ok || !bookingsData.success) {
@@ -74,6 +130,16 @@ export default function AccountPage() {
         if (inquiriesRes.ok && inquiriesData.success) {
           setInquiries(inquiriesData.inquiries);
         }
+        const admissionApplicationsData = await admissionApplicationsRes.json();
+        if (admissionApplicationsRes.ok && admissionApplicationsData.success) {
+          setAdmissionApplications(admissionApplicationsData.applications);
+        }
+        setStudent(studentDoc);
+        setProfileSchool(studentDoc?.school || '');
+        setProfileLevelId(studentDoc?.studentLevelId || '');
+        setProfileSubjectIds(studentDoc?.subjectIds || []);
+        setSubjects(subs);
+        setStudentLevels(levels);
       } catch {
         setError(t('تعذر تحميل الحجوزات', 'Failed to load bookings'));
       } finally {
@@ -83,6 +149,56 @@ export default function AccountPage() {
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleWithdrawApplication = async (applicationId: string) => {
+    if (!confirm(t('هل أنت متأكد من سحب هذا الطلب؟', 'Are you sure you want to withdraw this application?'))) return;
+    setWithdrawingId(applicationId);
+    try {
+      const res = await fetch(`/api/account/admission-applications/${applicationId}/withdraw`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || t('تعذر سحب الطلب', 'Failed to withdraw application'));
+        return;
+      }
+      setAdmissionApplications((prev) => prev?.map((a) => (a.id === applicationId ? { ...a, status: 'WITHDRAWN' } : a)) || null);
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!uid) return;
+    setSavingProfile(true);
+    setProfileMessage('');
+    try {
+      await saveStudentProfile(uid, {
+        school: profileSchool.trim(),
+        studentLevelId: profileLevelId,
+        subjectIds: profileSubjectIds,
+      });
+      setProfileMessage(t('تم حفظ الملف الشخصي', 'Profile saved'));
+    } catch {
+      setProfileMessage(t('تعذر حفظ الملف الشخصي', 'Failed to save profile'));
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!confirm(t('هل أنت متأكد من إلغاء هذا الحجز؟', 'Are you sure you want to cancel this booking?'))) return;
+    setCancellingId(bookingId);
+    try {
+      const res = await fetch(`/api/account/bookings/${bookingId}/cancel`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || t('تعذر إلغاء الحجز', 'Failed to cancel booking'));
+        return;
+      }
+      setBookings((prev) => prev?.map((b) => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b)) || null);
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const toggleThread = async (bookingId: string) => {
     if (expandedThreadId === bookingId) {
@@ -178,6 +294,89 @@ export default function AccountPage() {
         </div>
       )}
 
+      {student && (
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4 text-emerald-700" />
+            <h2 className="text-sm font-extrabold text-[#0B192C]">{t('ملفي الدراسي', 'My Student Profile')}</h2>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('المدرسة', 'School')}</label>
+            <input
+              type="text"
+              value={profileSchool}
+              onChange={(e) => setProfileSchool(e.target.value)}
+              placeholder={t('اسم مدرستك أو جامعتك', 'Your school or university')}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('الصف الدراسي', 'Grade / Level')}</label>
+            <select
+              value={profileLevelId}
+              onChange={(e) => setProfileLevelId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">{t('اختر الصف الدراسي', 'Select your grade / level')}</option>
+              {studentLevels.map((lvl) => (
+                <option key={lvl.id} value={lvl.id}>{language === 'en' ? lvl.name.en : lvl.name.ar}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-2">{t('المواد التي تهمك', 'Subjects of Interest')}</label>
+            <div className="flex flex-wrap gap-2">
+              {subjects.map((sub) => {
+                const checked = profileSubjectIds.includes(sub.id);
+                return (
+                  <label
+                    key={sub.id}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
+                      checked ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={checked}
+                      onChange={(e) => {
+                        const ids = new Set(profileSubjectIds);
+                        if (e.target.checked) ids.add(sub.id); else ids.delete(sub.id);
+                        setProfileSubjectIds(Array.from(ids));
+                      }}
+                    />
+                    {language === 'en' ? sub.name.en : sub.name.ar}
+                  </label>
+                );
+              })}
+              {subjects.length === 0 && (
+                <span className="text-[11px] text-slate-400">{t('لا توجد مواد دراسية بعد', 'No subjects available yet')}</span>
+              )}
+            </div>
+          </div>
+
+          {profileMessage && (
+            <p className="text-xs font-semibold text-emerald-700">{profileMessage}</p>
+          )}
+
+          <button
+            onClick={handleSaveProfile}
+            disabled={savingProfile}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B192C] hover:bg-[#1E3E62] text-white text-xs font-bold disabled:opacity-60"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {t('حفظ الملف الشخصي', 'Save Profile')}
+          </button>
+        </div>
+      )}
+
+      <div>
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('حجوزاتي', 'My Bookings')}</h2>
+      </div>
+
       {bookings && bookings.length === 0 && (
         <div className="text-center text-sm text-slate-400 py-12">
           {t('لا توجد حجوزات بعد.', 'No bookings yet.')}{' '}
@@ -233,6 +432,16 @@ export default function AccountPage() {
                       <MessageSquare className="w-4 h-4" />
                     </a>
                   )}
+                  {(b.status === 'PENDING' || b.status === 'CONFIRMED') && (
+                    <button
+                      onClick={() => handleCancelBooking(b.id)}
+                      disabled={cancellingId === b.id}
+                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg disabled:opacity-60"
+                      title={t('إلغاء الحجز', 'Cancel booking')}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -275,6 +484,63 @@ export default function AccountPage() {
                   </div>
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="pt-4">
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('طلبات القبول', 'Admission Applications')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('طلبات التقديم على البرامج الأكاديمية وحالتها.', 'Your applications to academic programs and their status.')}</p>
+      </div>
+
+      {admissionApplications && admissionApplications.length === 0 && (
+        <div className="text-center text-sm text-slate-400 py-12">
+          {t('لا توجد طلبات قبول بعد.', 'No admission applications yet.')}{' '}
+          <Link href="/explore" className="text-emerald-700 font-bold hover:underline">{t('تصفّح المؤسسات', 'Browse institutions')}</Link>
+        </div>
+      )}
+
+      {admissionApplications && admissionApplications.length > 0 && (
+        <div className="space-y-3">
+          {admissionApplications.map((app) => (
+            <div key={app.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    {app.institutionSlug ? (
+                      <Link href={`/institutions/${app.institutionSlug}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
+                        {app.institutionName ? (language === 'en' ? app.institutionName.en : app.institutionName.ar) : app.institutionId}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-sm text-slate-900">
+                        {app.institutionName ? (language === 'en' ? app.institutionName.en : app.institutionName.ar) : app.institutionId}
+                      </span>
+                    )}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ADMISSION_STATUS_STYLES[app.status]}`}>
+                      {language === 'en' ? ADMISSION_STATUS_LABELS[app.status].en : ADMISSION_STATUS_LABELS[app.status].ar}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 font-bold">
+                    {language === 'en' ? app.programName.en : app.programName.ar}
+                  </div>
+                  {app.decisionNote && (
+                    <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 mt-1">{app.decisionNote}</p>
+                  )}
+                </div>
+
+                {(app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW' || app.status === 'WAITLISTED' || app.status === 'ACCEPTED') && (
+                  <button
+                    onClick={() => handleWithdrawApplication(app.id)}
+                    disabled={withdrawingId === app.id}
+                    className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold disabled:opacity-60"
+                  >
+                    <FileX className="w-3.5 h-3.5" />
+                    <span>{t('سحب الطلب', 'Withdraw')}</span>
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
