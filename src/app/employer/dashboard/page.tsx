@@ -208,12 +208,15 @@ export default function EmployerDashboardPage() {
                   <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
                 ))}
               </select>
-              <input
-                type="date"
-                value={editingJob.applicationDeadline || ''}
-                onChange={(e) => setEditingJob({ ...editingJob, applicationDeadline: e.target.value })}
-                className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-              />
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('آخر موعد لتقديم الطلبات', 'Application Deadline')}</label>
+                <input
+                  type="date"
+                  value={editingJob.applicationDeadline || ''}
+                  onChange={(e) => setEditingJob({ ...editingJob, applicationDeadline: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                />
+              </div>
               <label className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-700">
                 <input
                   type="checkbox"
