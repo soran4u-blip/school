@@ -2,7 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getCategories, getGovernorates } from '@/core/services/masterDataService';
 import { Category, Governorate } from '@/core/types/masterData';
@@ -19,11 +21,20 @@ import {
   Users,
   ChevronDown,
   Menu,
-  X
+  X,
+  LogOut,
 } from 'lucide-react';
+
+const DASHBOARD_BY_ROLE: Record<string, string> = {
+  tutor: '/tutor/dashboard',
+  student: '/account',
+  institution: '/institution/dashboard',
+  employer: '/employer/dashboard',
+};
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
+  const router = useRouter();
   const pathname = usePathname();
   const [categories, setCategories] = useState<Category[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
@@ -31,6 +42,7 @@ export default function Navbar() {
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef<HTMLDivElement>(null);
+  const [accountPath, setAccountPath] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadNavData() {
@@ -43,6 +55,27 @@ export default function Navbar() {
     }
     loadNavData();
   }, []);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setAccountPath(null);
+        return;
+      }
+      const tokenResult = await user.getIdTokenResult();
+      const role = tokenResult.claims.role as string | undefined;
+      setAccountPath((role && DASHBOARD_BY_ROLE[role]) || null);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    await signOut(auth);
+    setAccountPath(null);
+    router.push('/');
+    router.refresh();
+  };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -88,10 +121,23 @@ export default function Navbar() {
               <Languages className="w-3 h-3" />
               {language === 'ar' ? 'English' : 'عربي'}
             </button>
-            <Link href="/login" className="flex items-center gap-1 hover:text-white transition-colors">
-              <UserCheck className="w-3 h-3" />
-              {t('تسجيل الدخول', 'Login')}
-            </Link>
+            {accountPath ? (
+              <>
+                <Link href={accountPath} className="flex items-center gap-1 hover:text-white transition-colors">
+                  <UserCheck className="w-3 h-3" />
+                  {t('حسابي', 'My Account')}
+                </Link>
+                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-white transition-colors">
+                  <LogOut className="w-3 h-3" />
+                  {t('تسجيل الخروج', 'Log Out')}
+                </button>
+              </>
+            ) : (
+              <Link href="/login" className="flex items-center gap-1 hover:text-white transition-colors">
+                <UserCheck className="w-3 h-3" />
+                {t('تسجيل الدخول', 'Login')}
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -270,13 +316,31 @@ export default function Navbar() {
           </Link>
 
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
-            >
-              {t('تسجيل الدخول', 'Login')}
-            </Link>
+            {accountPath ? (
+              <>
+                <Link
+                  href={accountPath}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
+                >
+                  {t('حسابي', 'My Account')}
+                </Link>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                  className="w-full text-center py-2 text-xs font-bold text-red-700 border border-red-200 rounded-lg"
+                >
+                  {t('تسجيل الخروج', 'Log Out')}
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
+              >
+                {t('تسجيل الدخول', 'Login')}
+              </Link>
+            )}
             <Link
               href="/apply"
               onClick={() => setMobileMenuOpen(false)}
