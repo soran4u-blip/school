@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
+import ErrorReporter from '@/components/shared/ErrorReporter';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = 'Eduraq | دليل العراق التعليمي - المدارس، الجامعات، والأساتذة';
@@ -52,6 +53,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+        <ErrorReporter />
         <LanguageProvider>
           {children}
         </LanguageProvider>

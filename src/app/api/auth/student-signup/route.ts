@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { logServerError } from '@/core/server/errorLog';
 
 // Students self-register (no admin approval, unlike tutors) — this route runs immediately
 // after the client creates the Firebase Auth user, to attach the 'student' role + their phone
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Student signup failed:', error);
+    logServerError('Student signup failed', { stack: error?.stack, url: request.url });
     return NextResponse.json({ success: false, error: 'Signup failed' }, { status: 500 });
   }
 }

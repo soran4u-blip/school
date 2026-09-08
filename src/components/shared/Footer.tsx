@@ -141,6 +141,8 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} Eduraq. {t('جميع الحقوق محفوظة لجمهورية العراق.', 'All rights reserved. Republic of Iraq.')}</p>
           <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-white transition-colors">{t('سياسة الخصوصية', 'Privacy Policy')}</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">{t('شروط الاستخدام', 'Terms of Use')}</Link>
             <span>{t('تحديث فوري وقاعدة بيانات ديناميكية', 'Real-time & Zero Hardcoding Engine')}</span>
           </div>
         </div>

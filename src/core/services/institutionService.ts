@@ -8,7 +8,13 @@ const inMemoryInstitutions: Institution[] = (initialSeed.institutions as unknown
 /* =========================================================
    INSTITUTIONS DIRECTORY
 ========================================================= */
-async function getMergedInstitutions(): Promise<Institution[]> {
+// `wantsAll` is true only for the admin 'ALL' case — every other caller (the overwhelming
+// majority of traffic: the public directory, explore, search) only ever wants ACTIVE
+// institutions. Going straight to the ACTIVE-filtered query for that common case avoids a
+// wasted, guaranteed-to-fail unfiltered read on every single public page load — the previous
+// version always attempted the unfiltered query first and only fell back to the filtered one
+// once Firestore rejected it, doubling round-trip latency for almost all traffic.
+async function getMergedInstitutions(wantsAll = false): Promise<Institution[]> {
   let list = inMemoryInstitutions;
   try {
     if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
@@ -17,9 +23,13 @@ async function getMergedInstitutions(): Promise<Institution[]> {
       // must filter on `status` to match the rule's data-dependent branch, or Firestore
       // denies the list outright — fall back to that filtered query in that case.
       let snap;
-      try {
-        snap = await getDocs(collection(db, 'institutions'));
-      } catch {
+      if (wantsAll) {
+        try {
+          snap = await getDocs(collection(db, 'institutions'));
+        } catch {
+          snap = await getDocs(query(collection(db, 'institutions'), where('status', '==', 'ACTIVE')));
+        }
+      } else {
         snap = await getDocs(query(collection(db, 'institutions'), where('status', '==', 'ACTIVE')));
       }
       if (!snap.empty) {
@@ -41,7 +51,7 @@ export async function getInstitutions(filter?: {
   isVerified?: boolean;
   status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
 }): Promise<Institution[]> {
-  let list = await getMergedInstitutions();
+  let list = await getMergedInstitutions(filter?.status === 'ALL');
   if (filter?.status === 'ALL') {
     // no status filtering — admin needs to see PENDING/INACTIVE listings too
   } else if (filter?.status) {

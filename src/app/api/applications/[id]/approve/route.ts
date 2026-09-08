@@ -5,6 +5,7 @@ import { Tutor } from '@/core/types/tutor';
 import { Institution } from '@/core/types/institution';
 import { Employer } from '@/core/types/employer';
 import { slugify } from '@/lib/slug';
+import { logServerError } from '@/core/server/errorLog';
 
 function randomPassword(): string {
   return Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
@@ -78,6 +79,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
       }
       console.error('Application approval failed:', error);
+      logServerError('Application approval failed', { stack: error?.stack, url: _request.url });
       return NextResponse.json({ success: false, error: 'Approval failed' }, { status: 500 });
     }
   }
@@ -119,6 +121,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
       }
       console.error('Application approval failed:', error);
+      logServerError('Application approval failed', { stack: error?.stack, url: _request.url });
       return NextResponse.json({ success: false, error: 'Approval failed' }, { status: 500 });
     }
   }
@@ -171,6 +174,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
     }
     console.error('Application approval failed:', error);
+    logServerError('Application approval failed', { stack: error?.stack, url: _request.url });
     return NextResponse.json({ success: false, error: 'Approval failed' }, { status: 500 });
   }
 }

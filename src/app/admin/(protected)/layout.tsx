@@ -27,7 +27,8 @@ import {
   FileCheck2,
   Briefcase,
   Users,
-  BarChart3
+  BarChart3,
+  Bug
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -130,6 +131,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/community',
       label: { ar: 'مجتمع الأهالي', en: 'Community' },
       icon: Users,
+    },
+    {
+      href: '/admin/errors',
+      label: { ar: 'أخطاء النظام', en: 'System Errors' },
+      icon: Bug,
     },
     {
       href: '/admin/settings',

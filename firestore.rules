@@ -315,5 +315,13 @@ service cloud.firestore {
     match /students/{studentId} {
       allow read, write: if isSuperAdmin() || isOwner(studentId);
     }
+
+    // In-house error log (no third-party monitoring account needed) — written only via the
+    // Admin SDK (/api/errors for client-reported errors, logServerError() for server-side ones),
+    // never directly by a client, since a report can come from a fully logged-out visitor.
+    match /errorLogs/{errorId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
   }
 }

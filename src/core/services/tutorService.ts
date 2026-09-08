@@ -8,14 +8,24 @@ const inMemoryTutors: Tutor[] = (initialSeed.tutors as unknown) as Tutor[];
 /* =========================================================
    PRIVATE TUTORS
 ========================================================= */
-async function getMergedTutors(): Promise<Tutor[]> {
+// `wantsAll` is true only for the admin 'ALL' case — every other caller (the overwhelming
+// majority of traffic: the public /tutors listing, explore, search) only ever wants ACTIVE
+// tutors. Going straight to the ACTIVE-filtered query for that common case avoids a wasted,
+// guaranteed-to-fail unfiltered read on every single public page load — the previous version
+// always attempted the unfiltered query first and only fell back to the filtered one once
+// Firestore rejected it, doubling the round-trip latency for almost all traffic.
+async function getMergedTutors(wantsAll = false): Promise<Tutor[]> {
   let list = inMemoryTutors;
   try {
     if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
       let snap;
-      try {
-        snap = await getDocs(collection(db, 'tutors'));
-      } catch {
+      if (wantsAll) {
+        try {
+          snap = await getDocs(collection(db, 'tutors'));
+        } catch {
+          snap = await getDocs(query(collection(db, 'tutors'), where('status', '==', 'ACTIVE')));
+        }
+      } else {
         snap = await getDocs(query(collection(db, 'tutors'), where('status', '==', 'ACTIVE')));
       }
       if (!snap.empty) {
@@ -37,7 +47,7 @@ export async function getTutors(filter?: {
   status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
   keyword?: string;
 }): Promise<Tutor[]> {
-  let list = await getMergedTutors();
+  let list = await getMergedTutors(filter?.status === 'ALL');
   if (filter?.status === 'ALL') {
     // no status filtering — admin needs to see PENDING/INACTIVE listings too
   } else if (filter?.status) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/core/firebase/admin';
 import { Booking } from '@/core/types/booking';
+import { logServerError } from '@/core/server/errorLog';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ tutorId: string }> }) {
   if (!adminDb) {
@@ -39,8 +40,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }));
 
     return NextResponse.json({ success: true, slots });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Failed to load booking slots:', e);
+    logServerError('Failed to load booking slots', { stack: e?.stack, url: request.url });
     // Degrade gracefully: an empty slot list just means every availability
     // slot renders as open, rather than breaking the booking calendar entirely.
     return NextResponse.json({ success: true, slots: [] });
