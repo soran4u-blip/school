@@ -2,6 +2,7 @@ import { LocalizedString } from './masterData';
 
 export interface Job {
   id: string;
+  slug?: string; // human-readable URL slug; optional since jobs created before this field lack one — /jobs/[slug] falls back to id
   // Exactly one of these is set, depending on who posted it — same "exactly one owner" pattern
   // as Review's institutionId?/tutorId?.
   institutionId?: string;

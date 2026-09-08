@@ -10,6 +10,7 @@ export interface AvailabilitySlot {
 export interface Tutor {
   id: string;
   userId?: string;
+  slug?: string; // human-readable URL slug; optional since tutors created before this field lack one — /tutors/[slug] falls back to id
   fullName: LocalizedString;
   title: LocalizedString; // e.g. 'Senior Baccalaureate Physics Instructor / أستاذ الفيزياء للفرع العلمي'
   bio: LocalizedString;

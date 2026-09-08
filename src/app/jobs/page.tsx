@@ -250,7 +250,7 @@ function JobsContent() {
                   return (
                     <Link
                       key={job.id}
-                      href={`/jobs/${job.id}`}
+                      href={`/jobs/${job.slug || job.id}`}
                       className="block bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all p-5"
                     >
                       <div className="flex items-start justify-between gap-3 flex-wrap">

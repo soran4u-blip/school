@@ -1,13 +1,15 @@
 import { CommunityPost, CommunityReply } from '../types/community';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { slugify } from '@/lib/slug';
 
 /* =========================================================
    COMMUNITY DISCUSSION BOARDS (governorate-scoped Q&A)
 ========================================================= */
 export async function createCommunityPost(post: Omit<CommunityPost, 'id' | 'createdAt' | 'status' | 'replyCount'>): Promise<CommunityPost> {
   const ref = doc(collection(db, 'communityPosts'));
-  const newPost: CommunityPost = { ...post, id: ref.id, status: 'PENDING', replyCount: 0, createdAt: new Date().toISOString() };
+  const slug = slugify(post.title, ref.id.slice(-6), 'post');
+  const newPost: CommunityPost = { ...post, id: ref.id, slug, status: 'PENDING', replyCount: 0, createdAt: new Date().toISOString() };
   await setDoc(ref, newPost);
   return newPost;
 }
@@ -29,6 +31,22 @@ export async function getApprovedCommunityPosts(governorateId?: string): Promise
 export async function getCommunityPostById(id: string): Promise<CommunityPost | null> {
   const snap = await getDoc(doc(db, 'communityPosts', id));
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as CommunityPost) : null;
+}
+
+// Public detail-page lookup by slug, falling back to a raw id — posts created before the slug
+// field existed (or a stale bookmark) still resolve. The query filters on `status` alongside
+// `slug` because firestore.rules' read check is keyed off resource.data.status — a query whose
+// `where` doesn't include that exact field gets rejected outright for an unauthenticated reader,
+// same reasoning as getInstitutionJobApplications' institutionId filter above.
+export async function getCommunityPostBySlug(slug: string): Promise<CommunityPost | null> {
+  try {
+    const q = query(collection(db, 'communityPosts'), where('slug', '==', slug), where('status', '==', 'APPROVED'));
+    const snap = await getDocs(q);
+    if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() } as CommunityPost;
+  } catch {
+    // fall through to id-based lookup
+  }
+  return getCommunityPostById(slug);
 }
 
 export async function getAllCommunityPosts(): Promise<CommunityPost[]> {

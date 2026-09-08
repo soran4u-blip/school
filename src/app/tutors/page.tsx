@@ -253,7 +253,7 @@ export default function TutorsListPage() {
               return (
                 <Link
                   key={tutor.id}
-                  href={`/tutors/${tutor.id}`}
+                  href={`/tutors/${tutor.slug || tutor.id}`}
                   className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex gap-4 items-start"
                 >
                   <Image

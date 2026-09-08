@@ -6,7 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
-import { getJobById, createJobApplication } from '@/core/services/jobService';
+import { getJobBySlug, createJobApplication } from '@/core/services/jobService';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { Job } from '@/core/types/job';
 import { Institution } from '@/core/types/institution';
@@ -36,8 +36,8 @@ const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string 
 
 const MAX_RESUME_SIZE = 5 * 1024 * 1024;
 
-export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function JobDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const { language, t } = useLanguage();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -57,7 +57,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const j = await getJobById(id);
+      const j = await getJobBySlug(slug);
       setJob(j);
       if (j) {
         const [inst, govs, subs] = await Promise.all([
@@ -72,7 +72,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       setLoading(false);
     }
     load();
-  }, [id]);
+  }, [slug]);
 
   const handleResumeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

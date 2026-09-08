@@ -88,7 +88,7 @@ function CommunityContent() {
               return (
                 <Link
                   key={post.id}
-                  href={`/community/${post.id}`}
+                  href={`/community/${post.slug || post.id}`}
                   className="block bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all p-5"
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">

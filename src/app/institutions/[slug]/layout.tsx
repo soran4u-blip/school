@@ -39,6 +39,49 @@ export async function generateMetadata({
   };
 }
 
-export default function InstitutionLayout({ children }: { children: React.ReactNode }) {
-  return children;
+export default async function InstitutionLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const institution = await getInstitutionBySlug(slug);
+
+  if (!institution) {
+    return children;
+  }
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: institution.name.en,
+    description: institution.description.en || institution.tagline.en,
+    logo: institution.logoUrl || undefined,
+    image: institution.coverImageUrl || undefined,
+    telephone: institution.contact.phonePrimary || undefined,
+    email: institution.contact.email || undefined,
+    url: institution.contact.website || undefined,
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'IQ',
+      addressRegion: institution.governorateId,
+      streetAddress: institution.address.en || undefined,
+    },
+    ...(institution.metrics.reviewCount > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: institution.metrics.ratingAvg,
+        reviewCount: institution.metrics.reviewCount,
+      },
+    }),
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {children}
+    </>
+  );
 }

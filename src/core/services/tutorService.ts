@@ -84,6 +84,13 @@ export async function getTutorById(id: string): Promise<Tutor | null> {
   return inMemoryTutors.find(t => t.id === id) || null;
 }
 
+// Public detail-page lookup by slug, falling back to a raw id — tutors approved before the slug
+// field existed (or a stale bookmark) still resolve.
+export async function getTutorBySlug(slug: string): Promise<Tutor | null> {
+  const list = await getMergedTutors();
+  return list.find(t => t.slug === slug) || getTutorById(slug);
+}
+
 export async function saveTutor(tutor: Tutor): Promise<Tutor> {
   const now = new Date().toISOString();
   const toSave: Tutor = { ...tutor, createdAt: tutor.createdAt || now, updatedAt: now };

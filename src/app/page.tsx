@@ -453,7 +453,7 @@ export default function HomePage() {
                 <div className="flex-1 space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <Link href={`/tutors/${tutor.id}`} className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors">
+                      <Link href={`/tutors/${tutor.slug || tutor.id}`} className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors">
                         {language === 'en' ? tutor.fullName.en : tutor.fullName.ar}
                       </Link>
                       <p className="text-xs font-semibold text-blue-700">
@@ -479,7 +479,7 @@ export default function HomePage() {
 
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/tutors/${tutor.id}`}
+                        href={`/tutors/${tutor.slug || tutor.id}`}
                         className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                       >
                         <span>{t('احجز موعداً', 'Book Now')}</span>

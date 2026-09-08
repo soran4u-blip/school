@@ -1,5 +1,6 @@
 export interface CommunityPost {
   id: string;
+  slug?: string; // human-readable URL slug; optional since posts created before this field lack one — /community/[slug] falls back to id
   governorateId: string;
   authorName: string;
   title: string;

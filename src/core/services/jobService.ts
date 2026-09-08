@@ -1,6 +1,7 @@
 import { Job, JobApplication } from '../types/job';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import { slugify } from '@/lib/slug';
 
 /* =========================================================
    JOBS & JOB APPLICATIONS
@@ -8,7 +9,8 @@ import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where } fro
 export async function createJob(job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<Job> {
   const ref = doc(collection(db, 'jobs'));
   const now = new Date().toISOString();
-  const newJob: Job = { ...job, id: ref.id, createdAt: now, updatedAt: now };
+  const slug = slugify(job.title.en || job.title.ar, ref.id.slice(-6), 'job');
+  const newJob: Job = { ...job, id: ref.id, slug, createdAt: now, updatedAt: now };
   const payload = Object.fromEntries(Object.entries(newJob).filter(([, v]) => v !== undefined));
   await setDoc(ref, payload);
   return newJob;
@@ -24,6 +26,24 @@ export async function updateJob(id: string, patch: Partial<Job>): Promise<void> 
 export async function getJobById(id: string): Promise<Job | null> {
   const snap = await getDoc(doc(db, 'jobs', id));
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Job) : null;
+}
+
+// Public detail-page lookup by slug, falling back to a raw id — jobs created before the slug
+// field existed (or a stale bookmark) still resolve. The query filters on `status` alongside
+// `slug` because firestore.rules' read check is keyed off resource.data.status — a query whose
+// `where` doesn't include that exact field gets rejected outright for an unauthenticated reader,
+// same reasoning as getInstitutionJobApplications' institutionId filter above. A DRAFT/CLOSED
+// job (owner preview) falls through to the direct getJobById(slug) doc-read, which isOwnerOfJob
+// still permits.
+export async function getJobBySlug(slug: string): Promise<Job | null> {
+  try {
+    const q = query(collection(db, 'jobs'), where('slug', '==', slug), where('status', '==', 'ACTIVE'));
+    const snap = await getDocs(q);
+    if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() } as Job;
+  } catch {
+    // fall through to id-based lookup
+  }
+  return getJobById(slug);
 }
 
 export async function getInstitutionJobs(institutionId: string): Promise<Job[]> {

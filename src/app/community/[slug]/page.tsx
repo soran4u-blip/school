@@ -6,7 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates } from '@/core/services/masterDataService';
-import { getCommunityPostById, getCommunityReplies, createCommunityReply } from '@/core/services/communityService';
+import { getCommunityPostBySlug, getCommunityReplies, createCommunityReply } from '@/core/services/communityService';
 import { CommunityPost, CommunityReply } from '@/core/types/community';
 import { Governorate } from '@/core/types/masterData';
 import { auth } from '@/core/firebase/config';
@@ -14,8 +14,8 @@ import { signInAnonymously } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { MapPin, MessageCircle } from 'lucide-react';
 
-export default function CommunityPostPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function CommunityPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const { language, t } = useLanguage();
 
   const [post, setPost] = useState<CommunityPost | null>(null);
@@ -30,12 +30,12 @@ export default function CommunityPostPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const p = await getCommunityPostById(id);
+      const p = await getCommunityPostBySlug(slug);
       if (p && p.status === 'APPROVED') {
         setPost(p);
         const [govs, repliesList] = await Promise.all([
           getGovernorates(),
-          getCommunityReplies(id),
+          getCommunityReplies(p.id),
         ]);
         setGovernorate(govs.find((g) => g.id === p.governorateId) || null);
         setReplies(repliesList);
@@ -43,7 +43,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ id: st
       setLoading(false);
     }
     load();
-  }, [id]);
+  }, [slug]);
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();

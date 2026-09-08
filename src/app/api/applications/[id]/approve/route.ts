@@ -4,19 +4,10 @@ import { Application } from '@/core/types/application';
 import { Tutor } from '@/core/types/tutor';
 import { Institution } from '@/core/types/institution';
 import { Employer } from '@/core/types/employer';
+import { slugify } from '@/lib/slug';
 
 function randomPassword(): string {
   return Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
-}
-
-function slugify(name: string, uniqueSuffix: string): string {
-  const base = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .slice(0, 60);
-  return `${base || 'institution'}-${uniqueSuffix}`;
 }
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -49,7 +40,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       const institution: Institution = {
         id: instRef.id,
         userId: authUser.uid,
-        slug: slugify(application.fullName, instRef.id.slice(-6)),
+        slug: slugify(application.fullName, instRef.id.slice(-6), 'institution'),
         name: { ar: application.fullName, en: application.fullName },
         categoryId: application.categoryId || '',
         governorateId: application.governorateId,
@@ -144,6 +135,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const tutor: Tutor = {
       id: tutorRef.id,
       userId: authUser.uid,
+      slug: slugify(application.fullName, tutorRef.id.slice(-6), 'tutor'),
       fullName: { ar: application.fullName, en: application.fullName },
       title: { ar: '', en: '' },
       bio: { ar: application.message, en: application.message },

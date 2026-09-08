@@ -8,7 +8,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorateById, getTaxonomies } from '@/core/services/masterDataService';
-import { getTutorById } from '@/core/services/tutorService';
+import { getTutorBySlug } from '@/core/services/tutorService';
 import { getApprovedTutorReviews, createReview } from '@/core/services/reviewService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -84,7 +84,7 @@ function nextNDays(n: number): { date: string; dayOfWeek: number }[] {
   return out;
 }
 
-export default function TutorProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default function TutorProfilePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const { language, t } = useLanguage();
@@ -133,7 +133,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
     async function load() {
       setLoading(true);
       try {
-        const tut = await getTutorById(resolvedParams.id);
+        const tut = await getTutorBySlug(resolvedParams.slug);
         if (tut) {
           setTutor(tut);
           const [gov, taxes, levels, revs] = await Promise.all([
@@ -154,7 +154,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedParams.id]);
+  }, [resolvedParams.slug]);
 
   // Slot statuses are best-effort/eventually-consistent: poll periodically so a
   // student doesn't act on a stale "open" slot someone else just filled.
@@ -207,7 +207,7 @@ export default function TutorProfilePage({ params }: { params: Promise<{ id: str
 
   const openBooking = (daySlot: DaySlot, mode: 'INDIVIDUAL' | 'GROUP', existingGroupId?: string) => {
     if (!currentUser) {
-      router.push(`/login?redirect=${encodeURIComponent(`/tutors/${resolvedParams.id}`)}`);
+      router.push(`/login?redirect=${encodeURIComponent(`/tutors/${resolvedParams.slug}`)}`);
       return;
     }
     setSelectedSlot(daySlot);

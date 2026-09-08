@@ -46,7 +46,7 @@ export function getSearchSuggestions(
         id: tutor.id,
         label: language === 'en' ? tutor.fullName.en : tutor.fullName.ar,
         sublabel: language === 'en' ? tutor.title.en : tutor.title.ar,
-        href: `/tutors/${tutor.id}`,
+        href: `/tutors/${tutor.slug || tutor.id}`,
       });
     }
   }
