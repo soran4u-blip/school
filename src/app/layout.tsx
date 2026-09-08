@@ -27,6 +27,22 @@ export const metadata: Metadata = {
   },
 };
 
+// Unlocks Google's sitelinks search box (a search field shown directly under the site's result).
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Eduraq',
+  url: siteUrl,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${siteUrl}/explore?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <LanguageProvider>
           {children}
         </LanguageProvider>

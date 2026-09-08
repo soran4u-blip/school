@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getJobBySlug } from '@/core/services/jobService';
 import { getInstitutionById } from '@/core/services/institutionService';
+import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 const EMPLOYMENT_TYPE_SCHEMA: Record<string, string> = {
   FULL_TIME: 'FULL_TIME',
@@ -91,9 +92,16 @@ export default async function JobLayout({
     }),
   };
 
+  const breadcrumb = breadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Jobs', url: '/jobs' },
+    { name: job.title.en, url: `/jobs/${job.slug || job.id}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       {children}
     </>
   );

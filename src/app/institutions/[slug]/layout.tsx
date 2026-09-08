@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getInstitutionBySlug } from '@/core/services/institutionService';
+import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 export async function generateMetadata({
   params,
@@ -78,9 +79,16 @@ export default async function InstitutionLayout({
     }),
   };
 
+  const breadcrumb = breadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Explore', url: '/explore' },
+    { name: institution.name.en, url: `/institutions/${institution.slug}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       {children}
     </>
   );

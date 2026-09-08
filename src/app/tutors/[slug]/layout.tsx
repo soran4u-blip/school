@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTutorBySlug } from '@/core/services/tutorService';
+import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 export async function generateMetadata({
   params,
@@ -71,9 +72,16 @@ export default async function TutorLayout({
       : {}),
   };
 
+  const breadcrumb = breadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Tutors', url: '/tutors' },
+    { name: tutor.fullName.en, url: `/tutors/${tutor.slug || tutor.id}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       {children}
     </>
   );

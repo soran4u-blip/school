@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getCommunityPostBySlug } from '@/core/services/communityService';
+import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 export async function generateMetadata({
   params,
@@ -57,9 +58,16 @@ export default async function CommunityPostLayout({
     },
   };
 
+  const breadcrumb = breadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Community', url: '/community' },
+    { name: post.title, url: `/community/${post.slug || post.id}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       {children}
     </>
   );
