@@ -195,7 +195,7 @@ export default function EmployerJobApplicantsPage({ params }: { params: Promise<
                     <tr className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-3">
                         <div className="font-bold text-slate-900">{app.fullName}</div>
-                        <div className="flex items-center gap-1.5 text-slate-500 font-mono mt-0.5">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-mono mt-0.5" dir="ltr">
                           <Phone className="w-3 h-3" />
                           <span>{app.phone}</span>
                         </div>

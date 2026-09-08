@@ -105,7 +105,7 @@ export default function AdminEmployersPage() {
                       <Mail className="w-3 h-3" />
                       {employer.contact.email}
                     </div>
-                    <div className="flex items-center gap-1 text-slate-500">
+                    <div className="flex items-center gap-1 text-slate-500" dir="ltr">
                       <Phone className="w-3 h-3" />
                       {employer.contact.phone}
                     </div>

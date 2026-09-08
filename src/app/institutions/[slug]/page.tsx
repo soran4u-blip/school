@@ -755,7 +755,7 @@ export default function InstitutionProfilePage({
               </button>
 
               <div className="pt-4 border-t border-slate-100 space-y-3 text-xs">
-                <div className="flex items-center gap-3 text-slate-700">
+                <div className="flex items-center gap-3 text-slate-700" dir="ltr">
                   <Phone className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-semibold font-mono">{institution.contact.phonePrimary}</span>
                 </div>

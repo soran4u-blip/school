@@ -908,7 +908,7 @@ export default function TutorDashboardPage() {
                     {booking.participants.map((p, i) => (
                       <span key={i} className="text-[11px] text-slate-500 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
-                        {p.name} — {p.phone}
+                        {p.name} — <span dir="ltr">{p.phone}</span>
                       </span>
                     ))}
                   </div>

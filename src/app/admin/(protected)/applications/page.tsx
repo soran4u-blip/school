@@ -146,7 +146,7 @@ export default function AdminApplicationsPage() {
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-slate-500">
                   <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{app.email}</span>
-                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{app.phone}</span>
+                  <span className="flex items-center gap-1" dir="ltr"><Phone className="w-3 h-3" />{app.phone}</span>
                   {app.type === 'TUTOR' && app.yearsOfExperience !== undefined && (
                     <span>{t(`${app.yearsOfExperience} سنوات خبرة`, `${app.yearsOfExperience} yrs experience`)}</span>
                   )}

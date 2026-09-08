@@ -181,7 +181,7 @@ export default function AdminReviewsPage() {
                     <span className="text-[10px] text-slate-400">→ {inq.institutionName || institutionName(inq.institutionId)}</span>
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{inq.phone}</span>
+                    <span className="flex items-center gap-1" dir="ltr"><Phone className="w-3 h-3" />{inq.phone}</span>
                     {inq.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{inq.email}</span>}
                   </div>
                   {inq.message && <p className="text-xs text-slate-600">{inq.message}</p>}
