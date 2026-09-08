@@ -873,34 +873,45 @@ export default function InstitutionDashboardPage() {
                     />
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <input
-                      type="text"
-                      placeholder={t('الكلية', 'Faculty')}
-                      value={prog.facultyName.en}
-                      onChange={(e) => updateProgram(prog.id, { facultyName: { ar: e.target.value, en: e.target.value } })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                    />
-                    <input
-                      type="number"
-                      placeholder={t('عدد السنوات', 'Years')}
-                      value={prog.durationYears}
-                      onChange={(e) => updateProgram(prog.id, { durationYears: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                    />
-                    <input
-                      type="number"
-                      placeholder={t('القسط السنوي', 'Annual Tuition')}
-                      value={prog.tuitionAnnual.amount}
-                      onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, amount: Number(e.target.value) } })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                    />
-                    <button
-                      onClick={() => removeProgram(prog.id)}
-                      className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>{t('حذف', 'Remove')}</span>
-                    </button>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('الكلية', 'Faculty')}</label>
+                      <input
+                        type="text"
+                        placeholder={t('الكلية', 'Faculty')}
+                        value={prog.facultyName.en}
+                        onChange={(e) => updateProgram(prog.id, { facultyName: { ar: e.target.value, en: e.target.value } })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('عدد سنوات الدراسة', 'Duration (Years)')}</label>
+                      <input
+                        type="number"
+                        placeholder={t('عدد السنوات', 'Years')}
+                        value={prog.durationYears}
+                        onChange={(e) => updateProgram(prog.id, { durationYears: Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('القسط السنوي', 'Annual Tuition')}</label>
+                      <input
+                        type="number"
+                        placeholder={t('القسط السنوي', 'Annual Tuition')}
+                        value={prog.tuitionAnnual.amount}
+                        onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, amount: Number(e.target.value) } })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => removeProgram(prog.id)}
+                        className="w-full flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t('حذف', 'Remove')}</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200">
