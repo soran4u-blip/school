@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getCategories, saveCategory } from '@/core/services/masterDataService';
 import { Category } from '@/core/types/masterData';
@@ -8,7 +9,6 @@ import {
   FolderTree, 
   Plus, 
   Edit, 
-  Check, 
   X, 
   Save, 
   AlertCircle,
@@ -42,9 +42,7 @@ export default function AdminCategoriesPage() {
     setCategories(list);
   };
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  useLoadOnMount(loadCategories);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

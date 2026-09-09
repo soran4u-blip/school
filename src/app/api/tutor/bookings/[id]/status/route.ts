@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
 import { sendPushToStudent } from '@/core/server/push';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { tutorBookingStatusSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 
 const STATUS_LABEL: Record<string, string> = {
   CONFIRMED: 'Confirmed',
@@ -23,21 +23,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'tutor' || !user.tutorId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-
-  let tutorId: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'tutor' || !decoded.tutorId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-    tutorId = decoded.tutorId as string;
-  } catch {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  const tutorId = user.tutorId;
 
   const parsed = await parseJsonBody(request, tutorBookingStatusSchema);
   if (parsed.error) return parsed.error;

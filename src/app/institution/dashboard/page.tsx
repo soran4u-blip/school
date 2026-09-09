@@ -5,33 +5,28 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
+import OwnerReviewsPanel from '@/components/shared/OwnerReviewsPanel';
+import ProgramsTab from './_components/ProgramsTab';
+import JobsTab from './_components/JobsTab';
+import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
+import { useMessageThreads } from '@/lib/useMessageThreads';
 import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutionById, saveInstitution, deleteInstitution, getInstitutionVerificationDocuments, saveInstitutionVerificationDocuments } from '@/core/services/institutionService';
-import { getInstitutionInquiries, updateInquiryStatus, getApprovedReviews, replyToReview } from '@/core/services/reviewService';
+import { getInstitutionInquiries, updateInquiryStatus, getApprovedReviews } from '@/core/services/reviewService';
 import { getInstitutionJobs, getInstitutionJobApplications, updateJob, createJob } from '@/core/services/jobService';
 import { getInstitutionAdmissionApplications } from '@/core/services/admissionService';
-import { getThreadMessages, sendInstitutionMessage } from '@/core/services/messagingService';
-import Link from 'next/link';
+import { sendInstitutionMessage } from '@/core/services/messagingService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Inquiry, Review } from '@/core/types/review';
 import { Job } from '@/core/types/job';
-import { ThreadMessage } from '@/core/types/message';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
 import { getInstitutionCompleteness } from '@/lib/utils';
 import {
-  Building2, Save, AlertCircle, Plus, Trash2, Send, Star, Mail, Phone,
+  Building2, Save, AlertCircle, Trash2, Mail, Phone,
   KeyRound, PauseCircle, PlayCircle, ShieldCheck, MessageCircle, Rocket,
-  Briefcase, Users, ExternalLink,
-} from 'lucide-react';
-
-const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
-  FULL_TIME: { ar: 'دوام كامل', en: 'Full-time' },
-  PART_TIME: { ar: 'دوام جزئي', en: 'Part-time' },
-  CONTRACT: { ar: 'عقد', en: 'Contract' },
-  INTERNSHIP: { ar: 'تدريب', en: 'Internship' },
-};
+  } from 'lucide-react';
 
 function emptyJob(institutionId: string): Omit<Job, 'id' | 'createdAt' | 'updatedAt'> {
   return {
@@ -82,13 +77,6 @@ export default function InstitutionDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
-  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
-  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
-  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
-  const [sendingThreadId, setSendingThreadId] = useState<string | null>(null);
-  const [reviewReplyDrafts, setReviewReplyDrafts] = useState<Record<string, string>>({});
-  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -178,39 +166,18 @@ export default function InstitutionDashboardPage() {
     }
   };
 
-  const toggleThread = async (inquiryId: string) => {
-    if (expandedThreadId === inquiryId) {
-      setExpandedThreadId(null);
-      return;
+  // Sending also advances a NEW inquiry to CONTACTED — replying is the contact, so making the
+  // owner also change the dropdown by hand was busywork they could forget.
+  const threads = useMessageThreads(async (inquiryId, text) => {
+    const inquiry = inquiries.find((i) => i.id === inquiryId);
+    if (!inquiry || !institution) return null;
+    const sent = await sendInstitutionMessage(inquiry, institution.name.en || institution.name.ar, text);
+    if (inquiry.status === 'NEW') {
+      await updateInquiryStatus(inquiry.id, 'CONTACTED');
+      setInquiries((prev) => prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'CONTACTED' } : i)));
     }
-    setExpandedThreadId(inquiryId);
-    if (!threadMessages[inquiryId]) {
-      setLoadingThreadId(inquiryId);
-      try {
-        const messages = await getThreadMessages(inquiryId);
-        setThreadMessages((prev) => ({ ...prev, [inquiryId]: messages }));
-      } finally {
-        setLoadingThreadId(null);
-      }
-    }
-  };
-
-  const handleSendMessage = async (inquiry: Inquiry) => {
-    const text = messageDrafts[inquiry.id]?.trim();
-    if (!text || !institution) return;
-    setSendingThreadId(inquiry.id);
-    try {
-      const sent = await sendInstitutionMessage(inquiry, institution.name.en || institution.name.ar, text);
-      setThreadMessages((prev) => ({ ...prev, [inquiry.id]: [...(prev[inquiry.id] || []), sent] }));
-      setMessageDrafts((prev) => ({ ...prev, [inquiry.id]: '' }));
-      if (inquiry.status === 'NEW') {
-        await updateInquiryStatus(inquiry.id, 'CONTACTED');
-        setInquiries((prev) => prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'CONTACTED' } : i)));
-      }
-    } finally {
-      setSendingThreadId(null);
-    }
-  };
+    return sent;
+  });
 
   const handleSaveJob = async () => {
     if (!editingJob || !institution) return;
@@ -246,19 +213,6 @@ export default function InstitutionDashboardPage() {
     setInquiries((prev) => prev.map((i) => (i.id === inquiryId ? { ...i, status } : i)));
   };
 
-  const handleReplyToReview = async (reviewId: string) => {
-    const text = reviewReplyDrafts[reviewId]?.trim();
-    if (!text) return;
-    setReplyingReviewId(reviewId);
-    try {
-      await replyToReview(reviewId, text);
-      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: { text, createdAt: new Date().toISOString() } } : r)));
-      setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
-    } finally {
-      setReplyingReviewId(null);
-    }
-  };
-
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const user = auth.currentUser;
@@ -283,9 +237,12 @@ export default function InstitutionDashboardPage() {
     }
   };
 
+  // Pause/resume only. A PENDING profile is one an admin hasn't approved yet, and this button
+  // used to walk it straight to ACTIVE — self-publishing an unreviewed listing into the public
+  // directory. firestore.rules now allows an owner to move only between ACTIVE and SUSPENDED, so
+  // this mirrors that: approval is requested here and granted from /admin/institutions.
   const handleTogglePause = async () => {
-    if (!institution) return;
-    const wasPending = institution.status === 'PENDING';
+    if (!institution || institution.status === 'PENDING') return;
     const status = institution.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     if (status === 'SUSPENDED' && !confirm(t('سيتم إخفاء ملف مؤسستك من الدليل العام. هل تريد المتابعة؟', "Your institution's profile will be hidden from the public directory. Continue?"))) {
       return;
@@ -297,9 +254,7 @@ export default function InstitutionDashboardPage() {
       setMessage({
         text: status === 'SUSPENDED'
           ? t('تم إيقاف ملف مؤسستك مؤقتاً', 'Your institution profile is now paused')
-          : wasPending
-            ? t('تم نشر ملف مؤسستك في الدليل العام!', 'Your institution profile is now live in the public directory!')
-            : t('تم تفعيل ملف مؤسستك مجدداً', 'Your institution profile is active again'),
+          : t('تم تفعيل ملف مؤسستك مجدداً', 'Your institution profile is active again'),
         type: 'success',
       });
     } catch {
@@ -697,22 +652,23 @@ export default function InstitutionDashboardPage() {
               </div>
               <p className="text-xs text-slate-500">
                 {t(
-                  'ملفك غير منشور بعد ولا يظهر لزوار الموقع. أكمل المعلومات التالية ثم انشره.',
-                  "Your profile isn't published yet and can't be seen by visitors. Complete the following, then publish."
+                  'ملفك غير منشور بعد ولا يظهر لزوار الموقع. أكمل المعلومات التالية ليراجعها فريقنا.',
+                  "Your profile isn't published yet and can't be seen by visitors. Complete the following and our team will review it."
                 )}
               </p>
               {(() => {
                 const completeness = getInstitutionCompleteness(institution);
                 if (completeness.complete) {
                   return (
-                    <button
-                      onClick={handleTogglePause}
-                      disabled={pausing}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
-                    >
-                      <Rocket className="w-3.5 h-3.5" />
-                      <span>{pausing ? t('جاري النشر...', 'Publishing...') : t('نشر الملف الآن', 'Publish Now')}</span>
-                    </button>
+                    <div className="flex items-start gap-2 text-xs font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                      <Rocket className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span className="font-medium">
+                        {t(
+                          'ملفك مكتمل وبانتظار مراجعة الإدارة. سيظهر في الدليل العام فور الموافقة عليه.',
+                          'Your profile is complete and waiting for admin review. It goes live in the public directory once approved.'
+                        )}
+                      </span>
+                    </div>
                   );
                 }
                 return (
@@ -725,13 +681,10 @@ export default function InstitutionDashboardPage() {
                         </li>
                       ))}
                     </ul>
-                    <button
-                      disabled
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed"
-                    >
+                    <p className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400">
                       <Rocket className="w-3.5 h-3.5" />
                       <span>{t('أكمل المعلومات أعلاه أولاً', 'Complete the fields above first')}</span>
-                    </button>
+                    </p>
                   </div>
                 );
               })()}
@@ -837,307 +790,31 @@ export default function InstitutionDashboardPage() {
         </div>
       )}
 
-      {tab === 'programs' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold text-sm text-slate-900">{t('البرامج الأكاديمية والأقساط', 'Academic Programs & Tuition')}</h2>
-            <button
-              onClick={addProgram}
-              className="flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t('إضافة برنامج', 'Add Program')}</span>
-            </button>
-          </div>
-
-          {programs.length === 0 ? (
-            <p className="text-[11px] text-slate-400">{t('لا توجد برامج مضافة بعد', 'No programs added yet')}</p>
-          ) : (
-            <div className="space-y-3">
-              {programs.map((prog) => (
-                <div key={prog.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder={t('اسم البرنامج (عربي)', 'Program name (Arabic)')}
-                      value={prog.name.ar}
-                      onChange={(e) => updateProgram(prog.id, { name: { ...prog.name, ar: e.target.value } })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('اسم البرنامج (إنجليزي)', 'Program name (English)')}
-                      value={prog.name.en}
-                      onChange={(e) => updateProgram(prog.id, { name: { ...prog.name, en: e.target.value } })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('الكلية', 'Faculty')}</label>
-                      <input
-                        type="text"
-                        placeholder={t('الكلية', 'Faculty')}
-                        value={prog.facultyName.en}
-                        onChange={(e) => updateProgram(prog.id, { facultyName: { ar: e.target.value, en: e.target.value } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('عدد سنوات الدراسة', 'Duration (Years)')}</label>
-                      <input
-                        type="number"
-                        placeholder={t('عدد السنوات', 'Years')}
-                        value={prog.durationYears}
-                        onChange={(e) => updateProgram(prog.id, { durationYears: Number(e.target.value) })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                      />
-                    </div>
-                    <div className="col-span-2 sm:col-span-1">
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('القسط السنوي', 'Annual Tuition')}</label>
-                      <input
-                        type="number"
-                        placeholder={t('القسط السنوي', 'Annual Tuition')}
-                        value={prog.tuitionAnnual.amount}
-                        onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, amount: Number(e.target.value) } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        onClick={() => removeProgram(prog.id)}
-                        className="w-full flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{t('حذف', 'Remove')}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('السعة (اختياري)', 'Capacity (optional)')}</label>
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder={t('غير محدود', 'Unlimited')}
-                        value={prog.capacity ?? ''}
-                        onChange={(e) => updateProgram(prog.id, { capacity: e.target.value === '' ? undefined : Number(e.target.value) })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('آخر موعد للتقديم', 'Application Deadline')}</label>
-                      <input
-                        type="date"
-                        value={prog.applicationDeadline || ''}
-                        onChange={(e) => updateProgram(prog.id, { applicationDeadline: e.target.value || undefined })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                      />
-                    </div>
-                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 cursor-pointer self-end pb-1.5">
-                      <input
-                        type="checkbox"
-                        checked={prog.isAcceptingApplications !== false}
-                        onChange={(e) => updateProgram(prog.id, { isAcceptingApplications: e.target.checked })}
-                        className="rounded text-emerald-600"
-                      />
-                      <span>{t('يقبل الطلبات حالياً', 'Accepting applications')}</span>
-                    </label>
-                    <div className="flex flex-col items-start justify-end gap-1">
-                      <span className="text-[11px] font-bold text-slate-600">
-                        {prog.acceptedCount || 0}{prog.capacity != null ? ` / ${prog.capacity}` : ''} {t('مقبول', 'accepted')}
-                      </span>
-                      <Link
-                        href={`/institution/dashboard/programs/${prog.id}`}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>{admissionApplicationCounts[prog.id] || 0} {t('متقدم', 'applicants')}</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-end pt-2 border-t border-slate-100">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ البرامج', 'Save Programs')}</span>
-            </button>
-          </div>
-        </div>
+      {tab === 'programs' && institution && (
+        <ProgramsTab
+          programs={programs}
+          admissionApplicationCounts={admissionApplicationCounts}
+          addProgram={addProgram}
+          removeProgram={removeProgram}
+          updateProgram={updateProgram}
+          handleSave={handleSave}
+          saving={saving}
+        />
       )}
 
-      {tab === 'jobs' && (
-        <div className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-purple-600" />
-                <span>{t('الوظائف الشاغرة', 'Job Postings')}</span>
-              </h2>
-              {!editingJob && (
-                <button
-                  onClick={() => setEditingJob(emptyJob(institution.id))}
-                  className="flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{t('نشر وظيفة جديدة', 'Post a Job')}</span>
-                </button>
-              )}
-            </div>
-
-            {editingJob && (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder={t('المسمى الوظيفي (عربي)', 'Job title (Arabic)')}
-                    value={editingJob.title.ar}
-                    onChange={(e) => setEditingJob({ ...editingJob, title: { ...editingJob.title, ar: e.target.value } })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    placeholder={t('المسمى الوظيفي (إنجليزي)', 'Job title (English)')}
-                    value={editingJob.title.en}
-                    onChange={(e) => setEditingJob({ ...editingJob, title: { ...editingJob.title, en: e.target.value } })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <textarea
-                    rows={3}
-                    placeholder={t('الوصف الوظيفي (عربي)', 'Description (Arabic)')}
-                    value={editingJob.description.ar}
-                    onChange={(e) => setEditingJob({ ...editingJob, description: { ...editingJob.description, ar: e.target.value } })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-                  />
-                  <textarea
-                    rows={3}
-                    placeholder={t('الوصف الوظيفي (إنجليزي)', 'Description (English)')}
-                    value={editingJob.description.en}
-                    onChange={(e) => setEditingJob({ ...editingJob, description: { ...editingJob.description, en: e.target.value } })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <select
-                    value={editingJob.employmentType}
-                    onChange={(e) => setEditingJob({ ...editingJob, employmentType: e.target.value as Job['employmentType'] })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  >
-                    {(Object.keys(EMPLOYMENT_LABELS) as Job['employmentType'][]).map((key) => (
-                      <option key={key} value={key}>{language === 'en' ? EMPLOYMENT_LABELS[key].en : EMPLOYMENT_LABELS[key].ar}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={editingJob.governorateId}
-                    onChange={(e) => setEditingJob({ ...editingJob, governorateId: e.target.value })}
-                    className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  >
-                    <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
-                    {governorates.map((g) => (
-                      <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
-                    ))}
-                  </select>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('آخر موعد لتقديم الطلبات', 'Application Deadline')}</label>
-                    <input
-                      type="date"
-                      value={editingJob.applicationDeadline || ''}
-                      onChange={(e) => setEditingJob({ ...editingJob, applicationDeadline: e.target.value })}
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={editingJob.isRemote}
-                      onChange={(e) => setEditingJob({ ...editingJob, isRemote: e.target.checked })}
-                      className="w-4 h-4 rounded"
-                    />
-                    <span>{t('عن بُعد', 'Remote')}</span>
-                  </label>
-                </div>
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    onClick={() => setEditingJob(null)}
-                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
-                  >
-                    {t('إلغاء', 'Cancel')}
-                  </button>
-                  <button
-                    onClick={handleSaveJob}
-                    disabled={savingJob || !editingJob.title.ar.trim() || !editingJob.title.en.trim() || !editingJob.governorateId}
-                    className="px-4 py-2 text-xs font-bold bg-[#0B192C] text-white rounded-lg disabled:opacity-60"
-                  >
-                    {savingJob ? t('جاري الحفظ...', 'Saving...') : t('حفظ', 'Save')}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {jobs.length === 0 ? (
-              <p className="text-[11px] text-slate-400">{t('لم تنشر أي وظيفة بعد', 'No jobs posted yet')}</p>
-            ) : (
-              <div className="space-y-2">
-                {jobs.map((job) => (
-                  <div key={job.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900">{language === 'en' ? job.title.en : job.title.ar}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          job.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : job.status === 'DRAFT' ? 'bg-amber-50 text-amber-700' : 'bg-slate-200 text-slate-600'
-                        }`}>
-                          {job.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-semibold mt-1">
-                        <Users className="w-3 h-3" />
-                        <span>{jobApplicationCounts[job.id] || 0} {t('متقدم', 'applicants')}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        href={`/institution/dashboard/jobs/${job.id}`}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>{t('المتقدمون', 'Applicants')}</span>
-                      </Link>
-                      <button
-                        onClick={() => setEditingJob(job)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold"
-                      >
-                        {t('تعديل', 'Edit')}
-                      </button>
-                      {job.status === 'ACTIVE' ? (
-                        <button onClick={() => handleJobStatus(job.id, 'CLOSED')} className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold">
-                          {t('إغلاق', 'Close')}
-                        </button>
-                      ) : (
-                        <button onClick={() => handleJobStatus(job.id, 'ACTIVE')} className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-bold">
-                          {t('نشر', 'Publish')}
-                        </button>
-                      )}
-                      <a href={`/jobs/${job.id}`} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-slate-700">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {tab === 'jobs' && institution && (
+        <JobsTab
+          institution={institution}
+          jobs={jobs}
+          governorates={governorates}
+          jobApplicationCounts={jobApplicationCounts}
+          editingJob={editingJob}
+          setEditingJob={setEditingJob}
+          handleSaveJob={handleSaveJob}
+          handleJobStatus={handleJobStatus}
+          savingJob={savingJob}
+          emptyJob={emptyJob}
+        />
       )}
 
       {tab === 'inquiries' && (
@@ -1157,8 +834,8 @@ export default function InstitutionDashboardPage() {
                     </span>
                   </div>
                   <button
-                    onClick={() => toggleThread(inq.id)}
-                    className={`p-2 rounded-lg ${expandedThreadId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                    onClick={() => threads.toggle(inq.id)}
+                    className={`p-2 rounded-lg ${threads.expandedId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                     title={t('مراسلة', 'Message')}
                   >
                     <MessageCircle className="w-4 h-4" />
@@ -1184,44 +861,8 @@ export default function InstitutionDashboardPage() {
                   <option value="CLOSED">{t('مغلق', 'Closed')}</option>
                 </select>
 
-                {expandedThreadId === inq.id && (
-                  <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
-                    <div className="max-h-56 overflow-y-auto space-y-2">
-                      {loadingThreadId === inq.id ? (
-                        <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
-                      ) : (threadMessages[inq.id]?.length || 0) === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
-                      ) : (
-                        threadMessages[inq.id].map((msg) => (
-                          <div key={msg.id} className={`flex ${msg.senderRole === 'institution' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[75%] px-3 py-2 rounded-xl text-xs ${
-                              msg.senderRole === 'institution' ? 'bg-[#0B192C] text-white' : 'bg-white border border-slate-200 text-slate-700'
-                            }`}>
-                              <p>{msg.text}</p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={messageDrafts[inq.id] || ''}
-                        onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [inq.id]: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(inq); }}
-                        placeholder={t('اكتب رسالة...', 'Write a message...')}
-                        className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                      />
-                      <button
-                        onClick={() => handleSendMessage(inq)}
-                        disabled={sendingThreadId === inq.id || !messageDrafts[inq.id]?.trim()}
-                        className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                        title={t('إرسال', 'Send')}
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                {threads.expandedId === inq.id && (
+                  <MessageThreadPanel threadId={inq.id} threads={threads} ownRole="institution" />
                 )}
               </div>
             ))
@@ -1230,53 +871,12 @@ export default function InstitutionDashboardPage() {
       )}
 
       {tab === 'reviews' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
-          {reviews.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد تقييمات معتمدة بعد', 'No approved reviews yet')}</div>
-          ) : (
-            reviews.map((review) => (
-              <div key={review.id} className="p-4 space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-slate-900">{review.reviewerName}</span>
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-600">{review.comment}</p>
-                </div>
-
-                {review.reply ? (
-                  <div className="ms-4 ps-3 border-s-2 border-emerald-200 space-y-1">
-                    <span className="text-[10px] font-bold text-emerald-700">{t('ردّك', 'Your reply')}</span>
-                    <p className="text-xs text-slate-600">{review.reply.text}</p>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={reviewReplyDrafts[review.id] || ''}
-                      onChange={(e) => setReviewReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleReplyToReview(review.id); }}
-                      placeholder={t('اكتب رداً علنياً...', 'Write a public reply...')}
-                      className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                    />
-                    <button
-                      onClick={() => handleReplyToReview(review.id)}
-                      disabled={replyingReviewId === review.id || !reviewReplyDrafts[review.id]?.trim()}
-                      className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                      title={t('نشر الرد', 'Post reply')}
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+        <OwnerReviewsPanel
+          reviews={reviews}
+          onReplied={(reviewId, reply) =>
+            setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply } : r)))
+          }
+        />
       )}
     </div>
   );

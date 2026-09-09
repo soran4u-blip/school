@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getPendingApplications, getApplicationsPage, approveApplication, rejectApplication } from '@/core/services/applicationService';
 import { getGovernorates } from '@/core/services/masterDataService';
@@ -8,6 +9,7 @@ import { Application } from '@/core/types/application';
 import { Governorate } from '@/core/types/masterData';
 import { FileCheck2, Check, X, Phone, Mail, AlertCircle, Copy } from 'lucide-react';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { errorMessage } from '@/lib/errors';
 
 const HISTORY_PAGE_SIZE = 25;
 
@@ -61,9 +63,7 @@ export default function AdminApplicationsPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
   const governorateName = (id: string) => {
     const gov = governorates.find((g) => g.id === id);
@@ -81,8 +81,8 @@ export default function AdminApplicationsPage() {
         alert(result.note);
       }
       await loadData();
-    } catch (err: any) {
-      setError(err.message || t('تعذرت الموافقة على الطلب', 'Failed to approve application'));
+    } catch (err: unknown) {
+      setError(errorMessage(err, t('تعذرت الموافقة على الطلب', 'Failed to approve application')));
     } finally {
       setBusyId(null);
     }

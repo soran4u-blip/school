@@ -7,6 +7,7 @@ import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { UserPlus, Loader2 } from 'lucide-react';
+import { errorCode } from '@/lib/errors';
 
 function SignupForm() {
   const router = useRouter();
@@ -58,11 +59,11 @@ function SignupForm() {
       const redirect = searchParams.get('redirect') || '/account';
       router.push(redirect);
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (created) {
         await signOut(auth).catch(() => {});
       }
-      const code = err?.code || '';
+      const code = errorCode(err) || '';
       if (code === 'auth/email-already-in-use') {
         setError(t('هذا البريد الإلكتروني مسجل بالفعل. سجّل الدخول بدلاً من ذلك.', 'This email is already registered. Try signing in instead.'));
       } else if (code === 'auth/weak-password') {

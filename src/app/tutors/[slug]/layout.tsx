@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTutorBySlug } from '@/core/services/tutorService';
+import { getPublicTutorBySlug } from '@/core/server/data/tutors';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const tutor = await getTutorBySlug(slug);
+  const tutor = await getPublicTutorBySlug(slug);
 
   if (!tutor) {
     return {
@@ -54,7 +54,7 @@ export default async function TutorLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const tutor = await getTutorBySlug(slug);
+  const tutor = await getPublicTutorBySlug(slug);
 
   if (!tutor) {
     return children;

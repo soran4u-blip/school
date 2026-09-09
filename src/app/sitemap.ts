@@ -1,8 +1,13 @@
 import type { MetadataRoute } from 'next';
-import { getInstitutions } from '@/core/services/institutionService';
-import { getTutors } from '@/core/services/tutorService';
-import { getActiveJobs } from '@/core/services/jobService';
-import { getApprovedCommunityPosts } from '@/core/services/communityService';
+import { getActiveInstitutions } from '@/core/server/data/institutions';
+import { getActiveTutors } from '@/core/server/data/tutors';
+import { getActiveJobs } from '@/core/server/data/jobs';
+import { getPublicCommunityPosts } from '@/core/server/data/community';
+
+// Built from the cached server-side snapshots rather than the browser SDK. It also can't be
+// prerendered: the Admin SDK's service account is a runtime-only secret, and a sitemap that
+// silently built empty at build time would be worse than one generated on request.
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -22,10 +27,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const [institutions, tutors, jobs, communityPosts] = await Promise.all([
-    getInstitutions({ status: 'ACTIVE' }),
-    getTutors({ status: 'ACTIVE' }),
+    getActiveInstitutions(),
+    getActiveTutors(),
     getActiveJobs(),
-    getApprovedCommunityPosts(),
+    getPublicCommunityPosts(),
   ]);
 
   const institutionRoutes: MetadataRoute.Sitemap = institutions.flatMap((inst) => [

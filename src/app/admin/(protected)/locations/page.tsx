@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getCities, saveGovernorate, saveCity, deleteGovernorate } from '@/core/services/masterDataService';
 import { Governorate, City } from '@/core/types/masterData';
@@ -11,14 +12,12 @@ import {
   Trash2, 
   Check, 
   X, 
-  ChevronRight, 
-  Layers, 
   Save, 
   AlertCircle 
 } from 'lucide-react';
 
 export default function AdminLocationsPage() {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [selectedGov, setSelectedGov] = useState<Governorate | null>(null);
   const [cities, setCities] = useState<City[]>([]);
@@ -48,23 +47,24 @@ export default function AdminLocationsPage() {
     displayOrder: 1,
   });
 
-  const loadData = async () => {
-    const list = await getGovernorates(false);
-    setGovernorates(list);
-    if (list.length > 0 && !selectedGov) {
-      selectGovernorate(list[0]);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
+  // Declared before loadData, which calls it — the other way round it was read from the temporal
+  // dead zone of its own `const`, so loadData closed over whichever version happened to exist
+  // rather than the current one.
   const selectGovernorate = async (gov: Governorate) => {
     setSelectedGov(gov);
     const cityList = await getCities(gov.id, false);
     setCities(cityList);
   };
+
+  const loadData = async () => {
+    const list = await getGovernorates(false);
+    setGovernorates(list);
+    if (list.length > 0 && !selectedGov) {
+      await selectGovernorate(list[0]);
+    }
+  };
+
+  useLoadOnMount(loadData);
 
   const handleSaveGovernorate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -337,7 +337,7 @@ export default function AdminLocationsPage() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">{t('الإقليم / المنطقة', 'Region')}</label>
                     <select
                       value={govForm.region || 'CENTRAL'}
-                      onChange={(e) => setGovForm({ ...govForm, region: e.target.value as any })}
+                      onChange={(e) => setGovForm({ ...govForm, region: e.target.value as Governorate['region'] })}
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-blue-500 bg-white"
                     >
                       <option value="CENTRAL">Central (الوسط)</option>

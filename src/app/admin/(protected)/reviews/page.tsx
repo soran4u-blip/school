@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getPendingReviews, getReviewsPage, getInquiriesPage, getNewInquiriesCount, updateReviewStatus, updateInquiryStatus } from '@/core/services/reviewService';
 import { getInstitutions } from '@/core/services/institutionService';
@@ -85,9 +86,7 @@ export default function AdminReviewsPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
   const institutionName = (id: string) => {
     const inst = institutions.find(i => i.id === id);
@@ -103,8 +102,15 @@ export default function AdminReviewsPage() {
     rev.institutionId ? institutionName(rev.institutionId) : rev.tutorId ? tutorName(rev.tutorId) : '';
 
   const handleReviewDecision = async (review: Review, status: 'APPROVED' | 'REJECTED') => {
-    await updateReviewStatus(review.id, status, review);
-    await loadData();
+    setError('');
+    try {
+      await updateReviewStatus(review.id, status);
+      await loadData();
+    } catch (e) {
+      // The moderation route is transactional — a failure here means nothing changed, including
+      // the rating aggregates, so the row stays exactly as it was and the action can be retried.
+      setError(e instanceof Error ? e.message : t('تعذر تحديث التقييم', 'Could not update the review'));
+    }
   };
 
   const handleInquiryStatus = async (inquiry: Inquiry, status: Inquiry['status']) => {

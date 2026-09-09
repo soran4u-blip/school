@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import Thumbnail from '@/components/shared/Thumbnail';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getInstitutions, saveInstitution, deleteInstitution } from '@/core/services/institutionService';
+import { getInstitutions } from '@/core/services/institutionService';
+import { updateListing, deleteListing } from '@/core/services/adminListingService';
 import { getGovernorates, getCategories } from '@/core/services/masterDataService';
 import { Institution } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
@@ -14,17 +17,17 @@ import {
   MapPin,
   Plus,
   ExternalLink,
-  CheckCircle,
-  XCircle,
   Edit,
   Trash2
 } from 'lucide-react';
+import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
 
 export default function AdminInstitutionsPage() {
   const { language, t } = useLanguage();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [error, setError] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [filterGov, setFilterGov] = useState('all');
 
@@ -39,35 +42,38 @@ export default function AdminInstitutionsPage() {
     setCategories(cats);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
-  const toggleVerification = async (inst: Institution) => {
-    const updated: Institution = {
-      ...inst,
-      isVerified: !inst.isVerified,
-    };
-    await saveInstitution(updated);
-    await loadData();
+  // These four go through /api/admin/listings so they land in the audit trail — approving,
+  // verifying, featuring and deleting are the admin actions most worth being able to attribute.
+  const run = async (action: () => Promise<void>) => {
+    setError('');
+    try {
+      await action();
+      await loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+    }
   };
 
-  const toggleFeatured = async (inst: Institution) => {
-    const updated: Institution = {
-      ...inst,
-      isFeatured: !inst.isFeatured,
-    };
-    await saveInstitution(updated);
-    await loadData();
-  };
+  // The only place a PENDING institution can be approved into the public directory. Institution
+  // owners could previously do this themselves from their dashboard's "Publish Now" button; that
+  // is now an admin decision, so this page has to offer it.
+  const handleSetStatus = (inst: Institution, status: ListingStatus) =>
+    run(() => updateListing('institutions', inst.id, { status }));
+
+  const toggleVerification = (inst: Institution) =>
+    run(() => updateListing('institutions', inst.id, { isVerified: !inst.isVerified }));
+
+  const toggleFeatured = (inst: Institution) =>
+    run(() => updateListing('institutions', inst.id, { isFeatured: !inst.isFeatured }));
 
   const handleDelete = async (inst: Institution) => {
     const name = language === 'en' ? inst.name.en : inst.name.ar;
     if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
       return;
     }
-    await deleteInstitution(inst.id);
-    await loadData();
+    await run(() => deleteListing('institutions', inst.id));
   };
 
   const filtered = institutions.filter(inst => {
@@ -109,6 +115,10 @@ export default function AdminInstitutionsPage() {
             <span>{t('إضافة مؤسسة', 'Add Institution')}</span>
           </Link>
         </div>
+
+      {error && (
+        <div className="p-4 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">{error}</div>
+      )}
       </div>
 
       {/* Filter Bar */}
@@ -150,6 +160,7 @@ export default function AdminInstitutionsPage() {
               <th className="p-3 text-start">{t('المؤسسة', 'Institution')}</th>
               <th className="p-3 text-start">{t('الفئة والمحافظة', 'Category & Location')}</th>
               <th className="p-3 text-center">{t('التقييم', 'Rating')}</th>
+              <th className="p-3 text-center">{t('الحالة', 'Status')}</th>
               <th className="p-3 text-center">{t('التوثيق الرسمي', 'Verified Badge')}</th>
               <th className="p-3 text-center">{t('مميز في الواجهة', 'Featured')}</th>
               <th className="p-3 text-end">{t('إجراءات', 'Actions')}</th>
@@ -164,10 +175,12 @@ export default function AdminInstitutionsPage() {
                 <tr key={inst.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={inst.logoUrl} 
-                        alt={inst.name.en} 
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" 
+                      <Thumbnail
+                        src={inst.logoUrl}
+                        alt={inst.name.en}
+                        width={36}
+                        height={36}
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div>
                         <div className="font-bold text-slate-900">{language === 'en' ? inst.name.en : inst.name.ar}</div>
@@ -188,6 +201,12 @@ export default function AdminInstitutionsPage() {
                       <span>{inst.metrics.ratingAvg}</span>
                       <span className="text-slate-400 font-normal">({inst.metrics.reviewCount})</span>
                     </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <ListingStatusControl
+                      status={inst.status}
+                      onChange={(next) => handleSetStatus(inst, next)}
+                    />
                   </td>
                   <td className="p-3 text-center">
                     <button

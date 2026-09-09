@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 import { Student } from '@/core/types/student';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { admissionApplicationSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 // Statuses that count as "already in progress" for a student re-applying to the same program.
 const ACTIVE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'WAITLISTED', 'ACCEPTED'];
 
@@ -18,21 +18,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') {
     return NextResponse.json({ success: false, error: 'You must be signed in as a student to apply' }, { status: 401 });
   }
-
-  let studentId: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'You must be signed in as a student to apply' }, { status: 401 });
-    }
-    studentId = decoded.uid;
-  } catch {
-    return NextResponse.json({ success: false, error: 'You must be signed in as a student to apply' }, { status: 401 });
-  }
+  const studentId = user.uid;
 
   const studentSnap = await adminDb.collection('students').doc(studentId).get();
   if (!studentSnap.exists) {

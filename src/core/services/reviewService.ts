@@ -73,28 +73,28 @@ export async function getReviewsPage(
   };
 }
 
-export async function updateReviewStatus(id: string, status: Review['status'], review: Review): Promise<void> {
-  await updateDoc(doc(db, 'reviews', id), { status });
-  if (status !== 'APPROVED') return;
+// Moderation goes through the Admin SDK route rather than a client-SDK write: approving or
+// un-approving a review has to move the reviewed party's rating aggregates in the same
+// transaction (see src/core/server/ratings.ts), and firestore.rules now denies the direct write
+// that used to make drift possible. The old version of this function updated the aggregates only
+// on the way *in* to APPROVED, so rejecting or deleting an approved review left them inflated.
+export async function updateReviewStatus(id: string, status: Review['status']): Promise<void> {
+  const res = await fetch(`/api/admin/reviews/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Could not update the review');
+  }
+}
 
-  if (review.institutionId) {
-    const approved = await getApprovedReviews(review.institutionId);
-    const ratingAvg = approved.length
-      ? Number((approved.reduce((sum, r) => sum + r.rating, 0) / approved.length).toFixed(1))
-      : 0;
-    await updateDoc(doc(db, 'institutions', review.institutionId), {
-      'metrics.ratingAvg': ratingAvg,
-      'metrics.reviewCount': approved.length,
-    });
-  } else if (review.tutorId) {
-    const approved = await getApprovedTutorReviews(review.tutorId);
-    const ratingAvg = approved.length
-      ? Number((approved.reduce((sum, r) => sum + r.rating, 0) / approved.length).toFixed(1))
-      : 0;
-    await updateDoc(doc(db, 'tutors', review.tutorId), {
-      ratingAvg,
-      reviewCount: approved.length,
-    });
+export async function deleteReview(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Could not delete the review');
   }
 }
 

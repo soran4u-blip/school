@@ -45,6 +45,29 @@ export const bookingSchema = z.object({
   weeks: z.number().int().positive().optional(),
 });
 
+// Superadmin review moderation (/api/admin/reviews/[id]). Kept separate from reviewSchema,
+// which describes a public submission — the two share no fields.
+export const reviewModerationSchema = z.object({
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+});
+
+export const applicationRejectSchema = z.object({
+  rejectionReason: z.string().trim().max(2000).optional(),
+});
+
+// Admin edits to a listing's trust/visibility fields (/api/admin/listings/[type]/[id]).
+// `.refine` rejects an empty body so a no-op PATCH doesn't write an audit entry saying nothing
+// happened.
+export const listingAdminUpdateSchema = z
+  .object({
+    status: z.enum(['ACTIVE', 'PENDING', 'SUSPENDED']).optional(),
+    isVerified: z.boolean().optional(),
+    isFeatured: z.boolean().optional(),
+  })
+  .refine((v) => v.status !== undefined || v.isVerified !== undefined || v.isFeatured !== undefined, {
+    message: 'Nothing to update',
+  });
+
 export const admissionDecisionSchema = z.object({
   status: z.enum(['UNDER_REVIEW', 'ACCEPTED', 'WAITLISTED', 'REJECTED']),
   decisionNote: z.string().trim().max(2000).optional(),

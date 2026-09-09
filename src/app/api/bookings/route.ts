@@ -1,35 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
 import { Student } from '@/core/types/student';
 import { dayOfWeekFromDate, addDaysToDateString, isWithinAvailability } from '@/lib/bookingLogic';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { bookingSchema } from '@/core/validation/schemas';
+import { errorMessage } from '@/lib/errors';
 
 const MAX_RECURRING_WEEKS = 12;
-const SESSION_COOKIE_NAME = 'session';
 
 export async function POST(request: NextRequest) {
   if (!adminAuth || !adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') {
     return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
   }
-
-  let studentId: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
-    }
-    studentId = decoded.uid;
-  } catch {
-    return NextResponse.json({ success: false, error: 'You must be signed in as a student to book' }, { status: 401 });
-  }
+  const studentId = user.uid;
 
   const studentSnap = await adminDb.collection('students').doc(studentId).get();
   if (!studentSnap.exists) {
@@ -94,8 +85,8 @@ export async function POST(request: NextRequest) {
         return { ...booking, participants, participantStudentIds, pricePerStudent };
       });
       return NextResponse.json({ success: true, booking: result });
-    } catch (e: any) {
-      return NextResponse.json({ success: false, error: e.message || 'Failed to join group' }, { status: 400 });
+    } catch (e: unknown) {
+      return NextResponse.json({ success: false, error: errorMessage(e, 'Failed to join group') }, { status: 400 });
     }
   }
 

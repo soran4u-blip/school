@@ -52,6 +52,10 @@ export default function ImageUploadField({
       <label className="block text-xs font-bold text-slate-700 mb-1">{label}</label>
       <div className="flex items-center gap-3">
         {value ? (
+          // A freshly uploaded file is previewed from an arbitrary Storage download URL that
+          // next/image would have to be configured for host by host, and this is a 56px preview,
+          // so the optimiser buys nothing here.
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt="" className="w-14 h-14 rounded-lg object-cover border border-slate-200 shrink-0" />
         ) : (
           <div className="w-14 h-14 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-300 shrink-0">

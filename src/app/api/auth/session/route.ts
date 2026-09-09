@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/core/firebase/admin';
+import { SESSION_COOKIE_NAME } from '@/core/server/session';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { sessionLoginSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 const SESSION_EXPIRES_IN_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 export async function POST(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, role: decoded.role });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Session creation failed:', error);
     return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
   }

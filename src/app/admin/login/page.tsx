@@ -42,7 +42,7 @@ function LoginForm() {
       const redirect = searchParams.get('redirect') || '/admin';
       router.push(redirect);
       router.refresh();
-    } catch (err: any) {
+    } catch {
       setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Invalid email or password'));
     } finally {
       setLoading(false);

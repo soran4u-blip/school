@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { Review } from '@/core/types/review';
 import { Student } from '@/core/types/student';
 import { Booking } from '@/core/types/booking';
@@ -8,7 +9,6 @@ import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { reviewSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 
 // POST /api/reviews — the sole path for creating a review now (firestore.rules denies client
 // creates entirely; see isValidReview()'s comment). Two identities are handled:
@@ -24,18 +24,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  let studentId: string | null = null;
-  if (sessionCookie) {
-    try {
-      const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-      if (decoded.role === 'student') {
-        studentId = decoded.uid;
-      }
-    } catch {
-      // Invalid/expired session cookie — fall through and treat as a guest.
-    }
-  }
+  // An absent, expired or revoked cookie just means "guest" here rather than an error — guests
+  // may review, they're rate-limited by IP instead of uid and never get the verified badge.
+  const user = await getSessionUser(request);
+  const studentId = user?.role === 'student' ? user.uid : null;
 
   const rateLimitKey = studentId ? `review:student:${studentId}` : `review:ip:${getClientIp(request)}`;
   const rateLimit = await checkRateLimit(adminDb, rateLimitKey, { max: 5, windowMinutes: 60 });

@@ -74,8 +74,12 @@ export interface Institution {
   isFeatured: boolean;
   
   metrics: {
-    ratingAvg: number; // e.g. 4.9
+    ratingAvg: number; // e.g. 4.9 — derived, always ratingSum / reviewCount rounded to 1dp
     reviewCount: number; // e.g. 310
+    // Sum of every approved review's rating. Stored alongside the count so approving or removing
+    // a review is an O(1) adjustment instead of a rescan; see src/core/server/ratings.ts.
+    // Optional because documents written before this field existed don't have one yet.
+    ratingSum?: number;
     studentsCount?: number;
     graduateEmploymentRate?: number; // e.g. 94%
   };

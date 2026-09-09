@@ -48,10 +48,16 @@ export interface Tutor {
   // Verification document URLs are NOT stored here — this doc is world-readable once status is
   // 'ACTIVE', so they live in the private tutors/{id}/private/verification subcollection instead
   // (see MasterDataService.getTutorVerificationDocuments/saveTutorVerificationDocuments).
-  status: 'ACTIVE' | 'PENDING';
+  // PENDING = awaiting admin approval, never self-settable; SUSPENDED = paused by the tutor
+  // themselves from their dashboard. Keeping these distinct is what lets firestore.rules allow
+  // an owner to pause/unpause (ACTIVE<->SUSPENDED) without also letting an unapproved tutor
+  // walk themselves from PENDING to ACTIVE.
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
   
-  ratingAvg: number;
+  ratingAvg: number; // derived, always ratingSum / reviewCount rounded to 1dp
   reviewCount: number;
+  // Sum of every approved review's rating — see the note on Institution['metrics'].ratingSum.
+  ratingSum?: number;
   
   createdAt: string;
   updatedAt: string;

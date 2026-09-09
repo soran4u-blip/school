@@ -74,3 +74,13 @@ env:
   - variable: VAPID_PRIVATE_KEY
     secret: vapid-private-key
     availability: [ RUNTIME ]
+
+  # Shared secret for the scheduled-task endpoints (/api/cron/[task]). A cron service can't hold
+  # a Firebase session cookie, so it authenticates on this header instead — see
+  # src/core/server/scheduledTasks.ts. Create it before deploying:
+  #   firebase apphosting:secrets:set cron-secret
+  # If it is unset, every /api/cron call is rejected: an unset variable must never be the thing
+  # that opens the endpoint.
+  - variable: CRON_SECRET
+    secret: cron-secret
+    availability: [ RUNTIME ]

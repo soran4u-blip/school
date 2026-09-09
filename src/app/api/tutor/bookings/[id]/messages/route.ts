@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
 import { sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { sendPushToStudent } from '@/core/server/push';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { threadMessageSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 
 async function requireTutorId(request: NextRequest): Promise<string | null> {
   if (!adminAuth) return null;
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) return null;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'tutor' || !decoded.tutorId) return null;
-    return decoded.tutorId as string;
-  } catch {
-    return null;
-  }
+  const user = await getSessionUser(request);
+  if (user?.role !== 'tutor' || !user.tutorId) return null;
+  return user.tutorId ?? null;
 }
 
 // POST /api/tutor/bookings/[id]/messages — the owning tutor sends a message. Reading a thread's

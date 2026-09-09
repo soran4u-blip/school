@@ -4,9 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, UserCheck, BookOpen } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getInstitutions } from '@/core/services/institutionService';
-import { getTutors } from '@/core/services/tutorService';
-import { getTaxonomies } from '@/core/services/masterDataService';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
 import { TaxonomyItem } from '@/core/types/masterData';
@@ -19,9 +16,12 @@ interface SearchAutocompleteProps {
   placeholder?: string;
   className?: string;
   inputClassName?: string;
-  // Optional preloaded lists (e.g. a page that already fetched institutions) — avoids a duplicate fetch.
-  preloadedInstitutions?: Institution[];
-  preloadedTutors?: Tutor[];
+  // The lists to search over. Supplied by the page, which gets them from the server — this
+  // component used to fall back to fetching every institution and every tutor from the browser
+  // the first time the box was focused, which was the single largest client-side read left.
+  institutions: Institution[];
+  tutors: Tutor[];
+  subjects: TaxonomyItem[];
 }
 
 const ICONS: Record<SearchSuggestion['type'], React.ReactNode> = {
@@ -37,40 +37,16 @@ export default function SearchAutocomplete({
   placeholder,
   className,
   inputClassName,
-  preloadedInstitutions,
-  preloadedTutors,
+  institutions,
+  tutors,
+  subjects,
 }: SearchAutocompleteProps) {
   const { language } = useLanguage();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [institutions, setInstitutions] = useState<Institution[]>(preloadedInstitutions || []);
-  const [tutors, setTutors] = useState<Tutor[]>(preloadedTutors || []);
-  const [subjects, setSubjects] = useState<TaxonomyItem[]>([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-
-  useEffect(() => {
-    if (preloadedInstitutions) setInstitutions(preloadedInstitutions);
-  }, [preloadedInstitutions]);
-
-  useEffect(() => {
-    if (preloadedTutors) setTutors(preloadedTutors);
-  }, [preloadedTutors]);
-
-  async function ensureDataLoaded() {
-    if (dataLoaded) return;
-    setDataLoaded(true); // set immediately so a second focus doesn't refetch while the first is in flight
-    const [insts, tuts, subs] = await Promise.all([
-      preloadedInstitutions ? Promise.resolve(preloadedInstitutions) : getInstitutions({}),
-      preloadedTutors ? Promise.resolve(preloadedTutors) : getTutors({}),
-      getTaxonomies('SUBJECT'),
-    ]);
-    setInstitutions(insts);
-    setTutors(tuts);
-    setSubjects(subs);
-  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -117,10 +93,7 @@ export default function SearchAutocomplete({
           setActiveIndex(-1);
           setOpen(true);
         }}
-        onFocus={() => {
-          ensureDataLoaded();
-          setOpen(true);
-        }}
+        onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
           handleKeyDown(e);
           if (e.key === 'Enter' && activeIndex < 0) onSubmit();

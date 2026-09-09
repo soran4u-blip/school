@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 import { computeCapacityUpdate } from '@/lib/admissionLogic';
+import { errorMessage } from '@/lib/errors';
 
-const SESSION_COOKIE_NAME = 'session';
 
 // POST /api/account/admission-applications/[id]/withdraw — a logged-in student withdraws their
 // own application, identity derived from their own session (never a client-supplied value).
@@ -15,21 +16,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-
-  let studentId: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-    studentId = decoded.uid;
-  } catch {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  const studentId = user.uid;
 
   const { id } = await params;
   const appRef = adminDb.collection('admissionApplications').doc(id);
@@ -65,7 +56,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
 
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message || 'Failed to withdraw application' }, { status: 400 });
+  } catch (e: unknown) {
+    return NextResponse.json({ success: false, error: errorMessage(e, 'Failed to withdraw application') }, { status: 400 });
   }
 }

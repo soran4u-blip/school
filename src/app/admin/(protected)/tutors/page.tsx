@@ -1,19 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import Thumbnail from '@/components/shared/Thumbnail';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getTutors, deleteTutor, saveTutor } from '@/core/services/tutorService';
+import { getTutors } from '@/core/services/tutorService';
+import { updateListing, deleteListing } from '@/core/services/adminListingService';
 import { getGovernorates } from '@/core/services/masterDataService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate } from '@/core/types/masterData';
-import { UserCheck, ShieldCheck, ShieldQuestion, Star, MapPin, Phone, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
+import { UserCheck, ShieldCheck, ShieldQuestion, Star, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { formatCurrencyIQD, deriveVerificationBadge } from '@/lib/utils';
+import { formatCurrencyIQD } from '@/lib/utils';
+import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
 
 export default function AdminTutorsPage() {
   const { language, t } = useLanguage();
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [error, setError] = useState('');
 
   const loadData = async () => {
     const [tutList, govs] = await Promise.all([
@@ -24,34 +29,35 @@ export default function AdminTutorsPage() {
     setGovernorates(govs);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
+
+  // These go through /api/admin/listings so they land in the audit trail.
+  const run = async (action: () => Promise<void>) => {
+    setError('');
+    try {
+      await action();
+      await loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+    }
+  };
 
   const handleDelete = async (tutor: Tutor) => {
     const name = language === 'en' ? tutor.fullName.en : tutor.fullName.ar;
     if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
       return;
     }
-    await deleteTutor(tutor.id);
-    await loadData();
+    await run(() => deleteListing('tutors', tutor.id));
   };
 
-  const handleToggleStatus = async (tutor: Tutor) => {
-    const status = tutor.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE';
-    await saveTutor({ ...tutor, status });
-    await loadData();
-  };
+  // PENDING -> ACTIVE is the approval an owner can no longer perform for themselves, so it has to
+  // be available here; ACTIVE <-> SUSPENDED mirrors the tutor's own pause switch.
+  const handleSetStatus = (tutor: Tutor, status: ListingStatus) =>
+    run(() => updateListing('tutors', tutor.id, { status }));
 
-  const handleToggleVerified = async (tutor: Tutor) => {
-    const isVerified = !tutor.isVerified;
-    await saveTutor({
-      ...tutor,
-      isVerified,
-      verificationBadgeLabel: deriveVerificationBadge(isVerified, tutor.verificationBadgeLabel),
-    });
-    await loadData();
-  };
+  // The badge label is derived server-side from isVerified, same as before.
+  const handleToggleVerified = (tutor: Tutor) =>
+    run(() => updateListing('tutors', tutor.id, { isVerified: !tutor.isVerified }));
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -77,6 +83,10 @@ export default function AdminTutorsPage() {
         </Link>
       </div>
 
+      {error && (
+        <div className="p-4 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">{error}</div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <table className="w-full text-xs text-start">
           <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
@@ -98,9 +108,11 @@ export default function AdminTutorsPage() {
                 <tr key={tutor.id} className="hover:bg-slate-50/50">
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      <img
+                      <Thumbnail
                         src={tutor.photoUrl}
                         alt={tutor.fullName.en}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full object-cover border border-slate-200"
                       />
                       <div>
@@ -124,17 +136,10 @@ export default function AdminTutorsPage() {
                     </div>
                   </td>
                   <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleToggleStatus(tutor)}
-                      title={t('اضغط للتبديل', 'Click to toggle')}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
-                        tutor.status === 'ACTIVE'
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                          : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                      }`}
-                    >
-                      {tutor.status === 'ACTIVE' ? t('نشط', 'Active') : t('قيد المراجعة', 'Pending')}
-                    </button>
+                    <ListingStatusControl
+                      status={tutor.status}
+                      onChange={(next) => handleSetStatus(tutor, next)}
+                    />
                   </td>
                   <td className="p-3 text-center">
                     <button

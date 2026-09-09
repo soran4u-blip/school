@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
 
-const SESSION_COOKIE_NAME = 'session';
 
 // GET /api/account/bookings — a logged-in student's own bookings, looked up by their account
 // uid (verified server-side from the session), never a client-supplied value.
@@ -12,18 +12,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
 
-    const snap = await adminDb.collection('bookings').where('participantStudentIds', 'array-contains', decoded.uid).get();
+    const snap = await adminDb.collection('bookings').where('participantStudentIds', 'array-contains', user.uid).get();
     const tutorIds = [...new Set(snap.docs.map((d) => (d.data() as Booking).tutorId))];
     const tutors = new Map<string, Tutor>();
     await Promise.all(
@@ -54,7 +50,7 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    return NextResponse.json({ success: true, phone: decoded.phone, bookings });
+    return NextResponse.json({ success: true, phone: user.phone, bookings });
   } catch (error) {
     console.error('Account bookings lookup failed:', error);
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { loadBookingAndVerifyStudent, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { threadMessageSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 
 async function requireStudentId(request: NextRequest): Promise<string | null> {
   if (!adminAuth) return null;
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) return null;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') return null;
-    return decoded.uid;
-  } catch {
-    return null;
-  }
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') return null;
+  return user.uid ?? null;
 }
 
 // GET /api/account/bookings/[id]/messages — a logged-in student reads their thread, identity

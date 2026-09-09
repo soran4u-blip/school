@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getInstitutionBySlug } from '@/core/services/institutionService';
+import { getPublicInstitutionBySlug } from '@/core/server/data/institutions';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const institution = await getInstitutionBySlug(slug);
+  const institution = await getPublicInstitutionBySlug(slug);
 
   if (!institution) {
     return { title: 'Institution Not Found' };
@@ -50,7 +50,7 @@ export default async function InstitutionEnLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const institution = await getInstitutionBySlug(slug);
+  const institution = await getPublicInstitutionBySlug(slug);
 
   if (!institution) {
     return children;

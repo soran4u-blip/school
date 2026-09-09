@@ -8,6 +8,25 @@ service cloud.firestore {
     function isSuperAdmin() {
       return isAuthenticated() && request.auth.token.role == 'superadmin';
     }
+
+    // Scoped admin roles — see src/core/permissions.ts, which is the readable copy of this table
+    // and the one proxy.ts and the API routes check against. Superadmin satisfies every capability
+    // below, so each helper includes it rather than each call site having to remember to.
+    //
+    // canEditDirectory: institutions, tutors, employers, jobs and the taxonomies behind them.
+    // canModerate:      the submission queues — join applications, reviews, inquiries, community.
+    // isAdmin:          any of the three, for the read-only views of the admin area.
+    function canEditDirectory() {
+      return isSuperAdmin() || (isAuthenticated() && request.auth.token.role == 'editor');
+    }
+
+    function canModerate() {
+      return isSuperAdmin() || (isAuthenticated() && request.auth.token.role == 'moderator');
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || canEditDirectory() || canModerate();
+    }
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -28,6 +47,43 @@ service cloud.firestore {
     // Review's institutionId?/tutorId?. `.get(key, null)` handles the genuinely-absent-field case.
     function isOwnerOfJob(data) {
       return isOwnerInstitution(data.get('institutionId', null)) || isOwnerEmployer(data.get('employerId', null));
+    }
+
+    // ---- Owner-write guards ----------------------------------------------------------------
+    // Institution/tutor/employer/job owners write their own documents straight from the browser
+    // with the client SDK, so a rule is the only thing standing between them and the fields that
+    // decide public ranking, the verification badge, and the JSON-LD aggregateRating we hand to
+    // Google. Everything an owner must not self-award is listed per-collection below and checked
+    // through here. Superadmin writes bypass these entirely.
+    //
+    // `diff().affectedKeys()` reports only keys whose value actually CHANGES, so the dashboards'
+    // whole-document setDoc(..., {merge: true}) still passes: it writes these fields back
+    // untouched, because no owner-facing form ever exposes them.
+    function keepsReservedFields(reserved) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(reserved);
+    }
+
+    // An owner may pause and resume their own listing, but may never walk a PENDING profile to
+    // ACTIVE — that approval is the admin's call. Institutions and tutors both use
+    // ACTIVE<->SUSPENDED for the owner-controlled pause, keeping PENDING to mean "not yet
+    // approved" and nothing else.
+    function statusStaysWithin(allowed) {
+      return request.resource.data.status == resource.data.status
+        || (resource.data.status in allowed && request.resource.data.status in allowed);
+    }
+
+    // Ownership of an existing profile doc, by either the linked uid or the role-scoped claim.
+    // `.get('userId', '')` keeps this safe on documents predating the userId field.
+    function ownsInstitutionDoc(instId) {
+      return isOwner(resource.data.get('userId', '')) || isOwnerInstitution(instId);
+    }
+
+    function ownsTutorDoc(tutorId) {
+      return isOwner(resource.data.get('userId', '')) || isOwnerTutor(tutorId);
+    }
+
+    function ownsEmployerDoc(employerId) {
+      return isOwner(resource.data.get('userId', '')) || isOwnerEmployer(employerId);
     }
 
     function isValidInquiry() {
@@ -56,25 +112,25 @@ service cloud.firestore {
     // Dynamic Master Data (Locations, Categories, Taxonomies, Settings): Public Read, Superadmin Write
     match /locations_governorates/{govId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if canEditDirectory();
       match /cities/{cityId} {
         allow read: if true;
-        allow write: if isSuperAdmin();
+        allow write: if canEditDirectory();
       }
     }
 
     match /categories/{catId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if canEditDirectory();
       match /subcategories/{subId} {
         allow read: if true;
-        allow write: if isSuperAdmin();
+        allow write: if canEditDirectory();
       }
     }
 
     match /taxonomies_master/{taxId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if canEditDirectory();
     }
 
     match /system_settings/{settingId} {
@@ -82,27 +138,48 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
+    // Homepage quick-search chips. Previously this master-data type lived only in seedData.json
+    // and was never persisted anywhere, so it had no collection and no rule.
+    match /quick_search_tags/{tagId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
     // Institutions Directory
     match /institutions/{instId} {
-      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerInstitution(instId);
-      allow write: if isSuperAdmin() || isOwner(resource.data.userId) || isOwnerInstitution(instId);
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerInstitution(instId);
+      // Profiles are provisioned by /api/applications/[id]/approve (Admin SDK), never client-side.
+      allow create: if canEditDirectory();
+      allow update: if canEditDirectory() || (
+        ownsInstitutionDoc(instId)
+        && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'isFeatured', 'metrics', 'createdAt'])
+        && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
+      );
+      // Self-service account deletion (re-authenticated in the dashboard) stays available.
+      allow delete: if canEditDirectory() || ownsInstitutionDoc(instId);
       match /programs/{progId} {
         allow read: if true;
-        allow write: if isSuperAdmin() || isOwnerInstitution(instId);
+        allow write: if canEditDirectory() || isOwnerInstitution(instId);
       }
 
       // Verification/accreditation documents — same private-subcollection pattern as tutors,
       // since the institution doc above is world-readable once status is 'ACTIVE' with no
       // field-level restriction, and Storage download-URL tokens bypass storage.rules anyway.
       match /private/{docId} {
-        allow read, write: if isSuperAdmin() || isOwnerInstitution(instId);
+        allow read, write: if canEditDirectory() || isOwnerInstitution(instId);
       }
     }
 
     // Private Tutors Directory
     match /tutors/{tutorId} {
-      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerTutor(tutorId);
-      allow write: if isSuperAdmin() || isOwner(resource.data.userId) || isOwnerTutor(tutorId);
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerTutor(tutorId);
+      allow create: if canEditDirectory();
+      allow update: if canEditDirectory() || (
+        ownsTutorDoc(tutorId)
+        && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'ratingAvg', 'reviewCount', 'createdAt'])
+        && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
+      );
+      allow delete: if canEditDirectory() || ownsTutorDoc(tutorId);
 
       // Verification documents (ID/certificate photos) live here instead of on the tutor doc
       // above, because that doc's read rule has no field-level restriction — anything on it
@@ -110,15 +187,22 @@ service cloud.firestore {
       // bypass storage.rules on a direct fetch, so keeping these URLs off the public doc is
       // the only real privacy boundary for identity documents.
       match /private/{docId} {
-        allow read, write: if isSuperAdmin() || isOwnerTutor(tutorId);
+        allow read, write: if canEditDirectory() || isOwnerTutor(tutorId);
       }
     }
 
     // Employers (companies/NGOs) — narrower than Institutions: no public directory profile page,
     // no programs/verification-docs subcollection, they only ever get read for job-listing display.
     match /employers/{employerId} {
-      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerEmployer(employerId);
-      allow write: if isSuperAdmin() || isOwner(resource.data.userId) || isOwnerEmployer(employerId);
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerEmployer(employerId);
+      allow create: if canEditDirectory();
+      // No owner-facing pause for employers, so `status` is admin-only here rather than being
+      // covered by statusStaysWithin().
+      allow update: if canEditDirectory() || (
+        ownsEmployerDoc(employerId)
+        && keepsReservedFields(['id', 'userId', 'status', 'createdAt'])
+      );
+      allow delete: if canEditDirectory() || ownsEmployerDoc(employerId);
     }
 
     // Tutoring Session Bookings (individual or group). Writes only via the Admin SDK
@@ -126,7 +210,8 @@ service cloud.firestore {
     // price recalculation stays transactional and student contact info in `participants`
     // isn't exposed to arbitrary readers.
     match /bookings/{bookingId} {
-      allow read, update, delete: if isSuperAdmin() || isOwnerTutor(resource.data.tutorId);
+      allow read: if isAdmin() || isOwnerTutor(resource.data.tutorId);
+      allow update, delete: if canEditDirectory() || isOwnerTutor(resource.data.tutorId);
       allow create: if false;
     }
 
@@ -145,10 +230,16 @@ service cloud.firestore {
     }
 
     match /reviews/{reviewId} {
-      allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
+      allow read: if resource.data.status == 'APPROVED' || canModerate();
       allow create: if false;
-      allow update: if isSuperAdmin() || isOwnerReplyingToOwnApprovedReview();
-      allow delete: if isSuperAdmin();
+      // Moderation (status changes) and deletion are Admin SDK only, via
+      // /api/admin/reviews/[id] — both have to move the reviewed party's rating aggregates in the
+      // same transaction, which a client-side write cannot do atomically. Even the superadmin
+      // goes through the route: leaving a direct client write open here is precisely how the
+      // aggregates drifted out of step with the reviews before. The one client write still
+      // allowed is an owner attaching a public reply, which touches no aggregate.
+      allow update: if isOwnerReplyingToOwnApprovedReview();
+      allow delete: if false;
     }
 
     // Inquiries & Leads (Anyone can create inquiry; recipient institution or admin can read/reply)
@@ -159,24 +250,36 @@ service cloud.firestore {
 
     match /inquiries/{inquiryId} {
       allow create: if isValidInquiry();
-      allow read: if isSuperAdmin() || isOwnerInstitution(resource.data.institutionId);
-      allow update: if isSuperAdmin() || isInstitutionUpdatingOwnInquiry();
-      allow delete: if isSuperAdmin();
+      allow read: if canModerate() || isOwnerInstitution(resource.data.institutionId);
+      allow update: if canModerate() || isInstitutionUpdatingOwnInquiry();
+      allow delete: if canModerate();
     }
 
-    // Join Applications (tutor/institution). Anyone can apply; only superadmin reviews.
+    // Join Applications (tutor/institution). Anyone can apply; a moderator or superadmin reviews.
     // Approval for tutors goes through the Admin SDK API route (/api/applications/[id]/approve)
     // so account provisioning + custom claims stay server-side.
     match /applications/{applicationId} {
       allow create: if isValidApplication();
-      allow read, update, delete: if isSuperAdmin();
+      allow read, update, delete: if canModerate();
     }
 
     // Jobs (institution or employer postings — exactly one of institutionId/employerId is set).
     // Anyone can browse ACTIVE jobs; owner/admin see DRAFT/CLOSED too.
     match /jobs/{jobId} {
-      allow read: if resource.data.status == 'ACTIVE' || isSuperAdmin() || isOwnerOfJob(resource.data);
-      allow write: if isSuperAdmin() || isOwnerOfJob(resource.data) || isOwnerOfJob(request.resource.data);
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerOfJob(resource.data);
+      // A new job must be posted under the poster's own institution/employer id and must start
+      // with an untouched applicant counter.
+      allow create: if canEditDirectory() || (
+        isOwnerOfJob(request.resource.data)
+        && request.resource.data.get('applicantCount', 0) == 0
+      );
+      // `applicantCount` is maintained atomically by /api/job-applications via the Admin SDK, so
+      // it is off-limits here; the ownership fields are frozen so a job can't be reassigned.
+      allow update: if canEditDirectory() || (
+        isOwnerOfJob(resource.data)
+        && keepsReservedFields(['id', 'institutionId', 'employerId', 'applicantCount', 'createdAt'])
+      );
+      allow delete: if canEditDirectory() || isOwnerOfJob(resource.data);
     }
 
     // Job Applications (guest apply, no account required). Creation is Admin SDK only
@@ -193,9 +296,9 @@ service cloud.firestore {
       // Admin SDK only (/api/job-applications) — rate-limited by IP rather than trusting
       // freely-mintable anonymous Firebase Auth sessions.
       allow create: if false;
-      allow read: if isSuperAdmin() || isOwnerOfJob(resource.data);
-      allow update: if isSuperAdmin() || isOwnerUpdatingOwnJobApplication();
-      allow delete: if isSuperAdmin();
+      allow read: if isAdmin() || isOwnerOfJob(resource.data);
+      allow update: if canEditDirectory() || isOwnerUpdatingOwnJobApplication();
+      allow delete: if canEditDirectory();
     }
 
     // Admission Applications (a student applying to an institution's program). Unlike
@@ -209,7 +312,7 @@ service cloud.firestore {
     // the student's own docs below in case a future UI wants them, scoped by studentId.
     match /admissionApplications/{applicationId} {
       allow create: if false;
-      allow read: if isSuperAdmin() || isOwnerInstitution(resource.data.get('institutionId', null)) || isOwner(resource.data.get('studentId', null));
+      allow read: if isAdmin() || isOwnerInstitution(resource.data.get('institutionId', null)) || isOwner(resource.data.get('studentId', null));
       allow update: if false;
       allow delete: if isSuperAdmin();
     }
@@ -231,9 +334,9 @@ service cloud.firestore {
       // Admin SDK only (/api/community-posts) — rate-limited by IP rather than trusting
       // freely-mintable anonymous Firebase Auth sessions.
       allow create: if false;
-      allow read: if resource.data.status == 'APPROVED' || isSuperAdmin();
-      allow update: if isSuperAdmin() || (isAuthenticated() && isGuestAddingReplyCount());
-      allow delete: if isSuperAdmin();
+      allow read: if resource.data.status == 'APPROVED' || canModerate();
+      allow update: if canModerate() || (isAuthenticated() && isGuestAddingReplyCount());
+      allow delete: if canModerate();
 
       function isValidCommunityReply() {
         let d = request.resource.data;
@@ -243,9 +346,9 @@ service cloud.firestore {
       }
 
       match /replies/{replyId} {
-        allow read: if isSuperAdmin() || get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
+        allow read: if canModerate() || get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
         allow create: if isAuthenticated() && isValidCommunityReply();
-        allow delete: if isSuperAdmin();
+        allow delete: if canModerate();
       }
     }
 
@@ -263,13 +366,15 @@ service cloud.firestore {
     }
 
     match /threads/{threadId} {
-      allow read: if isSuperAdmin() || isOwnerOfThread(resource.data);
+      allow read: if isAdmin() || isOwnerOfThread(resource.data);
       allow create: if isSuperAdmin() || isOwnerOfThread(request.resource.data);
       allow update: if isSuperAdmin() || isOwnerOfThread(resource.data);
       allow delete: if isSuperAdmin();
 
       match /messages/{messageId} {
-        allow read, create: if isSuperAdmin()
+        allow read: if isAdmin()
+          || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data);
+        allow create: if isSuperAdmin()
           || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data);
       }
     }
@@ -309,6 +414,23 @@ service cloud.firestore {
     // read or written by any client.
     match /rateLimits/{key} {
       allow read, write: if false;
+    }
+
+    // The audit trail. Append-only from the server's point of view and immutable from everywhere
+    // else: a log that the people it records can edit or delete is not a log. Superadmins read it
+    // through /admin/audit; nothing writes it but the Admin SDK. Editors are excluded on
+    // purpose — the people whose directory edits it records shouldn't also curate the record.
+    match /auditLogs/{entryId} {
+      allow read: if isSuperAdmin() || canModerate();
+      allow write: if false;
+    }
+
+    // Precomputed /admin/analytics figures, written only by the scheduled `analytics` task via
+    // the Admin SDK. Readable by any admin role so /admin/analytics can load it directly; a
+    // client write would let someone fabricate the platform's own numbers.
+    match /analytics_snapshots/{snapshotId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

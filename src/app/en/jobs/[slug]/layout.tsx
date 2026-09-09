@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getJobBySlug } from '@/core/services/jobService';
+import { getPublicJobBySlug } from '@/core/server/data/jobs';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getPublicJobBySlug(slug);
 
   if (!job) {
     return { title: 'Job Not Found' };
@@ -48,7 +48,7 @@ export default async function JobEnLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getPublicJobBySlug(slug);
 
   if (!job) {
     return children;

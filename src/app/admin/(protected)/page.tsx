@@ -13,7 +13,6 @@ import {
   UserCheck, 
   Plus, 
   CheckCircle2, 
-  Layers, 
   ShieldCheck 
 } from 'lucide-react';
 

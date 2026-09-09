@@ -1,7 +1,7 @@
 import { Application } from '../types/application';
 import { db } from '../firebase/config';
 import {
-  collection, getDocs, getCountFromServer, doc, setDoc, updateDoc, query, where, orderBy, limit, startAfter,
+  collection, getDocs, getCountFromServer, doc, setDoc, query, where, orderBy, limit, startAfter,
   QueryDocumentSnapshot, DocumentData,
 } from 'firebase/firestore';
 
@@ -62,12 +62,18 @@ export async function getPendingApplicationsCount(): Promise<number> {
   return snap.data().count;
 }
 
+// Goes through the server so the decision is attributable, same as approval — see
+// core/server/auditLog.ts.
 export async function rejectApplication(id: string, rejectionReason?: string): Promise<void> {
-  await updateDoc(doc(db, 'applications', id), {
-    status: 'REJECTED',
-    reviewedAt: new Date().toISOString(),
-    ...(rejectionReason ? { rejectionReason } : {}),
+  const res = await fetch(`/api/admin/applications/${id}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rejectionReason }),
   });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Rejection failed');
+  }
 }
 
 // Approval provisions a real login (tutors/institutions/employers) via the Admin SDK, so it

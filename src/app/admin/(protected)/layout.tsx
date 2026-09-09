@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
+import { onIdTokenChanged } from 'firebase/auth';
+import { AdminRole, hasPermission, permissionForPath, isAdminRole } from '@/core/permissions';
 import { signOut } from 'firebase/auth';
 import { getPendingApplicationsCount } from '@/core/services/applicationService';
 import { getPendingReviewsCount, getNewInquiriesCount } from '@/core/services/reviewService';
@@ -18,7 +20,6 @@ import {
   Building2,
   UserCheck,
   Settings,
-  ArrowRight,
   ShieldAlert,
   Home,
   LogOut,
@@ -28,6 +29,7 @@ import {
   Briefcase,
   Users,
   BarChart3,
+  ScrollText,
   Bug
 } from 'lucide-react';
 
@@ -36,10 +38,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { language, t } = useLanguage();
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+  // The role decides which sections are shown. This is presentation only — proxy.ts refuses the
+  // request and firestore.rules refuses the write regardless of what the sidebar renders.
+  const [role, setRole] = useState<AdminRole | null>(null);
+
+  useEffect(() => {
+    return onIdTokenChanged(auth, async (user) => {
+      if (!user) {
+        setRole(null);
+        return;
+      }
+      const token = await user.getIdTokenResult();
+      const claimed = token.claims.role as string | undefined;
+      setRole(isAdminRole(claimed) ? claimed : null);
+    });
+  }, []);
 
   useEffect(() => {
     async function loadPendingCounts() {
       try {
+        // A role without moderation access can't read these collections at all, and asking would
+        // just produce permission errors in the console.
+        if (!hasPermission(role, 'applications:write')) return;
         const [applicationsCount, reviewsCount, inquiriesCount, communityPostsCount] = await Promise.all([
           getPendingApplicationsCount(),
           getPendingReviewsCount(),
@@ -56,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
     loadPendingCounts();
-  }, [pathname]);
+  }, [pathname, role]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
@@ -133,6 +153,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: Users,
     },
     {
+      href: '/admin/audit',
+      label: { ar: 'سجل الإجراءات', en: 'Audit Log' },
+      icon: ScrollText,
+    },
+    {
       href: '/admin/errors',
       label: { ar: 'أخطاء النظام', en: 'System Errors' },
       icon: Bug,
@@ -160,7 +185,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </span>
               <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
                 <ShieldAlert className="w-3 h-3" />
-                {t('لوحة تحكم السوبر أدمن', 'Superadmin Suite')}
+                {role === 'moderator'
+                  ? t('صلاحيات الإشراف', 'Moderator access')
+                  : role === 'editor'
+                    ? t('صلاحيات التحرير', 'Editor access')
+                    : t('لوحة تحكم السوبر أدمن', 'Superadmin Suite')}
               </p>
             </div>
           </div>
@@ -168,7 +197,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Navigation items */}
         <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => hasPermission(role, permissionForPath(item.href)))
+            .map((item) => {
             const isActive = item.exact 
               ? pathname === item.href 
               : pathname.startsWith(item.href);

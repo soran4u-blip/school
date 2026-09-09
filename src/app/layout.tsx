@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
+import { MasterDataProvider } from '@/core/context/MasterDataContext';
+import { getPublicCategories, getPublicGovernorates } from '@/core/server/data/masterData';
 import ErrorReporter from '@/components/shared/ErrorReporter';
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar';
 
@@ -54,11 +56,20 @@ const websiteJsonLd = {
   },
 };
 
-export default function RootLayout({
+// The Admin SDK's service account is a runtime-only secret (see apphosting.yaml), so nothing
+// under this layout can be prerendered at build time. The reads below are cached snapshots shared
+// across visitors, so request-time rendering doesn't mean a Firestore read per request.
+export const dynamic = 'force-dynamic';
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read once here for the whole app: Navbar and Footer both need these on every page and used to
+  // fetch them separately from the browser.
+  const [categories, governorates] = await Promise.all([getPublicCategories(), getPublicGovernorates()]);
+
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
@@ -66,7 +77,9 @@ export default function RootLayout({
         <ErrorReporter />
         <ServiceWorkerRegistrar />
         <LanguageProvider>
-          {children}
+          <MasterDataProvider value={{ categories, governorates }}>
+            {children}
+          </MasterDataProvider>
         </LanguageProvider>
       </body>
     </html>

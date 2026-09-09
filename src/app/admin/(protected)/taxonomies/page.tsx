@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getTaxonomies, saveTaxonomy } from '@/core/services/masterDataService';
 import { TaxonomyItem, TaxonomyType } from '@/core/types/masterData';
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminTaxonomiesPage() {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [taxonomies, setTaxonomies] = useState<TaxonomyItem[]>([]);
   const [activeTab, setActiveTab] = useState<TaxonomyType>('ACCREDITATION');
   const [isEditing, setIsEditing] = useState(false);
@@ -41,9 +42,7 @@ export default function AdminTaxonomiesPage() {
     setTaxonomies(list);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
   const filteredTaxonomies = taxonomies.filter(t => t.type === activeTab);
 
@@ -235,7 +234,7 @@ export default function AdminTaxonomiesPage() {
                 <label className="block text-xs font-bold text-slate-700 mb-1">{t('لون الشارة', 'Badge Style')}</label>
                 <select
                   value={form.badgeStyle || 'emerald'}
-                  onChange={(e) => setForm({ ...form, badgeStyle: e.target.value as any })}
+                  onChange={(e) => setForm({ ...form, badgeStyle: e.target.value as TaxonomyItem['badgeStyle'] })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-blue-500 bg-white"
                 >
                   <option value="emerald">Emerald (أخضر موثق)</option>

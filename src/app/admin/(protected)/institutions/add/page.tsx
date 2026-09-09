@@ -157,7 +157,7 @@ function InstitutionForm() {
       await saveInstitution(institution);
       setMessage({ text: t('تم حفظ المؤسسة بنجاح', 'Institution saved successfully'), type: 'success' });
       setTimeout(() => router.push('/admin/institutions'), 900);
-    } catch (err) {
+    } catch {
       setMessage({ text: t('حدث خطأ أثناء الحفظ', 'Failed to save institution'), type: 'error' });
     } finally {
       setSaving(false);

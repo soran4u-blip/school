@@ -1,47 +1,37 @@
-import initialSeed from '../seed/seedData.json';
 import { Institution } from '../types/institution';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
-
-const inMemoryInstitutions: Institution[] = (initialSeed.institutions as unknown) as Institution[];
+import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 
 /* =========================================================
    INSTITUTIONS DIRECTORY
 ========================================================= */
+// Firestore is the only source of truth here. An earlier version of this file seeded itself from
+// seedData.json and merged Firestore results on top, which meant a seeded record that wasn't in
+// Firestore could never be deleted (it reappeared on the next load from the bundled JSON), and
+// shipped ~34KB of demo data to every visitor's browser. Writes likewise swallowed their errors
+// and updated a module-level array instead, so the UI reported success while nothing persisted.
+// Both are gone: reads return what Firestore returns, writes throw when they fail.
+
+const COLLECTION = 'institutions';
+
+// `{ ...data, id: doc.id }` and not the reverse — the document key is authoritative, so a stale
+// or forged `id` field inside the document can't shadow it.
+function toInstitution(id: string, data: Record<string, unknown>): Institution {
+  return { ...data, id } as Institution;
+}
+
 // `wantsAll` is true only for the admin 'ALL' case — every other caller (the overwhelming
 // majority of traffic: the public directory, explore, search) only ever wants ACTIVE
 // institutions. Going straight to the ACTIVE-filtered query for that common case avoids a
-// wasted, guaranteed-to-fail unfiltered read on every single public page load — the previous
-// version always attempted the unfiltered query first and only fell back to the filtered one
-// once Firestore rejected it, doubling round-trip latency for almost all traffic.
-async function getMergedInstitutions(wantsAll = false): Promise<Institution[]> {
-  let list = inMemoryInstitutions;
-  try {
-    if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
-      // Unfiltered list is only permitted by the rules for an authenticated superadmin
-      // (whose access doesn't depend on resource.data). Unauthenticated/public callers
-      // must filter on `status` to match the rule's data-dependent branch, or Firestore
-      // denies the list outright — fall back to that filtered query in that case.
-      let snap;
-      if (wantsAll) {
-        try {
-          snap = await getDocs(collection(db, 'institutions'));
-        } catch {
-          snap = await getDocs(query(collection(db, 'institutions'), where('status', '==', 'ACTIVE')));
-        }
-      } else {
-        snap = await getDocs(query(collection(db, 'institutions'), where('status', '==', 'ACTIVE')));
-      }
-      if (!snap.empty) {
-        const merged = new Map(list.map(i => [i.id, i]));
-        snap.docs.forEach(d => merged.set(d.id, { id: d.id, ...d.data() } as Institution));
-        list = Array.from(merged.values());
-      }
-    }
-  } catch (e) {
-    console.warn('Firestore fallback to in-memory store for institutions');
-  }
-  return list;
+// wasted, guaranteed-to-fail unfiltered read on every single public page load: the unfiltered
+// list is only permitted by the rules for an authenticated superadmin, since public callers must
+// filter on `status` to match the rule's data-dependent branch.
+async function fetchInstitutions(wantsAll = false): Promise<Institution[]> {
+  const ref = collection(db, COLLECTION);
+  const snap = wantsAll
+    ? await getDocs(ref)
+    : await getDocs(query(ref, where('status', '==', 'ACTIVE')));
+  return snap.docs.map((d) => toInstitution(d.id, d.data()));
 }
 
 export async function getInstitutions(filter?: {
@@ -51,9 +41,9 @@ export async function getInstitutions(filter?: {
   isVerified?: boolean;
   status?: string; // pass 'ALL' (admin use only) to include every status, not just ACTIVE
 }): Promise<Institution[]> {
-  let list = await getMergedInstitutions(filter?.status === 'ALL');
+  let list = await fetchInstitutions(filter?.status === 'ALL');
   if (filter?.status === 'ALL') {
-    // no status filtering — admin needs to see PENDING/INACTIVE listings too
+    // no status filtering — admin needs to see PENDING/SUSPENDED listings too
   } else if (filter?.status) {
     list = list.filter(i => i.status === filter.status);
   } else {
@@ -84,69 +74,45 @@ export async function getInstitutions(filter?: {
 }
 
 export async function getInstitutionById(id: string): Promise<Institution | null> {
-  // A direct single-doc read (not the collection-wide getMergedInstitutions scan) — same fix
-  // as getTutorById, for the same reason: an unfiltered collection query gets denied entirely
-  // for a signed-in owner whose own doc is still 'PENDING' (e.g. right after approval, before
-  // an admin activates it), even though isOwnerInstitution() already permits reading that doc
-  // directly.
-  try {
-    if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
-      const snap = await getDoc(doc(db, 'institutions', id));
-      if (snap.exists()) return { id: snap.id, ...snap.data() } as Institution;
-    }
-  } catch (e) {
-    console.warn('Firestore fallback to in-memory store for institution', id);
-  }
-  return inMemoryInstitutions.find(i => i.id === id) || null;
+  // A direct single-doc read (not the collection-wide scan) — an unfiltered collection query
+  // gets denied entirely for a signed-in owner whose own doc is still 'PENDING' (e.g. right
+  // after approval, before an admin activates it), even though isOwnerInstitution() already
+  // permits reading that doc directly.
+  const snap = await getDoc(doc(db, COLLECTION, id));
+  return snap.exists() ? toInstitution(snap.id, snap.data()) : null;
 }
 
 export async function getInstitutionBySlug(slug: string): Promise<Institution | null> {
-  const list = await getMergedInstitutions();
-  return list.find(i => i.slug === slug || i.id === slug) || null;
+  const ref = collection(db, COLLECTION);
+  const bySlug = await getDocs(query(ref, where('slug', '==', slug), where('status', '==', 'ACTIVE')));
+  if (!bySlug.empty) {
+    const d = bySlug.docs[0];
+    return toInstitution(d.id, d.data());
+  }
+  // Institutions created before the slug field existed (or a stale bookmark) still resolve by id.
+  return getInstitutionById(slug);
 }
 
 export async function saveInstitution(inst: Institution): Promise<Institution> {
   const now = new Date().toISOString();
   const toSave: Institution = { ...inst, createdAt: inst.createdAt || now, updatedAt: now };
-
-  try {
-    if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
-      await setDoc(doc(db, 'institutions', toSave.id), toSave, { merge: true });
-    }
-  } catch (e) {
-    console.warn('Error persisting institution to Firestore:', e);
-  }
-
-  const idx = inMemoryInstitutions.findIndex(i => i.id === toSave.id);
-  if (idx >= 0) {
-    inMemoryInstitutions[idx] = toSave;
-  } else {
-    inMemoryInstitutions.push(toSave);
-  }
+  await setDoc(doc(db, COLLECTION, toSave.id), toSave, { merge: true });
   return toSave;
 }
 
 export async function deleteInstitution(id: string): Promise<void> {
-  try {
-    if (process.env.NEXT_PUBLIC_USE_FIRESTORE === 'true') {
-      // Firestore doesn't cascade-delete subcollections when their parent doc goes.
-      await deleteDoc(doc(db, 'institutions', id, 'private', 'verification')).catch(() => {});
-      await deleteDoc(doc(db, 'institutions', id));
-    }
-  } catch (e) {
-    console.warn('Error deleting institution from Firestore:', e);
-  }
-  const idx = inMemoryInstitutions.findIndex(i => i.id === id);
-  if (idx >= 0) inMemoryInstitutions.splice(idx, 1);
+  // Firestore doesn't cascade-delete subcollections when their parent doc goes.
+  await deleteDoc(doc(db, COLLECTION, id, 'private', 'verification')).catch(() => {});
+  await deleteDoc(doc(db, COLLECTION, id));
 }
 
 // Accreditation/verification documents live in a private subcollection, same reasoning as
 // the tutor equivalent — the institution doc is world-readable once status is 'ACTIVE'.
 export async function getInstitutionVerificationDocuments(institutionId: string): Promise<string[]> {
-  const snap = await getDoc(doc(db, 'institutions', institutionId, 'private', 'verification'));
+  const snap = await getDoc(doc(db, COLLECTION, institutionId, 'private', 'verification'));
   return snap.exists() ? (snap.data().documents as string[]) || [] : [];
 }
 
 export async function saveInstitutionVerificationDocuments(institutionId: string, documents: string[]): Promise<void> {
-  await setDoc(doc(db, 'institutions', institutionId, 'private', 'verification'), { documents });
+  await setDoc(doc(db, COLLECTION, institutionId, 'private', 'verification'), { documents });
 }

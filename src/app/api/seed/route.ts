@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { requirePermission } from '@/core/server/session';
 import seedData from '@/core/seed/seedData.json';
+import { revalidatePublicData } from '@/core/server/data/cache';
+import { recordAuditEvent } from '@/core/server/auditLog';
+import { errorMessage, errorStack } from '@/lib/errors';
+import { logServerError } from '@/core/server/errorLog';
 
-const SESSION_COOKIE_NAME = 'session';
 
 // This overwrites master data (governorates, categories, institutions...) wholesale — restricted
 // to superadmin so it can't be triggered by an unauthenticated POST against a guessable path.
 export async function POST(request: NextRequest) {
-  if (!adminAuth || !adminDb) {
-    return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
-  }
-
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'superadmin') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-  } catch {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requirePermission(request, 'seed:run');
+  if (auth.error) return auth.error;
 
   try {
-    const db = adminDb;
+    const db = auth.context.db;
     const results: string[] = [];
 
     // 1. Seed Governorates
@@ -58,19 +47,13 @@ export async function POST(request: NextRequest) {
     results.push(`✅ ${seedData.taxonomies.length} taxonomy items seeded`);
 
     // 5. Seed Institutions
+    // Programs are an array on the institution document — that is where the institution
+    // dashboard writes them (saveInstitution) and the only place the public profile reads them
+    // from. An earlier version of this seeder split them off into a `programs` subcollection
+    // instead, which nothing has ever read, so every seeded institution showed an empty
+    // Programs tab.
     for (const inst of seedData.institutions) {
-      const { programs, ...instData } = inst as any;
-      await db.collection('institutions').doc(inst.id).set(instData);
-      if (programs && programs.length > 0) {
-        for (const prog of programs) {
-          await db
-            .collection('institutions')
-            .doc(inst.id)
-            .collection('programs')
-            .doc(prog.id)
-            .set(prog);
-        }
-      }
+      await db.collection('institutions').doc(inst.id).set(inst);
     }
     results.push(`✅ ${seedData.institutions.length} institutions seeded`);
 
@@ -80,9 +63,26 @@ export async function POST(request: NextRequest) {
     }
     results.push(`✅ ${seedData.tutors.length} tutors seeded`);
 
-    // 7. Seed System Settings
+    // 7. Seed Quick Search Tags
+    for (const tag of seedData.quickSearchTags) {
+      await db.collection('quick_search_tags').doc(tag.id).set(tag);
+    }
+    results.push(`✅ ${seedData.quickSearchTags.length} quick search tags seeded`);
+
+    // 8. Seed System Settings
     await db.collection('system_settings').doc('global').set(seedData.systemSettings);
     results.push(`✅ System settings seeded`);
+
+    // Seeding rewrites master data wholesale; every cached public snapshot is now stale.
+    await recordAuditEvent(db, {
+      actor: auth.context.user,
+      action: 'database.seed',
+      targetType: 'system',
+      targetId: 'seed',
+      summary: 'Re-seeded master data from seedData.json',
+      request,
+    });
+    revalidatePublicData('institutions', 'tutors', 'jobs', 'masterData');
 
     return NextResponse.json({
       success: true,
@@ -90,10 +90,13 @@ export async function POST(request: NextRequest) {
       results,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Seed error:', error);
+    // The stack used to be returned in the response body. Even on a superadmin-only route that
+    // is more than the caller needs; it goes to the error log instead.
+    await logServerError('Seed failed', { stack: errorStack(error), url: request.url });
     return NextResponse.json(
-      { success: false, error: error.message || 'Unknown error', stack: error.stack },
+      { success: false, error: errorMessage(error, 'Seeding failed') },
       { status: 500 }
     );
   }

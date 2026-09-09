@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { AdmissionApplication } from '@/core/types/admission';
 import { Institution } from '@/core/types/institution';
 
-const SESSION_COOKIE_NAME = 'session';
 
 // GET /api/account/admission-applications — a logged-in student's own applications, looked up
 // by their account uid (verified server-side from the session), never a client-supplied value.
@@ -12,18 +12,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
 
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student') {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
 
-    const snap = await adminDb.collection('admissionApplications').where('studentId', '==', decoded.uid).get();
+    const snap = await adminDb.collection('admissionApplications').where('studentId', '==', user.uid).get();
     const institutionIds = [...new Set(snap.docs.map((d) => (d.data() as AdmissionApplication).institutionId))];
     const institutions = new Map<string, Institution>();
     await Promise.all(

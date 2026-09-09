@@ -1,29 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
-import { getCategories, getGovernorates } from '@/core/services/masterDataService';
-import { Category, Governorate } from '@/core/types/masterData';
 import { GraduationCap, ShieldCheck, Mail, Phone } from 'lucide-react';
 
 export default function Footer() {
   const { language, t } = useLanguage();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [governorates, setGovernorates] = useState<Governorate[]>([]);
-
-  useEffect(() => {
-    async function loadFooterData() {
-      const [cats, govs] = await Promise.all([
-        getCategories(),
-        getGovernorates()
-      ]);
-      setCategories(cats);
-      setGovernorates(govs.slice(0, 8)); // Top governorates for footer links
-    }
-    loadFooterData();
-  }, []);
+  // Provided by the root layout from one server-side read — see MasterDataContext.
+  const { categories, governorates: allGovernorates } = useMasterData();
+  const governorates = allGovernorates.slice(0, 8); // Top governorates for footer links
 
   return (
     <footer className="bg-[#0B192C] text-slate-300 pt-16 pb-12 border-t border-slate-800 mt-auto">

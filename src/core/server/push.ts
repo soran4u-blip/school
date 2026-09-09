@@ -30,8 +30,11 @@ export async function sendPushToStudent(
       const subscription = doc.data().subscription;
       try {
         await webpush.sendNotification(subscription, JSON.stringify(payload));
-      } catch (err: any) {
-        if (err?.statusCode === 404 || err?.statusCode === 410) {
+      } catch (err: unknown) {
+        // 404/410 from the push service means the browser dropped this subscription — prune it
+        // rather than retrying it forever.
+        const statusCode = (err as { statusCode?: number } | null)?.statusCode;
+        if (statusCode === 404 || statusCode === 410) {
           await doc.ref.delete().catch(() => {});
         }
       }

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getRecentErrorLogs, deleteErrorLog } from '@/core/services/errorLogService';
 import { ErrorLog } from '@/core/types/errorLog';
@@ -22,9 +23,7 @@ export default function AdminErrorsPage() {
     }
   };
 
-  useEffect(() => {
-    loadLogs();
-  }, []);
+  useLoadOnMount(loadLogs);
 
   const handleDelete = async (id: string) => {
     await deleteErrorLog(id);

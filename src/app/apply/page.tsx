@@ -90,7 +90,7 @@ export default function ApplyPage() {
         message: message.trim(),
       });
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       setError(t('حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.', 'Something went wrong submitting your application. Please try again.'));
     } finally {
       setSubmitting(false);

@@ -6,7 +6,10 @@ import { Institution } from '@/core/types/institution';
 import { Employer } from '@/core/types/employer';
 import { slugify } from '@/lib/slug';
 import { logServerError } from '@/core/server/errorLog';
+import { recordAuditEvent } from '@/core/server/auditLog';
+import { requirePermission } from '@/core/server/session';
 import { UserRecord } from 'firebase-admin/auth';
+import { errorCode, errorMessage, errorStack } from '@/lib/errors';
 
 function randomPassword(): string {
   return Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
@@ -50,8 +53,8 @@ async function resumeOrCreateAuthUser(
   let authUser: UserRecord;
   try {
     authUser = await adminAuth!.createUser({ email, password: randomPassword(), displayName: fullName });
-  } catch (error: any) {
-    if (error?.code !== 'auth/email-already-exists') throw error;
+  } catch (error: unknown) {
+    if (errorCode(error) !== 'auth/email-already-exists') throw error;
     const existing = await adminAuth!.getUserByEmail(email);
     if (existing.customClaims?.role) {
       throw error; // genuine conflict — this email already belongs to an active account
@@ -64,6 +67,13 @@ async function resumeOrCreateAuthUser(
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // proxy.ts already gates /api/applications, but this route provisions a real login and hands
+  // back a password-reset link — not something to leave depending on a matcher entry staying
+  // correct.
+  const auth = await requirePermission(request, 'applications:write');
+  if (auth.error) return auth.error;
+  const actor = auth.context.user;
+
   if (!adminDb || !adminAuth) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
@@ -71,10 +81,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
 
   let application: Application;
+
   try {
     application = await claimApplication(id);
-  } catch (error: any) {
-    if (error.message === 'NOT_FOUND') {
+  } catch (error: unknown) {
+    if (errorMessage(error) === 'NOT_FOUND') {
       return NextResponse.json({ success: false, error: 'Application not found' }, { status: 404 });
     }
     return NextResponse.json({ success: false, error: 'Application already reviewed' }, { status: 400 });
@@ -124,6 +135,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       const resetLink = await adminAuth.generatePasswordResetLink(application.email);
       await adminDb.collection('applications').doc(id).update({ status: 'APPROVED', reviewedAt: now, resultInstitutionId: authUser.uid });
+      await recordAuditEvent(adminDb, {
+        actor: actor,
+        action: 'application.approve',
+        targetType: 'application',
+        targetId: id,
+        summary: `Approved ${application.type.toLowerCase()} application for "${application.fullName}"`,
+        metadata: { provisionedUid: authUser.uid, email: application.email },
+        request,
+      });
       return NextResponse.json({ success: true, institutionId: authUser.uid, resetLink });
     }
 
@@ -150,6 +170,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       const resetLink = await adminAuth.generatePasswordResetLink(application.email);
       await adminDb.collection('applications').doc(id).update({ status: 'APPROVED', reviewedAt: now, resultEmployerId: authUser.uid });
+      await recordAuditEvent(adminDb, {
+        actor: actor,
+        action: 'application.approve',
+        targetType: 'application',
+        targetId: id,
+        summary: `Approved ${application.type.toLowerCase()} application for "${application.fullName}"`,
+        metadata: { provisionedUid: authUser.uid, email: application.email },
+        request,
+      });
       return NextResponse.json({ success: true, employerId: authUser.uid, resetLink });
     }
 
@@ -186,13 +215,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const resetLink = await adminAuth.generatePasswordResetLink(application.email);
     await adminDb.collection('applications').doc(id).update({ status: 'APPROVED', reviewedAt: now, resultTutorId: authUser.uid });
+    await recordAuditEvent(adminDb, {
+      actor: actor,
+      action: 'application.approve',
+      targetType: 'application',
+      targetId: id,
+      summary: `Approved ${application.type.toLowerCase()} application for "${application.fullName}"`,
+      metadata: { provisionedUid: authUser.uid, email: application.email },
+      request,
+    });
     return NextResponse.json({ success: true, tutorId: authUser.uid, resetLink });
-  } catch (error: any) {
-    if (error?.code === 'auth/email-already-exists') {
+  } catch (error: unknown) {
+    if (errorCode(error) === 'auth/email-already-exists') {
       return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
     }
     console.error('Application approval failed:', error);
-    logServerError('Application approval failed', { stack: error?.stack, url: request.url });
+    logServerError('Application approval failed', { stack: errorStack(error), url: request.url });
     return NextResponse.json({ success: false, error: 'Approval failed — safe to retry' }, { status: 500 });
   }
 }

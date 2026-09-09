@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getAllCommunityPosts, updateCommunityPostStatus, deleteCommunityPost } from '@/core/services/communityService';
 import { getGovernorates } from '@/core/services/masterDataService';
@@ -32,9 +33,7 @@ export default function AdminCommunityPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
   const governorateName = (id: string) => {
     const gov = governorates.find((g) => g.id === id);

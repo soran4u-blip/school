@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getAllEmployers, updateEmployerStatus, deleteEmployer } from '@/core/services/employerService';
+import { getAllEmployers } from '@/core/services/employerService';
+import { updateListing, deleteListing } from '@/core/services/adminListingService';
 import { getGovernorates } from '@/core/services/masterDataService';
 import { Employer } from '@/core/types/employer';
 import { Governorate } from '@/core/types/masterData';
@@ -32,9 +34,7 @@ export default function AdminEmployersPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useLoadOnMount(loadData);
 
   const governorateName = (id: string) => {
     const gov = governorates.find((g) => g.id === id);
@@ -43,14 +43,23 @@ export default function AdminEmployersPage() {
 
   const handleToggleStatus = async (employer: Employer) => {
     const status = employer.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    await updateEmployerStatus(employer.id, status);
-    await loadData();
+    await run(() => updateListing('employers', employer.id, { status }));
+  };
+
+  // These go through /api/admin/listings so they land in the audit trail.
+  const run = async (action: () => Promise<void>) => {
+    setError('');
+    try {
+      await action();
+      await loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+    }
   };
 
   const handleDelete = async (employer: Employer) => {
     if (!confirm(t(`هل تريد حذف "${employer.name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${employer.name}"? This cannot be undone.`))) return;
-    await deleteEmployer(employer.id);
-    await loadData();
+    await run(() => deleteListing('employers', employer.id));
   };
 
   return (
@@ -64,6 +73,10 @@ export default function AdminEmployersPage() {
           {t('حسابات الشركات والمنظمات غير الحكومية — يمكنها فقط نشر وإدارة الوظائف.', 'Employer accounts — can only post and manage job listings.')}
         </p>
       </div>
+
+      {error && (
+        <div className="p-4 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">{error}</div>
+      )}
 
       {error && (
         <div className="p-4 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">{error}</div>

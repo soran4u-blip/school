@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# A second push to the same branch cancels the first — no point finishing a run for a commit
+# that's already been superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # --max-warnings 0 is the point of the gate: 37 errors and 44 warnings had accumulated
+      # precisely because nothing was failing on them.
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      # The build needs the public Firebase config to be present but never reaches Firestore:
+      # every route that reads data is force-dynamic, because the Admin SDK service account is a
+      # runtime-only secret. These are the same public values as apphosting.yaml.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: school-4bcd6
+          NEXT_PUBLIC_FIREBASE_DATABASE_NAME: schooldb
+          NEXT_PUBLIC_SITE_URL: https://school--school-4bcd6.us-east4.hosted.app
+
+  rules:
+    name: Firestore security rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The Firestore emulator is a Java process.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      # firestore.rules is the only thing enforcing field-level authorization against a hostile
+      # client, so it gets its own job rather than being folded into the unit-test run — where a
+      # missing emulator would silently skip it.
+      - name: Rules tests
+        run: npm run test:rules

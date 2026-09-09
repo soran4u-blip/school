@@ -6,9 +6,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
-import { getCategories, getGovernorates } from '@/core/services/masterDataService';
-import { Category, Governorate } from '@/core/types/masterData';
 import {
   GraduationCap,
   MapPin,
@@ -37,25 +36,14 @@ export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  // Provided by the root layout from one server-side read, rather than fetched here on every
+  // page load — see core/context/MasterDataContext.tsx.
+  const { categories, governorates } = useMasterData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef<HTMLDivElement>(null);
   const [accountPath, setAccountPath] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadNavData() {
-      const [cats, govs] = await Promise.all([
-        getCategories(),
-        getGovernorates()
-      ]);
-      setCategories(cats);
-      setGovernorates(govs);
-    }
-    loadNavData();
-  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {

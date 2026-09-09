@@ -4,35 +4,82 @@
       "collectionGroup": "institutions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "categoryId", "order": "ASCENDING" },
-        { "fieldPath": "governorateId", "order": "ASCENDING" },
-        { "fieldPath": "metrics.ratingAvg", "order": "DESCENDING" }
+        {
+          "fieldPath": "categoryId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "governorateId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "metrics.ratingAvg",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "institutions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "isFeatured", "order": "DESCENDING" },
-        { "fieldPath": "metrics.ratingAvg", "order": "DESCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isFeatured",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "metrics.ratingAvg",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutors",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "governorateId", "order": "ASCENDING" },
-        { "fieldPath": "isVerified", "order": "DESCENDING" },
-        { "fieldPath": "ratingAvg", "order": "DESCENDING" }
+        {
+          "fieldPath": "governorateId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isVerified",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "ratingAvg",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "tutorId", "order": "ASCENDING" },
-        { "fieldPath": "date", "order": "ASCENDING" }
+        {
+          "fieldPath": "tutorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "institutions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],

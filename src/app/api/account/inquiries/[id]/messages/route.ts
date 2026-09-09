@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
+import { getSessionUser } from '@/core/server/session';
 import { loadInquiryAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { threadMessageSchema } from '@/core/validation/schemas';
 
-const SESSION_COOKIE_NAME = 'session';
 
 async function requireStudentPhone(request: NextRequest): Promise<string | null> {
   if (!adminAuth) return null;
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) return null;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    if (decoded.role !== 'student' || !decoded.phone) return null;
-    return decoded.phone as string;
-  } catch {
-    return null;
-  }
+  const user = await getSessionUser(request);
+  if (user?.role !== 'student' || !user.phone) return null;
+  return user.phone ?? null;
 }
 
 // GET /api/account/inquiries/[id]/messages — a logged-in student reads their thread, phone
