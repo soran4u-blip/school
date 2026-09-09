@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/core/firebase/admin';
 import { Inquiry } from '@/core/types/review';
 import { Institution } from '@/core/types/institution';
+import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 
-// GET /api/inquiries/lookup?phone=... — a guest (parent) looks up their own inquiries by phone,
-// same pattern as /api/bookings/lookup.
+// GET /api/inquiries/lookup?phone=... — a guest (parent) looks up their own inquiries by phone.
+// Rate-limited by IP: the phone number is the only credential and this returns real PII (names,
+// messages, institution contact details) for whoever holds it, so an unlimited GET here is a
+// phone-number enumeration oracle.
 export async function GET(request: NextRequest) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
+  }
+
+  const rateLimit = await checkRateLimit(adminDb, `inquiry-lookup:ip:${getClientIp(request)}`, { max: 10, windowMinutes: 60 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
 
   const phone = new URL(request.url).searchParams.get('phone')?.trim();

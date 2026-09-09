@@ -3,11 +3,18 @@ import { adminDb } from '@/core/firebase/admin';
 import { loadInquiryAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { guestThreadMessageSchema } from '@/core/validation/schemas';
+import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 
 // GET /api/inquiries/[id]/messages?phone=... — a guest (parent) reads their thread for this inquiry.
+// Rate-limited by IP: the phone is the only credential, so an unlimited GET here is a brute-force
+// oracle for guessing a real phone number against a known inquiry id.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
+  }
+  const rateLimit = await checkRateLimit(adminDb, `inquiry-thread:ip:${getClientIp(request)}`, { max: 20, windowMinutes: 60 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
   const { id } = await params;
   const phone = new URL(request.url).searchParams.get('phone')?.trim();
@@ -25,9 +32,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // POST /api/inquiries/[id]/messages — a guest (parent) sends a message on their inquiry thread.
+// Rate-limited by IP for the same reason as GET, plus this one also writes.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
+  }
+  const rateLimit = await checkRateLimit(adminDb, `inquiry-thread:ip:${getClientIp(request)}`, { max: 20, windowMinutes: 60 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
   const { id } = await params;
   const parsed = await parseJsonBody(request, guestThreadMessageSchema);

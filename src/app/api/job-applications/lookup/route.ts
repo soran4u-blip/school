@@ -3,12 +3,20 @@ import { adminDb } from '@/core/firebase/admin';
 import { Job, JobApplication } from '@/core/types/job';
 import { Institution } from '@/core/types/institution';
 import { Employer } from '@/core/types/employer';
+import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 
 // GET /api/job-applications/lookup?phone=... — a guest applicant finds their own applications
 // across every job, sanitized (poster name/whatsapp only, no other applicants' data).
+// Rate-limited by IP for the same reason as /api/inquiries/lookup — phone is the only credential
+// and this is a real PII lookup.
 export async function GET(request: NextRequest) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
+  }
+
+  const rateLimit = await checkRateLimit(adminDb, `job-application-lookup:ip:${getClientIp(request)}`, { max: 10, windowMinutes: 60 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
 
   const phone = new URL(request.url).searchParams.get('phone')?.trim();
