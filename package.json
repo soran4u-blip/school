@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "test": "vitest run",
-    "test:rules": "firebase emulators:exec --only firestore --project eduraq-rules-test \"vitest run src/core/security\"",
+    "test:rules": "firebase emulators:exec --only firestore --project eduraq-rules-test \"vitest run src/core/security src/app/api/bookings\"",
     "verify": "npm run lint && tsc --noEmit && npm test"
   },
   "dependencies": {
