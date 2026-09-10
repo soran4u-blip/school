@@ -93,10 +93,10 @@ export async function POST(request: NextRequest) {
   // --- Starting a new booking (individual or new group) ---
   const bookingType: 'INDIVIDUAL' | 'GROUP' = type === 'GROUP' ? 'GROUP' : 'INDIVIDUAL';
 
-  async function createBookingOnDate(targetDate: string, recurringGroupId?: string): Promise<Booking> {
+  function buildBooking(targetDate: string, recurringGroupId?: string): Booking {
     const now = new Date().toISOString();
     const ref = adminDb!.collection('bookings').doc();
-    const newBooking: Booking = {
+    return {
       id: ref.id,
       tutorId,
       type: bookingType,
@@ -113,20 +113,30 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       ...(recurringGroupId && { recurringGroupId }),
     };
-    await ref.set(newBooking);
-    return newBooking;
   }
 
-  async function hasConflict(targetDate: string): Promise<boolean> {
-    const conflictSnap = await adminDb!
+  // Firestore transactions serialize on their query reads: if a conflicting booking is written
+  // between this query and the commit, the transaction aborts and retries. That closes the
+  // check-then-create race that a plain get()-then-set() would leave open for concurrent requests
+  // hitting the same tutor/date/startTime slot.
+  async function createIfNoConflict(targetDate: string, recurringGroupId?: string): Promise<Booking | null> {
+    const conflictQuery = adminDb!
       .collection('bookings')
       .where('tutorId', '==', tutorId)
       .where('date', '==', targetDate)
-      .where('startTime', '==', startTime)
-      .get();
-    return conflictSnap.docs.some((d) => {
-      const b = d.data() as Booking;
-      return b.status !== 'CANCELLED' && (b.type === 'INDIVIDUAL' || bookingType === 'INDIVIDUAL');
+      .where('startTime', '==', startTime);
+
+    return adminDb!.runTransaction(async (tx) => {
+      const conflictSnap = await tx.get(conflictQuery);
+      const conflict = conflictSnap.docs.some((d) => {
+        const b = d.data() as Booking;
+        return b.status !== 'CANCELLED' && (b.type === 'INDIVIDUAL' || bookingType === 'INDIVIDUAL');
+      });
+      if (conflict) return null;
+
+      const newBooking = buildBooking(targetDate, recurringGroupId);
+      tx.set(adminDb!.collection('bookings').doc(newBooking.id), newBooking);
+      return newBooking;
     });
   }
 
@@ -145,11 +155,12 @@ export async function POST(request: NextRequest) {
         skipped.push({ date: targetDate, reason: 'unavailable' });
         continue;
       }
-      if (await hasConflict(targetDate)) {
+      const booking = await createIfNoConflict(targetDate, recurringGroupId);
+      if (!booking) {
         skipped.push({ date: targetDate, reason: 'conflict' });
         continue;
       }
-      created.push(await createBookingOnDate(targetDate, recurringGroupId));
+      created.push(booking);
     }
 
     if (created.length === 0) {
@@ -158,10 +169,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, booking: created[0], bookings: created, skipped, recurringGroupId });
   }
 
-  if (await hasConflict(date)) {
+  const newBooking = await createIfNoConflict(date);
+  if (!newBooking) {
     return NextResponse.json({ success: false, error: 'This time slot is no longer available' }, { status: 409 });
   }
-
-  const newBooking = await createBookingOnDate(date);
   return NextResponse.json({ success: true, booking: newBooking });
 }
