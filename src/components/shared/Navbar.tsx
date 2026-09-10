@@ -23,7 +23,10 @@ import {
   Menu,
   X,
   LogOut,
+  MessageCircle,
 } from 'lucide-react';
+import NotificationCenter from './NotificationCenter';
+import { useTotalUnreadMessages } from '@/lib/useTotalUnreadMessages';
 
 const DASHBOARD_BY_ROLE: Record<string, string> = {
   tutor: '/tutor/dashboard',
@@ -44,6 +47,7 @@ export default function Navbar() {
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef<HTMLDivElement>(null);
   const [accountPath, setAccountPath] = useState<string | null>(null);
+  const unreadMessages = useTotalUnreadMessages();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -217,7 +221,24 @@ export default function Navbar() {
               </Link>
             </div>
 
-            <div className="justify-self-end">
+            <div className="justify-self-end flex items-center gap-2.5">
+              {accountPath && (
+                <>
+                  <Link
+                    href="/messages"
+                    className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                    title={t('الرسائل', 'Messages')}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    {unreadMessages > 0 && (
+                      <span className="absolute top-1 end-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-500 rounded-full ring-2 ring-white animate-pulse">
+                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                      </span>
+                    )}
+                  </Link>
+                  <NotificationCenter />
+                </>
+              )}
               <Link
                 href="/apply"
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B192C] hover:bg-[#1E3E62] text-white text-sm font-bold shadow-xs transition-all active:scale-95"
@@ -236,7 +257,24 @@ export default function Navbar() {
               </div>
               <span className="font-extrabold text-lg tracking-tight text-[#0B192C]">Eduraq</span>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {accountPath && (
+                <>
+                  <Link
+                    href="/messages"
+                    className="relative p-1.5 text-slate-600 hover:text-slate-900"
+                    title={t('الرسائل', 'Messages')}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    {unreadMessages > 0 && (
+                      <span className="absolute top-0 end-0 flex items-center justify-center min-w-[16px] h-[16px] px-0.5 text-[9px] font-bold text-white bg-rose-500 rounded-full ring-2 ring-white">
+                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                      </span>
+                    )}
+                  </Link>
+                  <NotificationCenter />
+                </>
+              )}
               <button onClick={toggleLanguage} className="px-2.5 py-1 text-xs font-bold border border-slate-200 rounded">
                 {language === 'ar' ? 'EN' : 'عربي'}
               </button>
