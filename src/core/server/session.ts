@@ -80,8 +80,11 @@ async function authorize(
     return { error: NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 }) };
   }
   const user = await getSessionUser(request);
-  if (!user || !allowed(user)) {
+  if (!user) {
     return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
+  }
+  if (!allowed(user)) {
+    return { error: NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 }) };
   }
   return { context: { user, auth: adminAuth, db: adminDb } };
 }

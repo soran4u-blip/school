@@ -19,10 +19,32 @@ import { AuditTargetType } from '@/core/types/auditLog';
 // write these fields directly; that is deliberate, since locking them to this route would also
 // block the legitimate full-profile edit form at /admin/institutions/add.
 
+// `verifiable`/`featurable` say which listing types actually carry that field on their document —
+// see Institution (isVerified + isFeatured) and Tutor (isVerified only) in core/types. Employers
+// have neither; nothing renders either field for them, so writing them would just be dead data
+// with a misleading audit-log entry.
 const COLLECTIONS = {
-  institutions: { collection: 'institutions', target: 'institution' as AuditTargetType, tag: 'institutions' as const },
-  tutors: { collection: 'tutors', target: 'tutor' as AuditTargetType, tag: 'tutors' as const },
-  employers: { collection: 'employers', target: 'employer' as AuditTargetType, tag: 'jobs' as const },
+  institutions: {
+    collection: 'institutions',
+    target: 'institution' as AuditTargetType,
+    tag: 'institutions' as const,
+    verifiable: true,
+    featurable: true,
+  },
+  tutors: {
+    collection: 'tutors',
+    target: 'tutor' as AuditTargetType,
+    tag: 'tutors' as const,
+    verifiable: true,
+    featurable: false,
+  },
+  employers: {
+    collection: 'employers',
+    target: 'employer' as AuditTargetType,
+    tag: 'jobs' as const,
+    verifiable: false,
+    featurable: false,
+  },
 };
 
 type ListingType = keyof typeof COLLECTIONS;
@@ -53,6 +75,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const parsed = await parseJsonBody(request, listingAdminUpdateSchema);
   if (parsed.error) return parsed.error;
   const { status, isVerified, isFeatured } = parsed.data;
+
+  if (isVerified !== undefined && !target.verifiable) {
+    return NextResponse.json({ success: false, error: `${type} listings don't support verification` }, { status: 400 });
+  }
+  if (isFeatured !== undefined && !target.featurable) {
+    return NextResponse.json({ success: false, error: `${type} listings don't support featuring` }, { status: 400 });
+  }
 
   try {
     const ref = db.collection(target.collection).doc(id);

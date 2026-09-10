@@ -82,6 +82,13 @@ export async function runSavedSearchAlerts(db: Firestore): Promise<SavedSearchAl
 
   const listings = newListings.docs.map((d) => ({ ...d.data(), id: d.id }) as Institution);
   const now = new Date().toISOString();
+
+  // If the scan hit the cap, there may be newer matching institutions beyond what we fetched —
+  // advancing every watermark to `now` would skip them permanently, since a future run's
+  // `createdAt > since` filter would already be past them. Cap the advance at the newest listing
+  // we actually looked at instead; the next run picks up from there.
+  const scanCutoff = listings.length === MAX_NEW_LISTINGS_SCANNED ? listings[listings.length - 1].createdAt : now;
+
   let notificationsSent = 0;
 
   for (const searchDoc of searches.docs) {
@@ -91,13 +98,16 @@ export async function runSavedSearchAlerts(db: Firestore): Promise<SavedSearchAl
     if (!studentId) continue;
 
     const since = search.lastNotifiedAt || search.createdAt;
+    // Never move a watermark backward — a search whose own `since` is already past scanCutoff
+    // (possible when another, older search forced the scan to start further back) keeps its lead.
+    const newWatermark = since < scanCutoff ? scanCutoff : since;
     const filters = filtersFor(search);
     const matches = listings.filter((listing) => listing.createdAt > since && institutionMatches(listing, filters));
 
     // Advance the watermark even with no matches: everything scanned in this pass has now been
     // considered, and not doing so would re-examine the same listings on every future run.
     if (matches.length === 0) {
-      await searchDoc.ref.update({ lastNotifiedAt: now });
+      await searchDoc.ref.update({ lastNotifiedAt: newWatermark });
       continue;
     }
 
@@ -109,7 +119,7 @@ export async function runSavedSearchAlerts(db: Firestore): Promise<SavedSearchAl
         : `${matches.length} new listings match "${search.label}"`;
 
     await sendPushToStudent(db, studentId, { title, body, url: search.path });
-    await searchDoc.ref.update({ lastNotifiedAt: now });
+    await searchDoc.ref.update({ lastNotifiedAt: newWatermark });
     notificationsSent += 1;
   }
 
