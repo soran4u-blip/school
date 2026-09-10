@@ -8,6 +8,8 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import InquiryModal from './InquiryModal';
 import ApplyModal from './ApplyModal';
+import ProgramsTab from './_components/ProgramsTab';
+import ReviewsTab from './_components/ReviewsTab';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { createInquiry } from '@/core/services/reviewService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
@@ -35,24 +37,6 @@ import {
   Sparkles,
   Send,
   } from 'lucide-react';
-
-const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
-  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
-  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
-  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
-  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
-  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
-  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
-};
-
-const ADMISSION_STATUS_STYLES: Record<AdmissionApplicationStatus, string> = {
-  SUBMITTED: 'bg-blue-50 text-blue-700',
-  UNDER_REVIEW: 'bg-amber-50 text-amber-700',
-  WAITLISTED: 'bg-purple-50 text-purple-700',
-  ACCEPTED: 'bg-emerald-50 text-emerald-700',
-  REJECTED: 'bg-rose-50 text-rose-700',
-  WITHDRAWN: 'bg-slate-100 text-slate-500',
-};
 
 // The interactive half of the institution profile. Everything this component needs to render is
 // fetched on the server and handed in as props — see ./page.tsx. It used to fetch the institution,
@@ -482,67 +466,7 @@ export default function InstitutionProfile({
 
             {/* Tab 2: Programs & Tuition */}
             {activeTab === 'programs' && (
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h2 className="text-lg font-extrabold text-[#0B192C]">
-                    {t('البرامج الأكاديمية والأقساط السنوية للعام الحالي', 'Academic Programs & Annual Tuition')}
-                  </h2>
-                  <span className="text-xs text-slate-400 font-semibold">{institution.programs?.length || 0} {t('برنامج متاح', 'programs')}</span>
-                </div>
-
-                <div className="divide-y divide-slate-100">
-                  {institution.programs && institution.programs.length > 0 ? (
-                    institution.programs.map((prog) => (
-                      <div key={prog.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="font-extrabold text-sm text-slate-900">
-                            {language === 'en' ? prog.name.en : prog.name.ar}
-                          </h3>
-                          <span className="text-xs text-slate-500 font-semibold">
-                            {language === 'en' ? prog.facultyName.en : prog.facultyName.ar} • {prog.durationYears} {t('سنوات دراسية', 'years')}
-                          </span>
-                          {prog.minBaccalaureateScore && (
-                            <div className="mt-1">
-                              <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                                {t('الحد الأدنى لمعدل السادس الإعدادي:', 'Min Baccalaureate:')} {prog.minBaccalaureateScore}%
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="text-end space-y-2">
-                          <div>
-                            <span className="block text-sm font-black text-[#0B192C]">
-                              ${prog.tuitionAnnual.amount.toLocaleString()} / {t('سنوياً', 'year')}
-                            </span>
-                            <span className="text-[10px] text-emerald-600 font-bold">
-                              {t('إمكانية التقسيط متاحة', 'Installments Available')}
-                            </span>
-                          </div>
-                          {myApplicationStatus[prog.id] ? (
-                            <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full ${ADMISSION_STATUS_STYLES[myApplicationStatus[prog.id]]}`}>
-                              {language === 'en' ? ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].en : ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].ar}
-                            </span>
-                          ) : prog.isActive && prog.isAcceptingApplications !== false && (!prog.applicationDeadline || prog.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? (
-                            <button
-                              onClick={() => openApply(prog)}
-                              className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg text-xs font-bold transition-colors"
-                            >
-                              {t('التقديم الآن', 'Apply Now')}
-                            </button>
-                          ) : (
-                            <span className="text-[11px] font-bold text-slate-400">{t('التقديم مغلق حالياً', 'Applications closed')}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center text-xs text-slate-400">
-                      {t('لم يتم إدراج برامج تفصيلية حتى الآن. تواصل مع قسم التسجيل لمزيد من التفاصيل.', 'No specific programs listed.')}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ProgramsTab institution={institution} myApplicationStatus={myApplicationStatus} openApply={openApply} />
             )}
 
             {/* Tab 3: Campus Facilities */}
@@ -585,110 +509,16 @@ export default function InstitutionProfile({
 
             {/* Tab 5: Reviews */}
             {activeTab === 'reviews' && (
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h2 className="text-lg font-extrabold text-[#0B192C]">
-                    {t('تقييمات وآراء الطلبة وأولياء الأمور', 'Student & Parent Reviews')}
-                  </h2>
-                  <span className="text-xs text-slate-400 font-semibold">{reviews.length} {t('تقييم معتمد', 'approved reviews')}</span>
-                </div>
-
-                <div className="divide-y divide-slate-100">
-                  {reviews.length > 0 ? (
-                    reviews.map((rev) => (
-                      <div key={rev.id} className="py-4 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
-                            {rev.verified && (
-                              <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title={t('طالب مقبول فعلياً في هذه المؤسسة', 'This student was actually accepted at this institution')}>
-                                <ShieldCheck className="w-2.5 h-2.5" />
-                                {t('طالب موثّق', 'Verified Student')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`w-3.5 h-3.5 ${i < rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
-                        {rev.reply && institution && (
-                          <div className="ms-4 ps-3 border-s-2 border-emerald-200 mt-2">
-                            <span className="text-[10px] font-bold text-emerald-700">
-                              {t(`رد ${institution.name.ar}`, `${institution.name.en}'s reply`)}
-                            </span>
-                            <p className="text-xs text-slate-600 leading-relaxed">{rev.reply.text}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center text-xs text-slate-400">
-                      {t('لا توجد تقييمات معتمدة بعد. كن أول من يشارك رأيه.', 'No approved reviews yet. Be the first to share your experience.')}
-                    </div>
-                  )}
-                </div>
-
-                {/* Write a Review */}
-                <div className="pt-5 border-t border-slate-100">
-                  <h3 className="font-bold text-sm text-slate-900 mb-3">{t('شارك تقييمك', 'Write a Review')}</h3>
-
-                  {reviewSubmitted ? (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800">
-                      {t('شكراً لك! تم إرسال تقييمك وسيظهر بعد مراجعته من الإدارة.', 'Thank you! Your review was submitted and will appear after moderation.')}
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmitReview} className="space-y-3">
-                      <input
-                        type="text"
-                        tabIndex={-1}
-                        autoComplete="off"
-                        value={reviewForm.hp}
-                        onChange={(e) => setReviewForm({ ...reviewForm, hp: e.target.value })}
-                        className="absolute -left-[9999px] w-px h-px overflow-hidden"
-                        aria-hidden="true"
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder={t('اسمك', 'Your name')}
-                          value={reviewForm.reviewerName}
-                          onChange={(e) => setReviewForm({ ...reviewForm, reviewerName: e.target.value })}
-                          className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                        />
-                        <div className="flex items-center gap-1 px-3 py-2 border border-slate-200 rounded-lg">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <button
-                              type="button"
-                              key={i}
-                              onClick={() => setReviewForm({ ...reviewForm, rating: i + 1 })}
-                            >
-                              <Star className={`w-4 h-4 ${i < reviewForm.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <textarea
-                        placeholder={t('اكتب تعليقك هنا...', 'Write your comment here...')}
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                        rows={3}
-                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                      />
-                      {reviewError && <p className="text-[11px] font-bold text-rose-600">{reviewError}</p>}
-                      <button
-                        type="submit"
-                        disabled={reviewSubmitting}
-                        className="px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
-                      >
-                        {reviewSubmitting ? t('جاري الإرسال...', 'Submitting...') : t('إرسال التقييم', 'Submit Review')}
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
+              <ReviewsTab
+                institution={institution}
+                reviews={reviews}
+                reviewForm={reviewForm}
+                setReviewForm={setReviewForm}
+                reviewSubmitting={reviewSubmitting}
+                reviewSubmitted={reviewSubmitted}
+                reviewError={reviewError}
+                onSubmitReview={handleSubmitReview}
+              />
             )}
           </div>
 

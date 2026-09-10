@@ -6,6 +6,7 @@ import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, up
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import OwnerReviewsPanel from '@/components/shared/OwnerReviewsPanel';
+import ProfileTab from './_components/ProfileTab';
 import AvailabilityTab from './_components/AvailabilityTab';
 import BookingsTab from './_components/BookingsTab';
 import { useMessageThreads } from '@/lib/useMessageThreads';
@@ -18,10 +19,7 @@ import { Booking } from '@/core/types/booking';
 import { ThreadMessage } from '@/core/types/message';
 import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
-import { Save, AlertCircle, Trash2, UserCog, KeyRound, PauseCircle, PlayCircle, ShieldCheck, Rocket } from 'lucide-react';
-import ImageUploadField from '@/components/shared/ImageUploadField';
-import DocumentUploadField from '@/components/shared/DocumentUploadField';
-import { getTutorCompleteness } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
 
 export default function TutorDashboardPage() {
   const router = useRouter();
@@ -292,412 +290,31 @@ export default function TutorDashboardPage() {
       </div>
 
       {tab === 'profile' && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center gap-2">
-              <UserCog className="w-4 h-4 text-emerald-600" />
-              <h2 className="font-bold text-sm text-slate-900">{t('البيانات الشخصية', 'Personal Details')}</h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ImageUploadField
-                label={t('الصورة الشخصية', 'Photo')}
-                value={tutor.photoUrl || ''}
-                onChange={(url) => setTutor({ ...tutor, photoUrl: url })}
-                pathPrefix={`tutors/${tutor.id}`}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم الكامل بالعربية', 'Full Name (Arabic)')}</label>
-                <input
-                  type="text"
-                  value={tutor.fullName?.ar || ''}
-                  onChange={(e) => setTutor({ ...tutor, fullName: { ...tutor.fullName, ar: e.target.value } })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم الكامل بالإنجليزية', 'Full Name (English)')}</label>
-                <input
-                  type="text"
-                  value={tutor.fullName?.en || ''}
-                  onChange={(e) => setTutor({ ...tutor, fullName: { ...tutor.fullName, en: e.target.value } })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('اللقب المهني بالعربية', 'Title (Arabic)')}</label>
-                <input
-                  type="text"
-                  placeholder="أستاذ الفيزياء للفرع العلمي"
-                  value={tutor.title?.ar || ''}
-                  onChange={(e) => setTutor({ ...tutor, title: { ...tutor.title, ar: e.target.value } })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('اللقب المهني بالإنجليزية', 'Title (English)')}</label>
-                <input
-                  type="text"
-                  placeholder="Senior Physics Instructor"
-                  value={tutor.title?.en || ''}
-                  onChange={(e) => setTutor({ ...tutor, title: { ...tutor.title, en: e.target.value } })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية', 'Bio')}</label>
-              <textarea
-                rows={3}
-                value={tutor.bio?.ar || ''}
-                onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('المحافظة', 'Governorate')}</label>
-                <select
-                  value={tutor.governorateId || ''}
-                  onChange={(e) => setTutor({ ...tutor, governorateId: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
-                >
-                  <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
-                  {governorates.map((g) => (
-                    <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنوات الخبرة', 'Years of Experience')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={tutor.yearsOfExperience ?? 0}
-                  onChange={(e) => setTutor({ ...tutor, yearsOfExperience: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
-                <input
-                  type="text"
-                  placeholder="9647801234567"
-                  value={tutor.whatsappNumber || ''}
-                  onChange={(e) => setTutor({ ...tutor, whatsappNumber: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
-              <input
-                type="text"
-                value={tutor.phone || ''}
-                onChange={(e) => setTutor({ ...tutor, phone: e.target.value })}
-                className="w-full sm:w-1/3 px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
-              />
-            </div>
-
-            {/* Location for "near me" search — no map, just a one-tap browser geolocation capture */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!navigator.geolocation) return;
-                  navigator.geolocation.getCurrentPosition(
-                    (pos) => setTutor({ ...tutor, coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude } }),
-                    () => alert(t('تعذر الوصول إلى الموقع', 'Could not access your location'))
-                  );
-                }}
-                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
-              >
-                {t('استخدام موقعي الحالي', 'Use My Current Location')}
-              </button>
-              <span className="text-xs text-slate-500">
-                {tutor.coordinates
-                  ? t('تم تحديد الموقع — سيظهر في نتائج "القريب مني"', 'Location set — you\'ll appear in "Near Me" search results')
-                  : t('لم يتم تحديد الموقع — الظهور حسب المحافظة فقط', 'Not set — only governorate-level matching for now')}
-              </span>
-            </div>
-
-            {/* Delivery Mode */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">{t('طريقة التدريس', 'Delivery Mode')}</label>
-              <div className="flex gap-2">
-                {(['ONLINE', 'IN_PERSON', 'HYBRID'] as const).map((mode) => {
-                  const checked = tutor.deliveryMode?.includes(mode) || false;
-                  return (
-                    <label
-                      key={mode}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
-                        checked ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={checked}
-                        onChange={(e) => {
-                          const set = new Set(tutor.deliveryMode || []);
-                          if (e.target.checked) set.add(mode); else set.delete(mode);
-                          setTutor({ ...tutor, deliveryMode: Array.from(set) });
-                        }}
-                      />
-                      {mode.replace('_', ' ')}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Subjects */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">{t('المواد الدراسية', 'Subjects')}</label>
-              <div className="flex flex-wrap gap-2">
-                {subjects.map((sub) => {
-                  const checked = tutor.subjectIds?.includes(sub.id) || false;
-                  return (
-                    <label
-                      key={sub.id}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
-                        checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={checked}
-                        onChange={(e) => {
-                          const ids = new Set(tutor.subjectIds || []);
-                          if (e.target.checked) ids.add(sub.id); else ids.delete(sub.id);
-                          setTutor({ ...tutor, subjectIds: Array.from(ids) });
-                        }}
-                      />
-                      {language === 'en' ? sub.name.en : sub.name.ar}
-                    </label>
-                  );
-                })}
-                {subjects.length === 0 && (
-                  <span className="text-[11px] text-slate-400">{t('لا توجد مواد دراسية بعد', 'No subjects available yet')}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Student Levels / Grades */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">{t('الصفوف الدراسية', 'Grades / Student Levels')}</label>
-              <div className="flex flex-wrap gap-2">
-                {studentLevels.map((lvl) => {
-                  const checked = tutor.studentLevelIds?.includes(lvl.id) || false;
-                  return (
-                    <label
-                      key={lvl.id}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border transition-colors ${
-                        checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={checked}
-                        onChange={(e) => {
-                          const ids = new Set(tutor.studentLevelIds || []);
-                          if (e.target.checked) ids.add(lvl.id); else ids.delete(lvl.id);
-                          setTutor({ ...tutor, studentLevelIds: Array.from(ids) });
-                        }}
-                      />
-                      {language === 'en' ? lvl.name.en : lvl.name.ar}
-                    </label>
-                  );
-                })}
-                {studentLevels.length === 0 && (
-                  <span className="text-[11px] text-slate-400">{t('لا توجد صفوف دراسية بعد', 'No grades available yet')}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <h2 className="font-bold text-sm text-slate-900">{t('وثائق التوثيق', 'Verification Documents')}</h2>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              {t('ارفع صورة هويتك أو شهاداتك لمساعدة الإدارة على توثيق ملفك — هذه الوثائق خاصة ولا تظهر للعامة.', 'Upload your ID or certificates to help the admin verify your profile — these documents are private and never shown publicly.')}
-            </p>
-            <DocumentUploadField
-              label=""
-              value={verificationDocuments}
-              onChange={setVerificationDocuments}
-              pathPrefix={`tutors/${tutor.id}/verification`}
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ التغييرات', 'Save Changes')}</span>
-            </button>
-          </div>
-
-          {tutor.status === 'PENDING' ? (
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center gap-2">
-                <Rocket className="w-4 h-4 text-indigo-600" />
-                <h2 className="font-bold text-sm text-slate-900">{t('نشر ملفك في الدليل العام', 'Publish to the Directory')}</h2>
-              </div>
-              <p className="text-xs text-slate-500">
-                {t(
-                  'ملفك غير منشور بعد ولا يظهر للطلاب. أكمل المعلومات التالية ليراجعها فريقنا.',
-                  "Your profile isn't published yet and can't be seen by students. Complete the following and our team will review it."
-                )}
-              </p>
-              {(() => {
-                const completeness = getTutorCompleteness(tutor);
-                if (completeness.complete) {
-                  return (
-                    <div className="flex items-start gap-2 text-xs text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                      <Rocket className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span className="font-medium">
-                        {t(
-                          'ملفك مكتمل وبانتظار مراجعة الإدارة. سيظهر للطلاب فور الموافقة عليه.',
-                          'Your profile is complete and waiting for admin review. It becomes visible to students once approved.'
-                        )}
-                      </span>
-                    </div>
-                  );
-                }
-                return (
-                  <div className="space-y-2">
-                    <ul className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
-                      {completeness.missingFields.map((f) => (
-                        <li key={f.en} className="flex items-center gap-1.5">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{t(f.ar, f.en)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400">
-                      <Rocket className="w-3.5 h-3.5" />
-                      <span>{t('أكمل المعلومات أعلاه أولاً', 'Complete the fields above first')}</span>
-                    </p>
-                  </div>
-                );
-              })()}
-            </div>
-          ) : (
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center gap-2">
-                {tutor.status === 'ACTIVE' ? <PauseCircle className="w-4 h-4 text-amber-600" /> : <PlayCircle className="w-4 h-4 text-emerald-600" />}
-                <h2 className="font-bold text-sm text-slate-900">{t('ظهور الملف للطلاب', 'Profile Visibility')}</h2>
-              </div>
-              <p className="text-xs text-slate-500">
-                {tutor.status === 'ACTIVE'
-                  ? t('ملفك ظاهر حالياً في الدليل العام ويمكن للطلاب حجز مواعيد جديدة.', 'Your profile is currently visible in the public directory and students can book new sessions.')
-                  : t('ملفك متوقف مؤقتاً ولن يظهر للطلاب حتى تُفعّله مجدداً.', 'Your profile is paused and hidden from students until you resume it.')}
-              </p>
-              <button
-                onClick={handleTogglePause}
-                disabled={pausing}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-60 ${
-                  tutor.status === 'ACTIVE' ? 'bg-amber-50 hover:bg-amber-100 text-amber-800' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                {tutor.status === 'ACTIVE' ? <PauseCircle className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5" />}
-                <span>
-                  {pausing ? t('جاري التحديث...', 'Updating...') : tutor.status === 'ACTIVE' ? t('إيقاف الملف مؤقتاً', 'Pause My Profile') : t('تفعيل الملف مجدداً', 'Resume My Profile')}
-                </span>
-              </button>
-            </div>
-          )}
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-slate-500" />
-              <h2 className="font-bold text-sm text-slate-900">{t('تغيير كلمة المرور', 'Change Password')}</h2>
-            </div>
-            <form onSubmit={handleChangePassword} className="space-y-3 max-w-sm">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('كلمة المرور الحالية', 'Current Password')}</label>
-                <input
-                  type="password"
-                  required
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  autoComplete="current-password"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('كلمة المرور الجديدة', 'New Password')}</label>
-                <input
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                  autoComplete="new-password"
-                />
-              </div>
-              {passwordMessage && (
-                <p className={`text-xs font-bold px-3 py-2 rounded-lg ${passwordMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
-                  {passwordMessage.text}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={changingPassword}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold disabled:opacity-60"
-              >
-                {changingPassword ? t('جاري التغيير...', 'Changing...') : t('تحديث كلمة المرور', 'Update Password')}
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-rose-50 p-6 rounded-2xl border border-rose-200 space-y-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600" />
-              <h2 className="font-bold text-sm text-rose-900">{t('منطقة الخطر', 'Danger Zone')}</h2>
-            </div>
-            <p className="text-xs text-rose-700">
-              {t('حذف حسابك نهائياً — سيُخفى ملفك عن الطلاب وتُلغى حجوزاتك القادمة. لا يمكن التراجع عن هذا الإجراء.', 'Permanently delete your account — your profile disappears from the directory and any upcoming bookings are cancelled. This cannot be undone.')}
-            </p>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 max-w-sm">
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder={t('كلمة المرور للتأكيد', 'Password to confirm')}
-                className="flex-1 w-full px-3 py-2 text-xs border border-rose-200 rounded-lg"
-              />
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deletingAccount || !deletePassword}
-                className="shrink-0 flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold disabled:opacity-60"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{deletingAccount ? t('جاري الحذف...', 'Deleting...') : t('حذف حسابي نهائياً', 'Delete My Account')}</span>
-              </button>
-            </div>
-            {deleteError && (
-              <p className="text-xs font-bold px-3 py-2 rounded-lg bg-rose-100 text-rose-800">{deleteError}</p>
-            )}
-          </div>
-        </div>
+        <ProfileTab
+          tutor={tutor}
+          setTutor={setTutor}
+          governorates={governorates}
+          subjects={subjects}
+          studentLevels={studentLevels}
+          verificationDocuments={verificationDocuments}
+          setVerificationDocuments={setVerificationDocuments}
+          handleSave={handleSave}
+          saving={saving}
+          currentPassword={currentPassword}
+          setCurrentPassword={setCurrentPassword}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          changingPassword={changingPassword}
+          passwordMessage={passwordMessage}
+          handleChangePassword={handleChangePassword}
+          pausing={pausing}
+          handleTogglePause={handleTogglePause}
+          deletePassword={deletePassword}
+          setDeletePassword={setDeletePassword}
+          deletingAccount={deletingAccount}
+          deleteError={deleteError}
+          handleDeleteAccount={handleDeleteAccount}
+        />
       )}
 
       {tab === 'availability' && (
