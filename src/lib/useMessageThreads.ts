@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Unsubscribe } from 'firebase/firestore';
 import { ThreadMessage } from '@/core/types/message';
-import { getThreadMessages } from '@/core/services/messagingService';
+import { subscribeToThreadMessages, markThreadRead } from '@/core/services/messagingService';
 
 // Owner-side message threads, one per context document (an inquiry for an institution, a booking
 // for a tutor). The institution and tutor dashboards each carried five pieces of thread state and
@@ -27,34 +28,39 @@ export interface MessageThreads {
  * @param sendMessage Posts the text and resolves with the stored message, or null if it failed.
  *                    Anything that has to happen alongside the send (an institution moving an
  *                    inquiry from NEW to CONTACTED, say) belongs in here.
+ * @param readerId    This reader's own id (tutorId/institutionId, or a participant student's uid)
+ *                    — written to the thread's `readBy` map whenever a thread is expanded, so the
+ *                    unread badge clears. Omit to skip read-tracking (e.g. no owner identity yet).
  */
 export function useMessageThreads(
-  sendMessage: (threadId: string, text: string) => Promise<ThreadMessage | null>
+  sendMessage: (threadId: string, text: string) => Promise<ThreadMessage | null>,
+  readerId?: string
 ): MessageThreads {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, ThreadMessage[]>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const unsubRef = useRef<Unsubscribe | null>(null);
 
   const toggle = useCallback(
     async (threadId: string) => {
+      unsubRef.current?.();
+      unsubRef.current = null;
+
       if (expandedId === threadId) {
         setExpandedId(null);
         return;
       }
       setExpandedId(threadId);
-      if (messages[threadId]) return; // cached from a previous expand
-
       setLoadingId(threadId);
-      try {
-        const loaded = await getThreadMessages(threadId);
+      unsubRef.current = subscribeToThreadMessages(threadId, (loaded) => {
         setMessages((prev) => ({ ...prev, [threadId]: loaded }));
-      } finally {
         setLoadingId(null);
-      }
+      });
+      if (readerId) markThreadRead(threadId, readerId).catch(() => {});
     },
-    [expandedId, messages]
+    [expandedId, readerId]
   );
 
   const send = useCallback(
@@ -67,11 +73,12 @@ export function useMessageThreads(
         if (!sent) return;
         setMessages((prev) => ({ ...prev, [threadId]: [...(prev[threadId] || []), sent] }));
         setDrafts((prev) => ({ ...prev, [threadId]: '' }));
+        if (readerId) markThreadRead(threadId, readerId).catch(() => {});
       } finally {
         setSendingId(null);
       }
     },
-    [drafts, sendMessage]
+    [drafts, sendMessage, readerId]
   );
 
   const setDraft = useCallback((threadId: string, text: string) => {
@@ -79,6 +86,8 @@ export function useMessageThreads(
   }, []);
 
   const draftFor = useCallback((threadId: string) => drafts[threadId] || '', [drafts]);
+
+  useEffect(() => () => unsubRef.current?.(), []);
 
   return { expandedId, loadingId, sendingId, messages, draftFor, setDraft, toggle, send };
 }

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
+import { Tutor } from '@/core/types/tutor';
 import { sendPushToStudent } from '@/core/server/push';
+import { syncBookingViews } from '@/core/server/bookingViews';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { tutorBookingStatusSchema } from '@/core/validation/schemas';
 
@@ -46,8 +48,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   await ref.update({ status });
 
+  const tutorSnap = await adminDb.collection('tutors').doc(tutorId).get();
+  await syncBookingViews(adminDb, { ...booking, status }, tutorSnap.exists ? (tutorSnap.data() as Tutor) : null);
+
   if (STATUS_LABEL[status]) {
-    const tutorSnap = await adminDb.collection('tutors').doc(tutorId).get();
     const tutorName = tutorSnap.exists ? (tutorSnap.data()!.fullName?.en || tutorSnap.data()!.fullName?.ar) : 'your tutor';
     await Promise.all(
       booking.participantStudentIds.map((studentId) =>

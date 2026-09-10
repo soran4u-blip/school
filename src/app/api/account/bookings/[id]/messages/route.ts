@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { getSessionUser } from '@/core/server/session';
-import { loadBookingAndVerifyStudent, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
+import { loadBookingAndVerifyStudent, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
+import { sendPushToTutor } from '@/core/server/push';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { threadMessageSchema } from '@/core/validation/schemas';
 
@@ -13,26 +14,10 @@ async function requireStudentId(request: NextRequest): Promise<string | null> {
   return user.uid ?? null;
 }
 
-// GET /api/account/bookings/[id]/messages — a logged-in student reads their thread, identity
-// derived from their own session (never a client-supplied value).
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!adminDb) {
-    return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
-  }
-  const studentId = await requireStudentId(request);
-  if (!studentId) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const booking = await loadBookingAndVerifyStudent(adminDb, id, studentId);
-  if (!booking) {
-    return NextResponse.json({ success: false, error: 'Booking not found' }, { status: 404 });
-  }
-
-  const messages = await listThreadMessages(adminDb, id);
-  return NextResponse.json({ success: true, messages });
-}
+// Reading a thread's messages is now a direct client-SDK onSnapshot (firestore.rules grants a
+// participant student read access — see isParticipantStudent), the same as the tutor side; only
+// sending goes through the Admin SDK below, since only sending needs the server-side hook to
+// notify the tutor via push.
 
 // POST /api/account/bookings/[id]/messages — a logged-in student sends a message.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -60,10 +45,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const message = await sendThreadMessage(
     adminDb,
-    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participants.map((p) => p.phone) },
+    {
+      id: booking.id,
+      tutorId: booking.tutorId,
+      participantPhones: booking.participants.map((p) => p.phone),
+      participantStudentIds: booking.participantStudentIds,
+    },
     'student',
+    studentId,
     senderName,
     text
   );
+
+  await sendPushToTutor(adminDb, booking.tutorId, {
+    title: 'New message from a student',
+    body: text.slice(0, 140),
+    url: '/tutor/dashboard?tab=bookings',
+  }).catch(() => {});
+
   return NextResponse.json({ success: true, message });
 }

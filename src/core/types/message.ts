@@ -12,9 +12,21 @@ export interface Thread {
   tutorId?: string;
   institutionId?: string;
   participantPhones: string[]; // denormalized from the booking/inquiry, kept for owner checks
+  // Denormalized from Booking.participantStudentIds (booking threads only), so a participant
+  // student can be granted direct read/limited-update access in firestore.rules without a thread
+  // doc lookup back to the booking.
+  participantStudentIds?: string[];
   lastMessageAt: string;
   lastMessagePreview: string;
+  // Who sent the last message: the tutorId/institutionId for an owner-sent message, or the
+  // sending student's uid — lets a reader tell "is the last message mine or theirs" without
+  // fetching the message itself, which is what the unread badges are computed from.
+  lastMessageSenderId: string;
   createdAt: string;
+  // Per-reader last-read timestamps. Tutor/institution owners write their own key directly
+  // (firestore.rules has no field restriction for them); a participant student may only ever
+  // touch their own key here (see the isParticipantStudent update rule).
+  readBy?: Record<string, string>;
 }
 
 export interface ThreadMessage {

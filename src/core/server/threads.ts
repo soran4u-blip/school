@@ -12,6 +12,7 @@ export interface ThreadContext {
   tutorId?: string;
   institutionId?: string;
   participantPhones: string[];
+  participantStudentIds?: string[];
 }
 
 export async function loadBookingAndVerifyStudent(adminDb: Firestore, bookingId: string, studentId: string): Promise<Booking | null> {
@@ -39,6 +40,7 @@ export async function sendThreadMessage(
   adminDb: Firestore,
   context: ThreadContext,
   senderRole: 'tutor' | 'institution' | 'student',
+  senderId: string,
   senderName: string,
   text: string
 ): Promise<ThreadMessage> {
@@ -56,13 +58,20 @@ export async function sendThreadMessage(
         ...(context.tutorId && { tutorId: context.tutorId }),
         ...(context.institutionId && { institutionId: context.institutionId }),
         participantPhones: context.participantPhones,
+        ...(context.participantStudentIds && { participantStudentIds: context.participantStudentIds }),
         lastMessageAt: now,
         lastMessagePreview: text.slice(0, 140),
+        lastMessageSenderId: senderId,
         createdAt: now,
       };
       tx.set(threadRef, thread);
     } else {
-      tx.update(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140) });
+      tx.update(threadRef, {
+        lastMessageAt: now,
+        lastMessagePreview: text.slice(0, 140),
+        lastMessageSenderId: senderId,
+        ...(context.participantStudentIds && { participantStudentIds: context.participantStudentIds }),
+      });
     }
     tx.set(messageRef, message);
   });

@@ -8,6 +8,8 @@ import { dayOfWeekFromDate, addDaysToDateString, isWithinAvailability } from '@/
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { bookingSchema } from '@/core/validation/schemas';
 import { errorMessage } from '@/lib/errors';
+import { syncBookingViews } from '@/core/server/bookingViews';
+import { sendPushToTutor } from '@/core/server/push';
 
 const MAX_RECURRING_WEEKS = 12;
 
@@ -84,6 +86,21 @@ export async function POST(request: NextRequest) {
         tx.update(ref, { participants, participantStudentIds, pricePerStudent });
         return { ...booking, participants, participantStudentIds, pricePerStudent };
       });
+
+      await syncBookingViews(adminDb, result, tutor);
+      // Keep a thread the new participant may not have been part of when it was created in sync,
+      // so they can read past messages immediately rather than waiting for the next new one.
+      const threadRef = adminDb.collection('threads').doc(joinBookingId);
+      const threadSnap = await threadRef.get();
+      if (threadSnap.exists) {
+        await threadRef.update({ participantStudentIds: result.participantStudentIds });
+      }
+      await sendPushToTutor(adminDb, tutorId, {
+        title: 'A student joined your group session',
+        body: `${student.fullName} joined your ${date} ${startTime} group session.`,
+        url: '/tutor/dashboard?tab=bookings',
+      }).catch(() => {});
+
       return NextResponse.json({ success: true, booking: result });
     } catch (e: unknown) {
       return NextResponse.json({ success: false, error: errorMessage(e, 'Failed to join group') }, { status: 400 });
@@ -166,6 +183,12 @@ export async function POST(request: NextRequest) {
     if (created.length === 0) {
       return NextResponse.json({ success: false, error: 'No sessions could be booked in that weekly range' }, { status: 409 });
     }
+    await Promise.all(created.map((b) => syncBookingViews(adminDb!, b, tutor)));
+    await sendPushToTutor(adminDb, tutorId, {
+      title: 'New recurring booking request',
+      body: `${student.fullName} requested a weekly session starting ${date} at ${startTime}.`,
+      url: '/tutor/dashboard?tab=bookings',
+    }).catch(() => {});
     return NextResponse.json({ success: true, booking: created[0], bookings: created, skipped, recurringGroupId });
   }
 
@@ -173,5 +196,11 @@ export async function POST(request: NextRequest) {
   if (!newBooking) {
     return NextResponse.json({ success: false, error: 'This time slot is no longer available' }, { status: 409 });
   }
+  await syncBookingViews(adminDb, newBooking, tutor);
+  await sendPushToTutor(adminDb, tutorId, {
+    title: 'New booking request',
+    body: `${student.fullName} requested a session on ${newBooking.date} at ${newBooking.startTime}.`,
+    url: '/tutor/dashboard?tab=bookings',
+  }).catch(() => {});
   return NextResponse.json({ success: true, booking: newBooking });
 }

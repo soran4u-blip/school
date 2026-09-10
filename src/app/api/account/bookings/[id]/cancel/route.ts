@@ -3,6 +3,8 @@ import { adminAuth, adminDb } from '@/core/firebase/admin';
 import { getSessionUser } from '@/core/server/session';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
+import { BookingView } from '@/core/types/bookingView';
+import { syncBookingViews } from '@/core/server/bookingViews';
 import { errorMessage } from '@/lib/errors';
 
 
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const ref = adminDb.collection('bookings').doc(id);
 
   try {
-    await adminDb.runTransaction(async (tx) => {
+    const { booking: updatedBooking, tutor, left } = await adminDb.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists) throw new Error('Booking not found');
       const booking = snap.data() as Booking;
@@ -40,7 +42,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       if (booking.participants.length <= 1) {
         tx.update(ref, { status: 'CANCELLED' });
-        return;
+        // tutor: undefined (not fetched here) tells syncBookingViews to look it up itself, so the
+        // view's tutorName/tutorWhatsapp aren't wiped out by this cancellation.
+        return { booking: { ...booking, status: 'CANCELLED' as const }, tutor: undefined, left: false };
       }
 
       // Group booking with other students still in it — remove just this participant
@@ -54,7 +58,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         usd: Math.round(tutor.groupRate.usd / participants.length),
       };
       tx.update(ref, { participants, participantStudentIds, pricePerStudent });
+      return { booking: { ...booking, participants, participantStudentIds, pricePerStudent }, tutor, left: true };
     });
+
+    await syncBookingViews(adminDb, updatedBooking, tutor);
+    if (left) {
+      // The leaving student is no longer in participantStudentIds, so the loop above never
+      // touches their own view — mark it CANCELLED directly rather than leaving it stale.
+      const leavingView: BookingView = {
+        id: `${updatedBooking.id}_${studentId}`,
+        bookingId: updatedBooking.id,
+        studentId,
+        tutorId: updatedBooking.tutorId,
+        tutorName: tutor?.fullName || null,
+        tutorWhatsapp: tutor?.whatsappNumber || null,
+        type: updatedBooking.type,
+        date: updatedBooking.date,
+        startTime: updatedBooking.startTime,
+        endTime: updatedBooking.endTime,
+        status: 'CANCELLED',
+        pricePerStudent: updatedBooking.pricePerStudent,
+      };
+      await adminDb.collection('bookingViews').doc(leavingView.id).set(leavingView);
+    }
 
     return NextResponse.json({ success: true });
   } catch (e: unknown) {

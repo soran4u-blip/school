@@ -62,6 +62,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     adminDb,
     { id, institutionId: inquiry.institutionId, participantPhones: [inquiry.phone] },
     'student',
+    inquiry.phone,
     senderName,
     text
   );

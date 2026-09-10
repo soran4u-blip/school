@@ -2,10 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/core/firebase/config';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { AlertCircle } from 'lucide-react';
-import { ThreadMessage } from '@/core/types/message';
+import { ThreadMessage, Thread } from '@/core/types/message';
+import { BookingView } from '@/core/types/bookingView';
+import { subscribeToThreadMessages, markThreadRead } from '@/core/services/messagingService';
 import { Student } from '@/core/types/student';
 import { getStudent, saveStudentProfile } from '@/core/services/studentService';
 import { getTaxonomies } from '@/core/services/masterDataService';
@@ -33,6 +36,23 @@ export interface AccountBooking {
   pricePerStudent: { iqd: number; usd: number };
   groupSize?: number;
   maxGroupSize?: number;
+}
+
+function toAccountBooking(view: BookingView): AccountBooking {
+  return {
+    id: view.bookingId,
+    tutorId: view.tutorId,
+    tutorName: view.tutorName,
+    tutorWhatsapp: view.tutorWhatsapp,
+    type: view.type,
+    date: view.date,
+    startTime: view.startTime,
+    endTime: view.endTime,
+    status: view.status,
+    pricePerStudent: view.pricePerStudent,
+    groupSize: view.groupSize,
+    maxGroupSize: view.maxGroupSize,
+  };
 }
 
 export interface AccountInquiry {
@@ -94,6 +114,7 @@ export default function AccountPage() {
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[] | null>(null);
   const [deletingSearchId, setDeletingSearchId] = useState<string | null>(null);
+  const [threadsByBooking, setThreadsByBooking] = useState<Record<string, Thread>>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -103,8 +124,7 @@ export default function AccountPage() {
       }
       setUid(user.uid);
       try {
-        const [bookingsRes, inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels, searches] = await Promise.all([
-          fetch('/api/account/bookings'),
+        const [inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels, searches] = await Promise.all([
           fetch('/api/account/inquiries'),
           fetch('/api/account/admission-applications'),
           getStudent(user.uid),
@@ -113,12 +133,6 @@ export default function AccountPage() {
           getSavedSearches(user.uid),
         ]);
         setSavedSearches(searches);
-        const bookingsData = await bookingsRes.json();
-        if (!bookingsRes.ok || !bookingsData.success) {
-          setError(bookingsData.error || t('تعذر تحميل الحجوزات', 'Failed to load bookings'));
-        } else {
-          setBookings(bookingsData.bookings);
-        }
         const inquiriesData = await inquiriesRes.json();
         if (inquiriesRes.ok && inquiriesData.success) {
           setInquiries(inquiriesData.inquiries);
@@ -142,6 +156,34 @@ export default function AccountPage() {
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Live: booking status changes made by the tutor (approve/reject/complete) show up here without
+  // a refresh, via the sanitized per-student bookingViews mirror (see firestore.rules for why a
+  // student can't read the full Booking doc directly), and so do new chat messages / their unread
+  // dots, via a direct read of threads this student is a participant on.
+  useEffect(() => {
+    if (!uid) return;
+    const unsubBookings = onSnapshot(
+      query(collection(db, 'bookingViews'), where('studentId', '==', uid)),
+      (snap) => setBookings(snap.docs.map((d) => toAccountBooking(d.data() as BookingView))),
+      () => setError(t('تعذر تحميل الحجوزات', 'Failed to load bookings'))
+    );
+    const unsubThreads = onSnapshot(
+      query(collection(db, 'threads'), where('participantStudentIds', 'array-contains', uid)),
+      (snap) => setThreadsByBooking(Object.fromEntries(snap.docs.map((d) => [d.id, d.data() as Thread])))
+    );
+    return () => {
+      unsubBookings();
+      unsubThreads();
+    };
+  }, [uid, t]);
+
+  const isThreadUnread = (bookingId: string) => {
+    const th = threadsByBooking[bookingId];
+    if (!th || !uid || th.lastMessageSenderId === uid) return false;
+    const readAt = th.readBy?.[uid];
+    return !readAt || th.lastMessageAt > readAt;
+  };
 
   const handleWithdrawApplication = async (applicationId: string) => {
     if (!confirm(t('هل أنت متأكد من سحب هذا الطلب؟', 'Are you sure you want to withdraw this application?'))) return;
@@ -204,22 +246,23 @@ export default function AccountPage() {
     }
   };
 
+  const threadUnsubRef = React.useRef<(() => void) | null>(null);
+
   const toggleThread = async (bookingId: string) => {
+    threadUnsubRef.current?.();
+    threadUnsubRef.current = null;
+
     if (expandedThreadId === bookingId) {
       setExpandedThreadId(null);
       return;
     }
     setExpandedThreadId(bookingId);
-    if (!threadMessages[bookingId]) {
-      setLoadingThreadId(bookingId);
-      try {
-        const res = await fetch(`/api/account/bookings/${bookingId}/messages`);
-        const data = await res.json();
-        if (data.success) setThreadMessages((prev) => ({ ...prev, [bookingId]: data.messages }));
-      } finally {
-        setLoadingThreadId(null);
-      }
-    }
+    setLoadingThreadId(bookingId);
+    threadUnsubRef.current = subscribeToThreadMessages(bookingId, (loaded) => {
+      setThreadMessages((prev) => ({ ...prev, [bookingId]: loaded }));
+      setLoadingThreadId(null);
+    });
+    if (uid) markThreadRead(bookingId, uid).catch(() => {});
   };
 
   const handleSendMessage = async (bookingId: string) => {
@@ -236,11 +279,14 @@ export default function AccountPage() {
       if (data.success) {
         setThreadMessages((prev) => ({ ...prev, [bookingId]: [...(prev[bookingId] || []), data.message] }));
         setMessageDrafts((prev) => ({ ...prev, [bookingId]: '' }));
+        if (uid) markThreadRead(bookingId, uid).catch(() => {});
       }
     } finally {
       setSendingThreadId(null);
     }
   };
+
+  useEffect(() => () => threadUnsubRef.current?.(), []);
 
   const toggleInquiryThread = async (inquiryId: string) => {
     if (expandedInquiryThreadId === inquiryId) {
@@ -325,7 +371,12 @@ export default function AccountPage() {
       )}
 
       <div>
-        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('حجوزاتي', 'My Bookings')}</h2>
+        <h2 className="text-lg font-extrabold text-[#0B192C]">
+          {t('حجوزاتي', 'My Bookings')}
+          {bookings && bookings.filter((b) => isThreadUnread(b.id)).length > 0 && (
+            <span className="ms-1 text-amber-500">({bookings.filter((b) => isThreadUnread(b.id)).length})</span>
+          )}
+        </h2>
       </div>
 
       {bookings && (
@@ -337,6 +388,7 @@ export default function AccountPage() {
           loadingThreadId={loadingThreadId}
           messageDrafts={messageDrafts}
           setMessageDrafts={setMessageDrafts}
+          isThreadUnread={isThreadUnread}
           sendingThreadId={sendingThreadId}
           handleSendMessage={handleSendMessage}
           cancellingId={cancellingId}

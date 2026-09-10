@@ -51,8 +51,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const message = await sendThreadMessage(
     adminDb,
-    { id: booking.id, tutorId: booking.tutorId, participantPhones: booking.participants.map((p) => p.phone) },
+    {
+      id: booking.id,
+      tutorId: booking.tutorId,
+      participantPhones: booking.participants.map((p) => p.phone),
+      participantStudentIds: booking.participantStudentIds,
+    },
     'tutor',
+    tutorId,
     senderName,
     text
   );

@@ -23,6 +23,7 @@ export default function BookingsSection({
   handleSendMessage,
   cancellingId,
   handleCancelBooking,
+  isThreadUnread,
 }: {
   bookings: AccountBooking[];
   expandedThreadId: string | null;
@@ -35,6 +36,7 @@ export default function BookingsSection({
   handleSendMessage: (bookingId: string) => void;
   cancellingId: string | null;
   handleCancelBooking: (bookingId: string) => void;
+  isThreadUnread: (bookingId: string) => boolean;
 }) {
   const { language, t } = useLanguage();
 
@@ -79,10 +81,13 @@ export default function BookingsSection({
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => toggleThread(b.id)}
-                className={`p-2 rounded-lg ${expandedThreadId === b.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                className={`relative p-2 rounded-lg ${expandedThreadId === b.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                 title={t('مراسلة الأستاذ', 'Message tutor')}
               >
                 <MessageCircle className="w-4 h-4" />
+                {isThreadUnread(b.id) && (
+                  <span className="absolute -top-0.5 -end-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />
+                )}
               </button>
               {b.tutorWhatsapp && (
                 <a

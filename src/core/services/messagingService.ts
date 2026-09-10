@@ -1,24 +1,27 @@
 import { Inquiry } from '../types/review';
 import { Thread, ThreadMessage } from '../types/message';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, query, orderBy, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
 
 /* =========================================================
    MESSAGING — one thread per context (a Booking or an Inquiry), doc id == that context's id.
-   Tutor/institution owner side only — authenticated, direct via client SDK under
-   firestore.rules. The student side (booking threads) goes through the account-authenticated
-   /api/account/bookings/[id]/messages route; the guest (parent/applicant) side of inquiries
-   still goes through /api/inquiries/[id]/messages, since inquiries remain phone-based.
+   Tutor/institution owner side, and a participant student on a booking thread, all read/write
+   directly via the client SDK under firestore.rules. The guest (parent/applicant) side of
+   inquiries still goes through /api/inquiries/[id]/messages, since inquiries remain phone-based.
 ========================================================= */
-export async function getThreadMessages(contextId: string): Promise<ThreadMessage[]> {
+
+// Live thread messages — used by whichever side (tutor, institution, or a participant student)
+// already has direct read access, so the other party's replies show up without reopening the
+// thread.
+export function subscribeToThreadMessages(contextId: string, cb: (messages: ThreadMessage[]) => void): Unsubscribe {
   const q = query(collection(db, 'threads', contextId, 'messages'), orderBy('createdAt', 'asc'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => d.data() as ThreadMessage);
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => d.data() as ThreadMessage)));
 }
 
 async function sendOwnerMessage(
-  thread: Omit<Thread, 'lastMessageAt' | 'lastMessagePreview' | 'createdAt'>,
+  thread: Omit<Thread, 'lastMessageAt' | 'lastMessagePreview' | 'lastMessageSenderId' | 'createdAt'>,
   senderRole: 'tutor' | 'institution',
+  senderId: string,
   senderName: string,
   text: string
 ): Promise<ThreadMessage> {
@@ -40,9 +43,9 @@ async function sendOwnerMessage(
     existingThread = null;
   }
   if (existingThread?.exists()) {
-    await updateDoc(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140) });
+    await updateDoc(threadRef, { lastMessageAt: now, lastMessagePreview: text.slice(0, 140), lastMessageSenderId: senderId });
   } else {
-    const newThread: Thread = { ...thread, lastMessageAt: now, lastMessagePreview: text.slice(0, 140), createdAt: now };
+    const newThread: Thread = { ...thread, lastMessageAt: now, lastMessagePreview: text.slice(0, 140), lastMessageSenderId: senderId, createdAt: now };
     await setDoc(threadRef, newThread);
   }
   await setDoc(messageRef, message);
@@ -57,7 +60,22 @@ export async function sendInstitutionMessage(inquiry: Inquiry, senderName: strin
   return sendOwnerMessage(
     { id: inquiry.id, institutionId: inquiry.institutionId, participantPhones: [inquiry.phone] },
     'institution',
+    inquiry.institutionId,
     senderName,
     text
   );
+}
+
+// Every thread belonging to a tutor, live — used to compute per-booking/total unread counts
+// (a thread is unread for the tutor when its last message wasn't sent by the tutor and postdates
+// the tutor's own `readBy` entry) without subscribing to each booking's thread individually.
+export function subscribeToTutorThreads(tutorId: string, cb: (threads: Thread[]) => void): Unsubscribe {
+  const q = query(collection(db, 'threads'), where('tutorId', '==', tutorId));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => d.data() as Thread)));
+}
+
+// Marks a thread read by the given reader (tutor's own tutorId, or a participant student's uid).
+// Firestore rules restrict a participant student's update to touching only this one map key.
+export async function markThreadRead(threadId: string, readerId: string): Promise<void> {
+  await updateDoc(doc(db, 'threads', threadId), { [`readBy.${readerId}`]: new Date().toISOString() });
 }

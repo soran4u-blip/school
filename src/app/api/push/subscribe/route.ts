@@ -6,8 +6,8 @@ import { parseJsonBody } from '@/core/validation/apiValidation';
 import { pushSubscribeSchema } from '@/core/validation/schemas';
 
 
-// POST /api/push/subscribe — a logged-in student registers a browser push subscription. Doc id
-// is a hash of the subscription endpoint, so re-subscribing the same browser/device just
+// POST /api/push/subscribe — a logged-in student or tutor registers a browser push subscription.
+// Doc id is a hash of the subscription endpoint, so re-subscribing the same browser/device just
 // overwrites its own entry instead of accumulating duplicates.
 export async function POST(request: NextRequest) {
   if (!adminAuth || !adminDb) {
@@ -15,10 +15,11 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await getSessionUser(request);
-  if (user?.role !== 'student') {
+  const ownerId = user?.role === 'student' ? user.uid : user?.role === 'tutor' ? user.tutorId : null;
+  if (!ownerId || !user?.role) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-  const studentId = user.uid;
+  const collectionName = user.role === 'student' ? 'students' : 'tutors';
 
   const parsed = await parseJsonBody(request, pushSubscribeSchema);
   if (parsed.error) return parsed.error;
@@ -26,8 +27,8 @@ export async function POST(request: NextRequest) {
 
   const subId = crypto.createHash('sha256').update(subscription.endpoint).digest('hex').slice(0, 32);
   await adminDb
-    .collection('students')
-    .doc(studentId)
+    .collection(collectionName)
+    .doc(ownerId)
     .collection('pushSubscriptions')
     .doc(subId)
     .set({ subscription, createdAt: new Date().toISOString() });

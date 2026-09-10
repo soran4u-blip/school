@@ -9,14 +9,16 @@ import OwnerReviewsPanel from '@/components/shared/OwnerReviewsPanel';
 import ProfileTab from './_components/ProfileTab';
 import AvailabilityTab from './_components/AvailabilityTab';
 import BookingsTab from './_components/BookingsTab';
+import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import { useMessageThreads } from '@/lib/useMessageThreads';
 import { getTutorById, saveTutor, getTutorVerificationDocuments, saveTutorVerificationDocuments, deleteTutor } from '@/core/services/tutorService';
-import { getTutorBookings, updateBookingStatus } from '@/core/services/bookingService';
+import { subscribeToTutorBookings } from '@/core/services/bookingService';
+import { subscribeToTutorThreads } from '@/core/services/messagingService';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getApprovedTutorReviews } from '@/core/services/reviewService';
 import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
-import { ThreadMessage } from '@/core/types/message';
+import { ThreadMessage, Thread } from '@/core/types/message';
 import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle } from 'lucide-react';
@@ -47,6 +49,7 @@ export default function TutorDashboardPage() {
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [newBlockedDate, setNewBlockedDate] = useState('');
   const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
+  const [threadsByBooking, setThreadsByBooking] = useState<Record<string, Thread>>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -63,9 +66,8 @@ export default function TutorDashboardPage() {
         const id = tokenResult.claims.tutorId as string | undefined;
         if (!id) return;
         setTutorId(id);
-        const [tutorDoc, tutorBookings, govs, subs, levels, tutorReviews, verifDocs] = await Promise.all([
+        const [tutorDoc, govs, subs, levels, tutorReviews, verifDocs] = await Promise.all([
           getTutorById(id),
-          getTutorBookings(id),
           getGovernorates(false),
           getTaxonomies('SUBJECT', false),
           getTaxonomies('STUDENT_LEVEL', false),
@@ -75,7 +77,6 @@ export default function TutorDashboardPage() {
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
         setUnavailableDates(tutorDoc?.unavailableDates || []);
-        setBookings(tutorBookings);
         setGovernorates(govs);
         setSubjects(subs);
         setStudentLevels(levels);
@@ -90,6 +91,27 @@ export default function TutorDashboardPage() {
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Live: new booking requests and status changes (made here or elsewhere, e.g. by an admin)
+  // appear without a refresh, and the per-booking unread-message dots stay current.
+  useEffect(() => {
+    if (!tutorId) return;
+    const unsubBookings = subscribeToTutorBookings(tutorId, setBookings);
+    const unsubThreads = subscribeToTutorThreads(tutorId, (threads) => {
+      setThreadsByBooking(Object.fromEntries(threads.map((th) => [th.id, th])));
+    });
+    return () => {
+      unsubBookings();
+      unsubThreads();
+    };
+  }, [tutorId]);
+
+  const isThreadUnread = (bookingId: string) => {
+    const th = threadsByBooking[bookingId];
+    if (!th || !tutorId || th.lastMessageSenderId === tutorId) return false;
+    const readAt = th.readBy?.[tutorId];
+    return !readAt || th.lastMessageAt > readAt;
+  };
 
   const addSlot = (dayOfWeek: number) => {
     setAvailability([...availability, { dayOfWeek: dayOfWeek as AvailabilitySlot['dayOfWeek'], startTime: '16:00', endTime: '18:00' }]);
@@ -121,14 +143,13 @@ export default function TutorDashboardPage() {
   };
   const removeBlockedDate = (date: string) => setUnavailableDates(unavailableDates.filter((d) => d !== date));
 
+  // No local state patch needed on success — the live bookings subscription picks up the change.
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
-    const res = await fetch(`/api/tutor/bookings/${booking.id}/status`, {
+    await fetch(`/api/tutor/bookings/${booking.id}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) return;
-    setBookings(bookings.map(b => (b.id === booking.id ? { ...b, status } : b)));
   };
 
   // Goes through the API route rather than a direct client write so the participant student gets
@@ -143,7 +164,7 @@ export default function TutorDashboardPage() {
     const data = await res.json();
     if (!res.ok || !data.success) return null;
     return data.message as ThreadMessage;
-  });
+  }, tutorId || undefined);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,11 +207,19 @@ export default function TutorDashboardPage() {
       const credential = EmailAuthProvider.credential(user.email, deletePassword);
       await reauthenticateWithCredential(user, credential);
 
-      // Cancel any bookings still in play before the tutor doc disappears from under them.
+      // Cancel any bookings still in play before the tutor doc disappears from under them. Goes
+      // through the same API route as a normal cancel (rather than a direct client write) so the
+      // participant students' bookingViews mirrors stay in sync too.
       await Promise.all(
         bookings
           .filter((b) => b.status === 'PENDING' || b.status === 'CONFIRMED')
-          .map((b) => updateBookingStatus(b.id, 'CANCELLED'))
+          .map((b) =>
+            fetch(`/api/tutor/bookings/${b.id}/status`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'CANCELLED' }),
+            })
+          )
       );
 
       await deleteTutor(tutorId);
@@ -253,6 +282,8 @@ export default function TutorDashboardPage() {
         <p className="text-xs text-slate-500 mt-1">{t('إدارة أوقات التوفر، الأسعار، والحجوزات', 'Manage your availability, pricing, and bookings')}</p>
       </div>
 
+      <NotificationsToggle />
+
       {message && (
         <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
           <div className="flex items-center gap-2">
@@ -279,7 +310,9 @@ export default function TutorDashboardPage() {
           onClick={() => setTab('bookings')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'bookings' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}
         >
-          {t('الحجوزات', 'My Bookings')} {bookings.filter(b => b.status === 'PENDING').length > 0 && <span className="ms-1 text-amber-400">({bookings.filter(b => b.status === 'PENDING').length})</span>}
+          {t('الحجوزات', 'My Bookings')} {(bookings.filter(b => b.status === 'PENDING').length + bookings.filter(b => isThreadUnread(b.id)).length) > 0 && (
+            <span className="ms-1 text-amber-400">({bookings.filter(b => b.status === 'PENDING').length + bookings.filter(b => isThreadUnread(b.id)).length})</span>
+          )}
         </button>
         <button
           onClick={() => setTab('reviews')}
@@ -336,7 +369,7 @@ export default function TutorDashboardPage() {
       )}
 
       {tab === 'bookings' && (
-        <BookingsTab bookings={bookings} handleBookingStatus={handleBookingStatus} threads={threads} />
+        <BookingsTab bookings={bookings} handleBookingStatus={handleBookingStatus} threads={threads} isThreadUnread={isThreadUnread} />
       )}
 
       {tab === 'reviews' && (

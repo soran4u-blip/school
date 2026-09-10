@@ -189,6 +189,12 @@ service cloud.firestore {
       match /private/{docId} {
         allow read, write: if canEditDirectory() || isOwnerTutor(tutorId);
       }
+
+      // Web push subscriptions — Admin SDK only (/api/push/subscribe, /api/push/unsubscribe),
+      // same pattern as students/{id}/pushSubscriptions below.
+      match /pushSubscriptions/{subId} {
+        allow read, write: if false;
+      }
     }
 
     // Employers (companies/NGOs) — narrower than Institutions: no public directory profile page,
@@ -213,6 +219,16 @@ service cloud.firestore {
       allow read: if isAdmin() || isOwnerTutor(resource.data.tutorId);
       allow update, delete: if canEditDirectory() || isOwnerTutor(resource.data.tutorId);
       allow create: if false;
+    }
+
+    // Sanitized per-(booking, participant) mirror of a Booking, for a student's own realtime
+    // dashboard — deliberately excludes the `participants`/`participantStudentIds` arrays a full
+    // Booking doc carries, which would otherwise expose every co-participant's name and phone
+    // number to any one member of a GROUP booking. Written only by the Admin SDK routes that
+    // already touch a booking (create, join, status change); never by a client.
+    match /bookingViews/{viewId} {
+      allow read: if isAdmin() || isOwner(resource.data.get('studentId', null));
+      allow write: if false;
     }
 
     // User Reviews (Public read approved). Creation is Admin SDK only (/api/reviews) — it needs
@@ -365,24 +381,38 @@ service cloud.firestore {
       return isOwnerTutor(data.get('tutorId', null)) || isOwnerInstitution(data.get('institutionId', null));
     }
 
+    // A booking thread also denormalizes participantStudentIds (kept in sync by the Admin SDK
+    // routes that create/update it), so a student who's actually part of that booking can read
+    // the conversation and mark it read directly, the same way the owning tutor already does.
+    function isParticipantStudent(data) {
+      return isAuthenticated() && data.get('participantStudentIds', []).hasAny([request.auth.uid]);
+    }
+
     match /threads/{threadId} {
-      allow read: if isAdmin() || isOwnerOfThread(resource.data);
+      allow read: if isAdmin() || isOwnerOfThread(resource.data) || isParticipantStudent(resource.data);
       allow create: if isSuperAdmin() || isOwnerOfThread(request.resource.data);
-      allow update: if isSuperAdmin() || isOwnerOfThread(resource.data);
+      // A participant student may only ever touch their own `readBy` entry — never the message
+      // content, the participant list, or anyone else's read receipt.
+      allow update: if isSuperAdmin() || isOwnerOfThread(resource.data) || (
+        isParticipantStudent(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+      );
       allow delete: if isSuperAdmin();
 
       match /messages/{messageId} {
         allow read: if isAdmin()
-          || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data);
+          || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data)
+          || isParticipantStudent(get(/databases/$(database)/documents/threads/$(threadId)).data);
         allow create: if isSuperAdmin()
           || isOwnerOfThread(get(/databases/$(database)/documents/threads/$(threadId)).data);
       }
     }
 
     // Student accounts — required to book a tutor. Doc id == the student's own Auth uid, so
-    // isOwner() is a direct fit. Bookings/threads for a logged-in student are still read via
-    // /api/account/* (their uid is verified server-side from the session, not trusted from a
-    // client-side Firestore query).
+    // isOwner() is a direct fit. Raw Booking docs stay read via /api/account/* (a full Booking's
+    // `participants` array holds every co-participant's name/phone — too much to hand a client
+    // directly); the sanitized live view is `bookingViews` above, and thread reads are scoped via
+    // isParticipantStudent() above.
     match /students/{studentId} {
       allow read, write: if isSuperAdmin() || isOwner(studentId);
 

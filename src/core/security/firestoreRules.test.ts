@@ -334,6 +334,96 @@ describe.skipIf(!available)('firestore.rules', () => {
     });
   });
 
+  describe('bookingViews', () => {
+    const STUDENT_ID = 'student-1';
+    const OTHER_STUDENT_ID = 'student-2';
+
+    function student(id: string) {
+      return testEnv.authenticatedContext(id, { role: 'student' }).firestore();
+    }
+
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'bookingViews', `booking-1_${STUDENT_ID}`), {
+          id: `booking-1_${STUDENT_ID}`,
+          bookingId: 'booking-1',
+          studentId: STUDENT_ID,
+          tutorId: TUTOR_ID,
+          status: 'PENDING',
+        });
+      });
+    });
+
+    it('lets a student read their own view', async () => {
+      await assertSucceeds(getDoc(doc(student(STUDENT_ID), 'bookingViews', `booking-1_${STUDENT_ID}`)));
+    });
+
+    it('does not let another student read it', async () => {
+      await assertFails(getDoc(doc(student(OTHER_STUDENT_ID), 'bookingViews', `booking-1_${STUDENT_ID}`)));
+    });
+
+    it('cannot be written from a client, even by the owning student', async () => {
+      await assertFails(
+        setDoc(doc(student(STUDENT_ID), 'bookingViews', `booking-1_${STUDENT_ID}`), {
+          id: `booking-1_${STUDENT_ID}`,
+          bookingId: 'booking-1',
+          studentId: STUDENT_ID,
+          tutorId: TUTOR_ID,
+          status: 'CONFIRMED',
+        })
+      );
+    });
+  });
+
+  describe('booking threads — participant student access', () => {
+    const STUDENT_ID = 'student-1';
+    const OTHER_STUDENT_ID = 'student-2';
+    const THREAD_ID = 'booking-1';
+
+    function student(id: string) {
+      return testEnv.authenticatedContext(id, { role: 'student' }).firestore();
+    }
+
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'threads', THREAD_ID), {
+          id: THREAD_ID,
+          tutorId: TUTOR_ID,
+          participantPhones: ['07700000000'],
+          participantStudentIds: [STUDENT_ID],
+          lastMessageAt: '2026-01-01T00:00:00.000Z',
+          lastMessagePreview: 'hi',
+          lastMessageSenderId: TUTOR_ID,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        });
+      });
+    });
+
+    it('lets a participant student read the thread', async () => {
+      await assertSucceeds(getDoc(doc(student(STUDENT_ID), 'threads', THREAD_ID)));
+    });
+
+    it('does not let a non-participant student read it', async () => {
+      await assertFails(getDoc(doc(student(OTHER_STUDENT_ID), 'threads', THREAD_ID)));
+    });
+
+    it('lets a participant student mark it read', async () => {
+      await assertSucceeds(
+        updateDoc(doc(student(STUDENT_ID), 'threads', THREAD_ID), { [`readBy.${STUDENT_ID}`]: new Date().toISOString() })
+      );
+    });
+
+    it('does not let a participant student touch anything else', async () => {
+      await assertFails(updateDoc(doc(student(STUDENT_ID), 'threads', THREAD_ID), { lastMessagePreview: 'tampered' }));
+    });
+
+    it('does not let a non-participant student mark it read', async () => {
+      await assertFails(
+        updateDoc(doc(student(OTHER_STUDENT_ID), 'threads', THREAD_ID), { [`readBy.${OTHER_STUDENT_ID}`]: new Date().toISOString() })
+      );
+    });
+  });
+
   describe('public reads', () => {
     it('expose an ACTIVE institution to an anonymous visitor', async () => {
       const anon = testEnv.unauthenticatedContext().firestore();
