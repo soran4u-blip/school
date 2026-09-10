@@ -142,10 +142,11 @@ export default function ProfileTab({
             <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
             <input
               type="text"
+              dir="ltr"
               placeholder="9647801234567"
               value={tutor.whatsappNumber || ''}
               onChange={(e) => setTutor({ ...tutor, whatsappNumber: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono text-left"
             />
           </div>
         </div>
@@ -154,9 +155,11 @@ export default function ProfileTab({
           <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
           <input
             type="text"
+            dir="ltr"
+            placeholder="9647801234567"
             value={tutor.phone || ''}
             onChange={(e) => setTutor({ ...tutor, phone: e.target.value })}
-            className="w-full sm:w-1/3 px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+            className="w-full sm:w-1/3 px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono text-left"
           />
         </div>
 
