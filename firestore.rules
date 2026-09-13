@@ -384,8 +384,17 @@ service cloud.firestore {
     // A booking thread also denormalizes participantStudentIds (kept in sync by the Admin SDK
     // routes that create/update it), so a student who's actually part of that booking can read
     // the conversation and mark it read directly, the same way the owning tutor already does.
+    //
+    // Inquiry threads carry no studentId — a guest can open one with only a phone number — so a
+    // logged-in student is matched on their `phone` custom claim instead. That claim is set
+    // server-side at signup and is exactly what /api/account/inquiries already authorizes on, so
+    // this grants the client nothing the account API wouldn't already hand the same user.
     function isParticipantStudent(data) {
-      return isAuthenticated() && data.get('participantStudentIds', []).hasAny([request.auth.uid]);
+      return isAuthenticated() && (
+        data.get('participantStudentIds', []).hasAny([request.auth.uid])
+        || (request.auth.token.get('phone', '') != ''
+            && data.get('participantPhones', []).hasAny([request.auth.token.get('phone', '')]))
+      );
     }
 
     match /threads/{threadId} {

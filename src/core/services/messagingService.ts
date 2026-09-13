@@ -80,6 +80,47 @@ export function subscribeToInstitutionThreads(institutionId: string, cb: (thread
   return onSnapshot(q, (snap) => cb(snap.docs.map(d => d.data() as Thread)));
 }
 
+/**
+ * A student's own threads, for the unified inbox. Two queries because the two kinds of thread
+ * identify a student differently: a booking thread by their uid, an inquiry thread only by the
+ * phone they left (a guest can start one without an account at all). Results are merged and
+ * de-duplicated, since nothing stops a thread from matching both.
+ */
+export function subscribeToStudentThreads(
+  uid: string,
+  phone: string | undefined,
+  cb: (threads: Thread[]) => void
+): Unsubscribe {
+  const byUid = new Map<string, Thread>();
+  const byPhone = new Map<string, Thread>();
+  const emit = () => cb([...new Map([...byUid, ...byPhone]).values()]);
+
+  const unsubUid = onSnapshot(
+    query(collection(db, 'threads'), where('participantStudentIds', 'array-contains', uid)),
+    (snap) => {
+      byUid.clear();
+      snap.docs.forEach((d) => byUid.set(d.id, d.data() as Thread));
+      emit();
+    }
+  );
+
+  if (!phone) return unsubUid;
+
+  const unsubPhone = onSnapshot(
+    query(collection(db, 'threads'), where('participantPhones', 'array-contains', phone)),
+    (snap) => {
+      byPhone.clear();
+      snap.docs.forEach((d) => byPhone.set(d.id, d.data() as Thread));
+      emit();
+    }
+  );
+
+  return () => {
+    unsubUid();
+    unsubPhone();
+  };
+}
+
 // Marks a thread read by the given reader (tutor's own tutorId, or a participant student's uid).
 // Firestore rules restrict a participant student's update to touching only this one map key.
 export async function markThreadRead(threadId: string, readerId: string): Promise<void> {

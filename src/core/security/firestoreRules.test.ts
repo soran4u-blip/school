@@ -424,6 +424,52 @@ describe.skipIf(!available)('firestore.rules', () => {
     });
   });
 
+  // An inquiry thread carries no studentId — a guest can open one with only a phone number — so a
+  // logged-in student is matched on their `phone` custom claim instead. This is what lets inquiry
+  // threads appear in the unified inbox alongside bookings and direct conversations.
+  describe('inquiry threads — student matched by phone claim', () => {
+    const INQUIRY_THREAD_ID = 'inquiry-1';
+    const MY_PHONE = '07701234567';
+
+    function studentWithPhone(uid: string, phone?: string) {
+      return testEnv.authenticatedContext(uid, { role: 'student', ...(phone ? { phone } : {}) }).firestore();
+    }
+
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'threads', INQUIRY_THREAD_ID), {
+          id: INQUIRY_THREAD_ID,
+          institutionId: INSTITUTION_ID,
+          participantPhones: [MY_PHONE],
+          lastMessageAt: '2026-01-01T00:00:00.000Z',
+          lastMessagePreview: 'hello',
+          lastMessageSenderId: INSTITUTION_ID,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        });
+      });
+    });
+
+    it('lets the student whose phone is on the thread read it', async () => {
+      await assertSucceeds(getDoc(doc(studentWithPhone('student-9', MY_PHONE), 'threads', INQUIRY_THREAD_ID)));
+    });
+
+    it('does not let a student with a different phone read it', async () => {
+      await assertFails(getDoc(doc(studentWithPhone('student-9', '07709999999'), 'threads', INQUIRY_THREAD_ID)));
+    });
+
+    it('does not let a student with no phone claim read it', async () => {
+      await assertFails(getDoc(doc(studentWithPhone('student-9'), 'threads', INQUIRY_THREAD_ID)));
+    });
+
+    it('still limits that student to their own readBy entry', async () => {
+      const db = studentWithPhone('student-9', MY_PHONE);
+      await assertSucceeds(
+        updateDoc(doc(db, 'threads', INQUIRY_THREAD_ID), { 'readBy.student-9': new Date().toISOString() })
+      );
+      await assertFails(updateDoc(doc(db, 'threads', INQUIRY_THREAD_ID), { lastMessagePreview: 'tampered' }));
+    });
+  });
+
   describe('public reads', () => {
     it('expose an ACTIVE institution to an anonymous visitor', async () => {
       const anon = testEnv.unauthenticatedContext().firestore();
