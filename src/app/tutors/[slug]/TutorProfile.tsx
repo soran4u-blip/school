@@ -14,6 +14,7 @@ import { Review } from '@/core/types/review';
 import { auth } from '@/core/firebase/config';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
+import { formatDate as formatDateUtil } from '@/lib/utils';
 import {
   MapPin,
   Star,
@@ -119,12 +120,7 @@ export default function TutorProfile({
   const [reviewError, setReviewError] = useState('');
 
   const days = nextNDays(14);
-  const formatDate = (date: string) =>
-    new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(`${date}T12:00:00`));
+  const formatDate = (date: string) => formatDateUtil(date, language);
 
   const loadSlotStatuses = async (tutorId: string) => {
     const from = days[0].date;

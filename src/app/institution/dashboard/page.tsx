@@ -24,7 +24,7 @@ import { Job } from '@/core/types/job';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
-import { formatShortDate, todayLocalDate } from '@/lib/utils';
+import { formatDate, todayLocalDate } from '@/lib/utils';
 
 function emptyJob(institutionId: string): Omit<Job, 'id' | 'createdAt' | 'updatedAt'> {
   return {
@@ -44,7 +44,9 @@ function emptyProgram(): InstitutionProgram {
     name: { ar: '', en: '' },
     facultyName: { ar: '', en: '' },
     degreeLevelId: 'bachelor',
-    tuitionAnnual: { amount: 0, currency: 'USD' },
+    // Iraqi institutions price in dinars far more often than dollars; the owner can switch it
+    // per-program now that the editor exposes a currency control.
+    tuitionAnnual: { amount: 0, currency: 'IQD' },
     durationYears: 4,
     isActive: true,
     isAcceptingApplications: true,
@@ -528,7 +530,7 @@ export default function InstitutionDashboardPage() {
                   {inq.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{inq.email}</span>}
                   {/* The list showed no date at all, so a three-month-old inquiry looked identical
                       to one that arrived this morning. */}
-                  <span className="text-slate-400">{formatShortDate(inq.createdAt, language)}</span>
+                  <span className="text-slate-400">{formatDate(inq.createdAt, language)}</span>
                 </div>
                 {inq.message && <p className="text-xs text-slate-600">{inq.message}</p>}
 

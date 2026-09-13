@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, Trash2, Save, Calendar, X } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { AvailabilitySlot, Tutor } from '@/core/types/tutor';
+import { formatDate as formatDateUtil } from '@/lib/utils';
 
 const DAY_LABELS: { ar: string; en: string }[] = [
   { ar: 'الأحد', en: 'Sunday' },
@@ -49,7 +50,7 @@ export default function AvailabilityTab({
   saving: boolean;
 }) {
   const { language, t } = useLanguage();
-  const formatDate = (date: string) => new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
+  const formatDate = (date: string) => formatDateUtil(date, language, { weekday: undefined, year: 'numeric' });
 
   return (
           <div className="space-y-6">

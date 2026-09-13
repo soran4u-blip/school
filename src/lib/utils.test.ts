@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatCurrencyIQD, formatCurrencyUSD, formatCurrency, formatShortDate, todayLocalDate } from './utils';
+import { cn, formatCurrencyIQD, formatCurrencyUSD, formatCurrency, formatDate, todayLocalDate } from './utils';
 
 describe('cn', () => {
   it('merges class names and resolves Tailwind conflicts', () => {
@@ -49,14 +49,14 @@ describe('todayLocalDate', () => {
   });
 });
 
-describe('formatShortDate', () => {
+describe('formatDate', () => {
   it('renders the same calendar day it was given, regardless of timezone offset', () => {
     // Anchored at noon precisely so a negative UTC offset can't roll it back to the 14th.
-    expect(formatShortDate('2026-09-15', 'en')).toContain('15');
-    expect(formatShortDate('2026-09-15', 'en')).toContain('Sep');
+    expect(formatDate('2026-09-15', 'en')).toContain('15');
+    expect(formatDate('2026-09-15', 'en')).toContain('Sep');
   });
 
   it('accepts a full ISO timestamp, not just a date', () => {
-    expect(formatShortDate('2026-09-15T08:30:00.000Z', 'en')).toContain('15');
+    expect(formatDate('2026-09-15T08:30:00.000Z', 'en')).toContain('15');
   });
 });

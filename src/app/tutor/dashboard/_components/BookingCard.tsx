@@ -6,6 +6,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Booking } from '@/core/types/booking';
 import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
 import { MessageThreads } from '@/lib/useMessageThreads';
+import { formatDate } from '@/lib/utils';
 
 // One booking's full detail + actions (confirm/complete/no-show/cancel, message thread toggle) —
 // shared by the By Student accordion and the By Date calendar's detail modal, so both stay in
@@ -30,12 +31,7 @@ export default function BookingCard({
   showStudent?: boolean;
 }) {
   const { t, language } = useLanguage();
-  const formattedDate = new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(`${booking.date}T12:00:00`));
+  const formattedDate = formatDate(booking.date, language, { year: 'numeric' });
 
   return (
     <div className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 transition-colors space-y-3">

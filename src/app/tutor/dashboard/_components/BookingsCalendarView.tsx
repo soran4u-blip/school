@@ -6,6 +6,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Booking } from '@/core/types/booking';
 import { dayOfWeekFromDate, addDaysToDateString } from '@/lib/bookingLogic';
 import { MessageThreads } from '@/lib/useMessageThreads';
+import { formatDate } from '@/lib/utils';
 import BookingCard from './BookingCard';
 
 // Sunday-start weekday labels — matches this app's existing dayOfWeek convention (0 = Sunday,
@@ -95,17 +96,12 @@ export default function BookingsCalendarView({
 
   const formatDayHeader = (dateStr: string) => {
     const dow = dayOfWeekFromDate(dateStr);
-    const fullDate = new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(new Date(`${dateStr}T12:00:00`));
+    const fullDate = formatDate(dateStr, language, { weekday: undefined, month: 'long', year: 'numeric' });
     return { weekday: language === 'ar' ? WEEKDAY_LABELS[dow].ar : WEEKDAY_LABELS[dow].en, fullDate };
   };
 
   const formatWeekRange = () => {
-    const fmt = (d: string) =>
-      new Date(`${d}T12:00:00`).toLocaleDateString(language === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric' });
+    const fmt = (d: string) => formatDate(d, language, { weekday: undefined });
     return `${fmt(weekDates[0])} – ${fmt(weekDates[6])}`;
   };
 

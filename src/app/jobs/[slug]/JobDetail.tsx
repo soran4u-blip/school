@@ -12,6 +12,7 @@ import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { auth } from '@/core/firebase/config';
 import { signInAnonymously } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
+import { todayLocalDate } from '@/lib/utils';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import {
   MapPin,
@@ -141,7 +142,9 @@ export default function JobDetail({
     }
   };
 
-  const deadlinePassed = job.applicationDeadline ? job.applicationDeadline < new Date().toISOString().slice(0, 10) : false;
+  // Local date, not UTC — the UTC day lags Iraq's by three hours, which kept a passed job
+  // deadline looking open past midnight.
+  const deadlinePassed = job.applicationDeadline ? job.applicationDeadline < todayLocalDate() : false;
   const canApply = job.status === 'ACTIVE' && !deadlinePassed;
   const jobSubjects = subjects.filter((s) => job.subjectIds?.includes(s.id));
 

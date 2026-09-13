@@ -22,6 +22,7 @@ import { ThreadMessage, Thread } from '@/core/types/message';
 import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle } from 'lucide-react';
+import { formatDate as formatDateUtil } from '@/lib/utils';
 
 export default function TutorDashboardPage() {
   const router = useRouter();
@@ -314,7 +315,7 @@ export default function TutorDashboardPage() {
   const nextSession = bookings
     .filter((booking) => booking.status === 'PENDING' || booking.status === 'CONFIRMED')
     .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`))[0];
-  const formatDate = (date: string) => new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
+  const formatDate = (date: string) => formatDateUtil(date, language);
 
   return (
     <div className="space-y-6">

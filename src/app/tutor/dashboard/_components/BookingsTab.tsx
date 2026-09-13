@@ -20,6 +20,7 @@ import {
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Booking } from '@/core/types/booking';
 import { MessageThreads } from '@/lib/useMessageThreads';
+import { formatDate as formatDateUtil, todayLocalDate } from '@/lib/utils';
 import BookingCard from './BookingCard';
 import BookingsCalendarView from './BookingsCalendarView';
 
@@ -56,19 +57,11 @@ export default function BookingsTab({
   const [expandedStudents, setExpandedStudents] = useState<Record<string, boolean>>({});
   const [batchLoadingStudentId, setBatchLoadingStudentId] = useState<string | null>(null);
 
-  // Keep the calendar date in the tutor's local time. `toISOString()` uses UTC and can show
-  // tomorrow late at night in Iraq, which makes the agenda's "Today" grouping misleading.
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
-  }, []);
+  // Local time, not UTC — `toISOString()` can read as tomorrow late at night in Iraq, which made
+  // the agenda's "Today" grouping misleading.
+  const todayStr = useMemo(() => todayLocalDate(), []);
 
-  const formatDate = (date: string) =>
-    new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(`${date}T12:00:00`));
+  const formatDate = (date: string) => formatDateUtil(date, language);
 
   // Filter bookings by status and search query
   const filteredBookings = useMemo(() => {

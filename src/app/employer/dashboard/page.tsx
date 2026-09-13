@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getEmployerById } from '@/core/services/employerService';
+import { getEmployerById, saveEmployer } from '@/core/services/employerService';
 import { getGovernorates } from '@/core/services/masterDataService';
 import { getEmployerJobs, getEmployerJobApplications, updateJob, createJob } from '@/core/services/jobService';
 import { Employer } from '@/core/types/employer';
@@ -15,6 +15,7 @@ import {
   Briefcase, Plus, Users, ExternalLink, AlertCircle,
 } from 'lucide-react';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
+import ProfileTab from './_components/ProfileTab';
 
 const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
   FULL_TIME: { ar: 'دوام كامل', en: 'Full-time' },
@@ -43,6 +44,7 @@ export default function EmployerDashboardPage() {
   const [jobApplicationCounts, setJobApplicationCounts] = useState<Record<string, number>>({});
   const [editingJob, setEditingJob] = useState<Job | Omit<Job, 'id' | 'createdAt' | 'updatedAt'> | null>(null);
   const [savingJob, setSavingJob] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -104,6 +106,19 @@ export default function EmployerDashboardPage() {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (!employer) return;
+    setSavingProfile(true);
+    try {
+      await saveEmployer(employer);
+      setMessage({ text: t('تم حفظ التغييرات بنجاح', 'Changes saved successfully'), type: 'success' });
+    } catch {
+      setMessage({ text: t('تعذر حفظ التغييرات', 'Failed to save changes'), type: 'error' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const handleJobStatus = async (jobId: string, status: Job['status']) => {
     await updateJob(jobId, { status });
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status } : j)));
@@ -130,6 +145,14 @@ export default function EmployerDashboardPage() {
       </div>
 
       <NotificationsToggle />
+
+      <ProfileTab
+        employer={employer}
+        setEmployer={setEmployer}
+        governorates={governorates}
+        handleSave={handleSaveProfile}
+        saving={savingProfile}
+      />
 
       {message && (
         <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>

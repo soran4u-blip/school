@@ -5,7 +5,7 @@ import { CalendarClock, Users } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
-import { formatCurrency, formatShortDate, todayLocalDate } from '@/lib/utils';
+import { formatCurrency, formatDate, todayLocalDate } from '@/lib/utils';
 
 const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
   SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
@@ -72,7 +72,7 @@ export default function ProgramsTab({
                   {prog.applicationDeadline && prog.applicationDeadline >= today && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
                       <CalendarClock className="w-3 h-3" />
-                      {t('آخر موعد للتقديم:', 'Applications close:')} {formatShortDate(prog.applicationDeadline, language)}
+                      {t('آخر موعد للتقديم:', 'Applications close:')} {formatDate(prog.applicationDeadline, language)}
                     </span>
                   )}
                   {typeof prog.capacity === 'number' && (

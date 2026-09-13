@@ -51,15 +51,19 @@ export function todayLocalDate(): string {
 }
 
 /**
- * A plain 'YYYY-MM-DD' (or ISO timestamp) rendered in the reader's language. Anchored at noon so
- * the calendar day can't shift under a timezone offset the way midnight can.
+ * A plain 'YYYY-MM-DD' (or ISO timestamp) rendered in the reader's language.
+ *
+ * Anchored at noon so the calendar day can't shift under a timezone offset the way midnight can —
+ * that anchoring and the locale choice are the parts that kept getting re-implemented (and
+ * getting the timezone wrong), so they live here once. Callers pass their own field set.
  */
-export function formatShortDate(date: string, language: string): string {
+export function formatDate(date: string, language: string, options?: Intl.DateTimeFormatOptions): string {
   const dayOnly = date.slice(0, 10);
   return new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    ...options,
   }).format(new Date(`${dayOnly}T12:00:00`));
 }
 

@@ -11,7 +11,7 @@ import { resolveDownloadURL } from '@/core/firebase/storage';
 import {
   ArrowRight, Phone, FileText, AlertCircle, ArrowUpDown,
 } from 'lucide-react';
-import { formatShortDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 const STAGES: JobApplication['status'][] = ['SUBMITTED', 'REVIEWING', 'SHORTLISTED', 'REJECTED', 'HIRED'];
 
@@ -222,7 +222,7 @@ export default function EmployerJobApplicantsPage({ params }: { params: Promise<
                           ))}
                         </select>
                       </td>
-                      <td className="p-3 text-slate-500">{formatShortDate(app.createdAt, language)}</td>
+                      <td className="p-3 text-slate-500">{formatDate(app.createdAt, language)}</td>
                       <td className="p-3 text-end">
                         <button
                           onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
