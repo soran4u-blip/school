@@ -104,14 +104,15 @@ export default function ProfileTab({
           placeholderEn="Senior Physics Instructor"
         />
 
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية', 'Bio')}</label>
-          <textarea
-            rows={3}
-            value={tutor.bio?.ar || ''}
-            onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })}
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية بالعربية', 'Bio (Arabic)')}</label>
+            <textarea rows={4} value={tutor.bio?.ar || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية بالإنجليزية', 'Bio (English)')}</label>
+            <textarea rows={4} dir="ltr" value={tutor.bio?.en || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: tutor.bio?.ar || '', en: e.target.value } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

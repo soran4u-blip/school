@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
@@ -50,6 +50,7 @@ export default function TutorDashboardPage() {
   const [newBlockedDate, setNewBlockedDate] = useState('');
   const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
   const [threadsByBooking, setThreadsByBooking] = useState<Record<string, Thread>>({});
+  const hasChosenInitialTab = useRef(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -96,7 +97,15 @@ export default function TutorDashboardPage() {
   // appear without a refresh, and the per-booking unread-message dots stay current.
   useEffect(() => {
     if (!tutorId) return;
-    const unsubBookings = subscribeToTutorBookings(tutorId, setBookings);
+    const unsubBookings = subscribeToTutorBookings(tutorId, (nextBookings) => {
+      setBookings(nextBookings);
+      // A tutor who has requests waiting should land on the work that needs attention, not a
+      // long profile form. Do this only once so navigating to another tab remains intentional.
+      if (!hasChosenInitialTab.current) {
+        hasChosenInitialTab.current = true;
+        if (nextBookings.some((booking) => booking.status === 'PENDING')) setTab('bookings');
+      }
+    });
     const unsubThreads = subscribeToTutorThreads(tutorId, (threads) => {
       setThreadsByBooking(Object.fromEntries(threads.map((th) => [th.id, th])));
     });
@@ -120,8 +129,28 @@ export default function TutorDashboardPage() {
   const updateSlot = (index: number, patch: Partial<AvailabilitySlot>) =>
     setAvailability(availability.map((s, i) => (i === index ? { ...s, ...patch } : s)));
 
+  const availabilityIssue = () => {
+    const byDay = new Map<number, AvailabilitySlot[]>();
+    for (const slot of availability) {
+      if (slot.startTime >= slot.endTime) return t('يجب أن يكون وقت النهاية بعد وقت البداية.', 'Each availability block must end after it starts.');
+      byDay.set(slot.dayOfWeek, [...(byDay.get(slot.dayOfWeek) || []), slot]);
+    }
+    for (const slots of byDay.values()) {
+      const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      if (sorted.some((slot, index) => index > 0 && slot.startTime < sorted[index - 1].endTime)) {
+        return t('توجد أوقات متداخلة في اليوم نفسه. عدّلها قبل الحفظ.', 'Some availability blocks overlap on the same day. Adjust them before saving.');
+      }
+    }
+    return null;
+  };
+
   const handleSave = async () => {
     if (!tutor) return;
+    const issue = availabilityIssue();
+    if (issue) {
+      setMessage({ text: issue, type: 'error' });
+      return;
+    }
     setSaving(true);
     try {
       await Promise.all([
@@ -145,11 +174,18 @@ export default function TutorDashboardPage() {
 
   // No local state patch needed on success — the live bookings subscription picks up the change.
   const handleBookingStatus = async (booking: Booking, status: Booking['status']) => {
-    await fetch(`/api/tutor/bookings/${booking.id}/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
+    try {
+      const res = await fetch(`/api/tutor/bookings/${booking.id}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      setMessage({ text: t('تم تحديث حالة الحجز.', 'Booking status updated.'), type: 'success' });
+    } catch {
+      setMessage({ text: t('تعذر تحديث حالة الحجز. حاول مرة أخرى.', 'Could not update the booking status. Please try again.'), type: 'error' });
+    }
   };
 
   // Goes through the API route rather than a direct client write so the participant student gets
@@ -273,6 +309,13 @@ export default function TutorDashboardPage() {
     );
   }
 
+  const pendingCount = bookings.filter((booking) => booking.status === 'PENDING').length;
+  const unreadCount = bookings.filter((booking) => isThreadUnread(booking.id)).length;
+  const nextSession = bookings
+    .filter((booking) => booking.status === 'PENDING' || booking.status === 'CONFIRMED')
+    .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`))[0];
+  const formatDate = (date: string) => new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
+
   return (
     <div className="space-y-6">
       <div>
@@ -283,6 +326,22 @@ export default function TutorDashboardPage() {
       </div>
 
       <NotificationsToggle />
+
+      {(pendingCount > 0 || unreadCount > 0) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-extrabold text-amber-900">
+              {pendingCount > 0
+                ? t(`${pendingCount} حجز بانتظار موافقتك`, `${pendingCount} booking${pendingCount === 1 ? '' : 's'} need your approval`)
+                : t(`${unreadCount} رسالة جديدة`, `${unreadCount} new message${unreadCount === 1 ? '' : 's'}`)}
+            </p>
+            {nextSession && <p className="text-xs text-amber-800 mt-1">{t('أقرب موعد:', 'Next session:')} {formatDate(nextSession.date)} · {nextSession.startTime}</p>}
+          </div>
+          <button onClick={() => setTab('bookings')} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold">
+            {t('فتح الحجوزات', 'Open bookings')}
+          </button>
+        </div>
+      )}
 
       {message && (
         <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>

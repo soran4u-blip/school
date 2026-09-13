@@ -49,6 +49,7 @@ export default function AvailabilityTab({
   saving: boolean;
 }) {
   const { language, t } = useLanguage();
+  const formatDate = (date: string) => new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
 
   return (
           <div className="space-y-6">
@@ -167,7 +168,7 @@ export default function AvailabilityTab({
                 <div className="flex flex-wrap gap-2">
                   {unavailableDates.map((date) => (
                     <span key={date} className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-mono font-bold">
-                      {date}
+                      {formatDate(date)}
                       <button onClick={() => removeBlockedDate(date)} className="hover:text-rose-900">
                         <X className="w-3 h-3" />
                       </button>

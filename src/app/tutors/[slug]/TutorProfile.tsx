@@ -119,6 +119,12 @@ export default function TutorProfile({
   const [reviewError, setReviewError] = useState('');
 
   const days = nextNDays(14);
+  const formatDate = (date: string) =>
+    new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(`${date}T12:00:00`));
 
   const loadSlotStatuses = async (tutorId: string) => {
     const from = days[0].date;
@@ -349,14 +355,14 @@ export default function TutorProfile({
           </div>
         </div>
 
-        {tutor.bio?.ar && (
+        {(language === 'en' ? tutor.bio?.en || tutor.bio?.ar : tutor.bio?.ar || tutor.bio?.en) && (
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-6">
-            <p className="text-sm text-slate-700 leading-relaxed">{language === 'en' ? tutor.bio.en : tutor.bio.ar}</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{language === 'en' ? tutor.bio?.en || tutor.bio?.ar : tutor.bio?.ar || tutor.bio?.en}</p>
           </div>
         )}
 
         {/* Teaching Details: Subjects, Grades, Delivery Mode, Experience */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-6 space-y-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {tutor.yearsOfExperience > 0 && (
             <div className="flex items-center gap-2 text-sm text-slate-700">
               <Award className="w-4 h-4 text-amber-600 shrink-0" />
@@ -378,7 +384,7 @@ export default function TutorProfile({
           )}
 
           {subjects.length > 0 && (
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 sm:col-span-2">
               <BookOpen className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <div className="flex flex-wrap gap-1.5">
                 {subjects.map((s) => (
@@ -391,7 +397,7 @@ export default function TutorProfile({
           )}
 
           {studentLevels.length > 0 && (
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 sm:col-span-2">
               <GraduationCap className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div className="flex flex-wrap gap-1.5">
                 {studentLevels.map((lvl) => (
@@ -455,18 +461,18 @@ export default function TutorProfile({
                         if (!status) {
                           return (
                             <div key={i} className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-mono text-slate-500 px-2 py-1 bg-slate-50 rounded">{slot.startTime}</span>
+                              <span className="text-[11px] font-mono text-slate-600 px-2 py-1 bg-slate-50 rounded">{slot.startTime}–{slot.endTime}</span>
                               <button
                                 onClick={() => openBooking(daySlot, 'INDIVIDUAL')}
                                 className="text-[10px] font-bold px-2 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded"
                               >
-                                {t('فردي', 'Individual')}
+                                {t(`فردي · ${tutor.hourlyRate.iqd.toLocaleString()} د.ع.`, `Individual · ${tutor.hourlyRate.iqd.toLocaleString()} IQD`)}
                               </button>
                               <button
                                 onClick={() => openBooking(daySlot, 'GROUP')}
                                 className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
                               >
-                                {t('بدء مجموعة', 'Start Group')}
+                                {t(`بدء مجموعة · ${tutor.groupRate.iqd.toLocaleString()} د.ع.`, `Start group · ${tutor.groupRate.iqd.toLocaleString()} IQD total`)}
                               </button>
                             </div>
                           );
@@ -475,7 +481,7 @@ export default function TutorProfile({
                         if (status.type === 'INDIVIDUAL') {
                           return (
                             <span key={i} className="text-[11px] font-bold px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded">
-                              {slot.startTime} — {t('محجوز', 'Booked')}
+                              {slot.startTime}–{slot.endTime} — {t('محجوز', 'Booked')}
                             </span>
                           );
                         }
@@ -483,7 +489,7 @@ export default function TutorProfile({
                         if (status.isFull) {
                           return (
                             <span key={i} className="text-[11px] font-bold px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded">
-                              {slot.startTime} — {t('المجموعة مكتملة', 'Group Full')}
+                              {slot.startTime}–{slot.endTime} — {t('المجموعة مكتملة', 'Group Full')}
                             </span>
                           );
                         }
@@ -495,7 +501,7 @@ export default function TutorProfile({
                             className="text-[11px] font-bold px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded flex items-center gap-1"
                           >
                             <Users className="w-3 h-3" />
-                            {slot.startTime} — {t(`انضم (${status.currentSize}/${status.maxGroupSize})`, `Join (${status.currentSize}/${status.maxGroupSize})`)}
+                            {slot.startTime}–{slot.endTime} — {t(`انضم (${status.currentSize}/${status.maxGroupSize}) · ${status.pricePerStudent.iqd.toLocaleString()} د.ع.`, `Join (${status.currentSize}/${status.maxGroupSize}) · ${status.pricePerStudent.iqd.toLocaleString()} IQD`)}
                           </button>
                         );
                       })}
@@ -619,7 +625,7 @@ export default function TutorProfile({
               {bookingMode === 'INDIVIDUAL' ? t('حجز جلسة فردية', 'Book Individual Session') : joinBookingId ? t('الانضمام لمجموعة', 'Join Group') : t('بدء مجموعة جديدة', 'Start New Group')}
             </h3>
             <p className="text-xs text-slate-500 mb-5">
-              {selectedSlot.date} • {selectedSlot.startTime}–{selectedSlot.endTime}
+              {formatDate(selectedSlot.date)} • {selectedSlot.startTime}–{selectedSlot.endTime}
             </p>
 
             {result ? (
@@ -631,8 +637,8 @@ export default function TutorProfile({
                   <a
                     href={`https://wa.me/${tutor.whatsappNumber}?text=${encodeURIComponent(
                       t(
-                        `مرحباً، لقد حجزت موعداً معك بتاريخ ${selectedSlot.date} الساعة ${selectedSlot.startTime}. أتطلع للتنسيق معك.`,
-                        `Hi, I just booked a session with you on ${selectedSlot.date} at ${selectedSlot.startTime}. Looking forward to coordinating with you.`
+                        `مرحباً، لقد حجزت موعداً معك بتاريخ ${formatDate(selectedSlot.date)} الساعة ${selectedSlot.startTime}. أتطلع للتنسيق معك.`,
+                        `Hi, I just booked a session with you on ${formatDate(selectedSlot.date)} at ${selectedSlot.startTime}. Looking forward to coordinating with you.`
                       )
                     )}`}
                     target="_blank"
