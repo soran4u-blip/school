@@ -366,7 +366,7 @@ export default function InstitutionProfile({
               <span className="font-extrabold text-xs text-slate-800">
                 {institution.tuition.min === 0
                   ? t('مجاني بالكامل', '100% Free')
-                  : `${formatCurrency(institution.tuition.min, institution.tuition.currency)} - ${formatCurrency(institution.tuition.max, institution.tuition.currency)}`}
+                  : `${formatCurrency(institution.tuition.min, institution.tuition.currency, language)} - ${formatCurrency(institution.tuition.max, institution.tuition.currency, language)}`}
               </span>
             </div>
           </div>

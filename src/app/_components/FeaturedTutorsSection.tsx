@@ -74,7 +74,7 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
                 <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-100 gap-3">
                   <div className="text-xs">
                     <span className="text-slate-500">{t('سعر الساعة:', 'Rate:')} </span>
-                    <span className="font-extrabold text-slate-900">{formatCurrencyIQD(tutor.hourlyRate.iqd)}</span>
+                    <span className="font-extrabold text-slate-900">{formatCurrencyIQD(tutor.hourlyRate.iqd, language)}</span>
                   </div>
 
                   <div className="flex items-center gap-2">

@@ -271,7 +271,7 @@ export default function TutorsList({
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{gov ? (language === 'en' ? gov.name.en : gov.name.ar) : tutor.governorateId}</span>
                       {tutor.isVerified && <span className="flex items-center gap-1 text-emerald-600"><ShieldCheck className="w-3 h-3" />{t('موثّق', 'Verified')}</span>}
                     </div>
-                    <div className="text-xs font-bold text-slate-800 pt-1">{formatCurrencyIQD(tutor.hourlyRate.iqd)} <span className="font-normal text-slate-400">/ {t('فردي', 'individual')}</span></div>
+                    <div className="text-xs font-bold text-slate-800 pt-1">{formatCurrencyIQD(tutor.hourlyRate.iqd, language)} <span className="font-normal text-slate-400">/ {t('فردي', 'individual')}</span></div>
                   </div>
                 </Link>
               );

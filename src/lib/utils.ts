@@ -20,20 +20,24 @@ export function deriveVerificationBadge(isVerified: boolean, current: LocalizedS
   return isVerified ? VERIFIED_LABEL : UNDER_REVIEW_LABEL;
 }
 
-export function formatCurrencyIQD(amount: number): string {
-  return new Intl.NumberFormat('ar-IQ', {
+// Money follows the reader's language, like every other formatted value on the page. These used
+// to hardcode a locale each — IQD always ar-IQ — so an English visitor was shown Arabic-Indic
+// digits (١٬٨٠٠٬٠٠٠ د.ع.) instead of "IQD 1,800,000". `language` is required rather than
+// defaulted so a new call site can't quietly reintroduce that.
+function currencyFormatter(language: string, currency: 'IQD' | 'USD'): Intl.NumberFormat {
+  return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'ar-IQ', {
     style: 'currency',
-    currency: 'IQD',
+    currency,
     maximumFractionDigits: 0,
-  }).format(amount);
+  });
 }
 
-export function formatCurrencyUSD(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(amount);
+export function formatCurrencyIQD(amount: number, language: string): string {
+  return currencyFormatter(language, 'IQD').format(amount);
+}
+
+export function formatCurrencyUSD(amount: number, language: string): string {
+  return currencyFormatter(language, 'USD').format(amount);
 }
 
 /**
@@ -70,8 +74,8 @@ export function formatDate(date: string, language: string, options?: Intl.DateTi
 // Institutions price in either dinars or dollars (Institution.tuition.currency,
 // InstitutionProgram.tuitionAnnual.currency). The public profile used to hardcode a '$' regardless,
 // so an institution that priced in IQD had its fees published as dollars.
-export function formatCurrency(amount: number, currency: 'IQD' | 'USD'): string {
-  return currency === 'IQD' ? formatCurrencyIQD(amount) : formatCurrencyUSD(amount);
+export function formatCurrency(amount: number, currency: 'IQD' | 'USD', language: string): string {
+  return currencyFormatter(language, currency).format(amount);
 }
 
 export interface ProfileCompleteness {

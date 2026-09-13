@@ -126,7 +126,7 @@ export default function AdminTutorsPage() {
                     <div className="text-[10px] text-slate-500">{tutor.deliveryMode.join(' • ')}</div>
                   </td>
                   <td className="p-3 text-center font-bold text-slate-800">
-                    {formatCurrencyIQD(tutor.hourlyRate.iqd)}
+                    {formatCurrencyIQD(tutor.hourlyRate.iqd, language)}
                   </td>
                   <td className="p-3 text-center">
                     <div className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[11px]">

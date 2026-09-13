@@ -12,14 +12,23 @@ describe('cn', () => {
 });
 
 describe('formatCurrencyIQD', () => {
-  it('formats using the Iraqi dinar currency symbol', () => {
-    expect(formatCurrencyIQD(35000)).toContain('د.ع');
+  it('formats using the Iraqi dinar currency symbol in Arabic', () => {
+    expect(formatCurrencyIQD(35000, 'ar')).toContain('د.ع');
+  });
+
+  // It used to hardcode the ar-IQ locale, so an English reader was shown Arabic-Indic digits.
+  it('uses Latin digits and an IQD label in English', () => {
+    const formatted = formatCurrencyIQD(1800000, 'en');
+    expect(formatted).toContain('IQD');
+    expect(formatted).toContain('1,800,000');
+    expect(formatted).not.toMatch(/[٠-٩]/);
   });
 });
 
 describe('formatCurrencyUSD', () => {
   it('formats using USD symbol', () => {
-    expect(formatCurrencyUSD(1200)).toContain('$');
+    expect(formatCurrencyUSD(1200, 'en')).toContain('$');
+    expect(formatCurrencyUSD(1200, 'en')).toContain('1,200');
   });
 });
 
@@ -27,9 +36,18 @@ describe('formatCurrency', () => {
   // The public institution pages used to hardcode '$', so a school priced in dinars had its
   // tuition published as dollars.
   it('honours the currency it is given rather than assuming dollars', () => {
-    expect(formatCurrency(5000000, 'IQD')).toContain('د.ع');
-    expect(formatCurrency(5000000, 'IQD')).not.toContain('$');
-    expect(formatCurrency(5000, 'USD')).toContain('$');
+    expect(formatCurrency(5000000, 'IQD', 'ar')).toContain('د.ع');
+    expect(formatCurrency(5000000, 'IQD', 'ar')).not.toContain('$');
+    expect(formatCurrency(5000, 'USD', 'en')).toContain('$');
+  });
+
+  it('follows the reader language for either currency', () => {
+    // Intl separates the currency label with a non-breaking space, so the parts are asserted
+    // separately rather than pinning an exact whitespace character.
+    const english = formatCurrency(5000000, 'IQD', 'en');
+    expect(english).toContain('IQD');
+    expect(english).toContain('5,000,000');
+    expect(formatCurrency(5000000, 'IQD', 'ar')).toMatch(/[٠-٩]/);
   });
 });
 

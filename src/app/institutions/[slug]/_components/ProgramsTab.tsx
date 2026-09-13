@@ -90,7 +90,7 @@ export default function ProgramsTab({
               <div className="text-end space-y-2">
                 <div>
                   <span className="block text-sm font-black text-[#0B192C]">
-                    {formatCurrency(prog.tuitionAnnual.amount, prog.tuitionAnnual.currency)} / {t('سنوياً', 'year')}
+                    {formatCurrency(prog.tuitionAnnual.amount, prog.tuitionAnnual.currency, language)} / {t('سنوياً', 'year')}
                   </span>
                 </div>
                 {myApplicationStatus[prog.id] ? (
