@@ -255,15 +255,13 @@ export default function BookingsTab({
   const toggleStudent = (key: string) => {
     setExpandedStudents((prev) => ({
       ...prev,
-      [key]: prev[key] === undefined ? false : !prev[key],
+      [key]: !(prev[key] ?? false),
     }));
   };
 
-  // Expanded by default — a tutor triaging bookings wants to see every student's sessions at a
-  // glance, not click through each one first. Collapsing is still available per-student via
-  // toggleStudent, and that choice is remembered for the rest of the session.
+  // Collapsed by default; expanding a student is remembered for the rest of the session.
   const isStudentExpanded = (key: string) => {
-    return expandedStudents[key] ?? true;
+    return expandedStudents[key] ?? false;
   };
 
   const handleBatchConfirm = async (group: StudentGroup) => {
