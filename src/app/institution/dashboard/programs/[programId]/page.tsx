@@ -13,6 +13,7 @@ import { resolveDownloadURL } from '@/core/firebase/storage';
 import {
   ArrowRight, Phone, Mail, FileText, AlertCircle, ArrowUpDown,
 } from 'lucide-react';
+import { formatShortDate } from '@/lib/utils';
 
 const STAGES: AdmissionApplicationStatus[] = ['SUBMITTED', 'UNDER_REVIEW', 'WAITLISTED', 'ACCEPTED', 'REJECTED'];
 
@@ -280,7 +281,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                         )}
                         {decisionError[app.id] && <p className="text-[10px] font-bold text-rose-600 mt-1 max-w-[160px]">{decisionError[app.id]}</p>}
                       </td>
-                      <td className="p-3 text-slate-500 font-mono">{app.createdAt.slice(0, 10)}</td>
+                      <td className="p-3 text-slate-500">{formatShortDate(app.createdAt, language)}</td>
                       <td className="p-3 text-end">
                         <button
                           onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}

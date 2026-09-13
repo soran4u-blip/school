@@ -76,10 +76,13 @@ export default function NotificationCenter() {
       case 'BOOKING_REQUEST':
       case 'BOOKING_STATUS':
         return <Calendar className="w-4 h-4 text-emerald-600" />;
+      case 'ADMISSION_APPLICATION':
       case 'ADMISSION_DECISION':
         return <GraduationCap className="w-4 h-4 text-purple-600" />;
       case 'JOB_APPLICATION':
         return <Briefcase className="w-4 h-4 text-amber-600" />;
+      case 'INQUIRY':
+        return <MessageCircle className="w-4 h-4 text-sky-600" />;
       case 'REVIEW':
         return <Star className="w-4 h-4 text-yellow-500" />;
       default:

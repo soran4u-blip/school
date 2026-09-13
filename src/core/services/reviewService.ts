@@ -2,7 +2,7 @@ import { Review, Inquiry } from '../types/review';
 import { db } from '../firebase/config';
 import {
   collection, getDocs, getCountFromServer, doc, setDoc, updateDoc, query, where, orderBy, limit, startAfter,
-  QueryDocumentSnapshot, DocumentData,
+  onSnapshot, Unsubscribe, QueryDocumentSnapshot, DocumentData,
 } from 'firebase/firestore';
 
 /* =========================================================
@@ -154,6 +154,21 @@ export async function getInstitutionInquiries(institutionId: string): Promise<In
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() } as Inquiry))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// Live equivalent of getInstitutionInquiries — a new inquiry (or a status change made from
+// another device) reaches the dashboard without a refresh, the same way the tutor dashboard
+// already watches its bookings. Inquiries are created by a direct client write from the public
+// profile, so there's no server hook to push from; this subscription is what makes them visible.
+export function subscribeToInstitutionInquiries(institutionId: string, cb: (inquiries: Inquiry[]) => void): Unsubscribe {
+  const q = query(collection(db, 'inquiries'), where('institutionId', '==', institutionId));
+  return onSnapshot(q, (snap) => {
+    cb(
+      snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Inquiry))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    );
+  });
 }
 
 export async function replyToInquiry(inquiryId: string, text: string): Promise<void> {

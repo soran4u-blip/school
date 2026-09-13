@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 import { FieldValue } from 'firebase-admin/firestore';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { jobApplicationSchema } from '@/core/validation/schemas';
+import { dispatchNotification, resolveOwnerRecipient } from '@/core/server/notifications';
 
 // POST /api/job-applications — Admin SDK only now (firestore.rules denies client creates), so an
 // applicant is rate-limited by IP rather than relying on freely-mintable anonymous Firebase Auth
@@ -54,6 +55,28 @@ export async function POST(request: NextRequest) {
   // Atomic field increment — no read-modify-write race, and no reason to fail the submission if
   // this denormalized counter update has a transient issue.
   await adminDb.collection('jobs').doc(jobId).update({ applicantCount: FieldValue.increment(1) }).catch(() => {});
+
+  // A job posting's owner is exactly one of an institution or an employer; neither was told about
+  // new applicants before, so the only way to notice one was to open the dashboard and look.
+  const ownerCollection = job.institutionId ? 'institutions' : 'employers';
+  const ownerDirectoryId = job.institutionId || job.employerId;
+  if (ownerDirectoryId) {
+    const owner = await resolveOwnerRecipient(adminDb, ownerCollection, ownerDirectoryId).catch(() => null);
+    if (owner) {
+      await dispatchNotification(adminDb, {
+        ...owner,
+        recipientRole: job.institutionId ? 'institution' : 'employer',
+        type: 'JOB_APPLICATION',
+        title: { ar: 'طلب توظيف جديد', en: 'New job application' },
+        body: {
+          ar: `${fullName} تقدّم لوظيفة ${job.title.ar || job.title.en}`,
+          en: `${fullName} applied for ${job.title.en || job.title.ar}`,
+        },
+        linkUrl: `${job.institutionId ? '/institution' : '/employer'}/dashboard/jobs/${jobId}`,
+        metadata: { applicationId: ref.id, jobId, applicantName: fullName },
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json({ success: true, application });
 }

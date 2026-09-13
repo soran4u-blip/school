@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
@@ -13,15 +13,18 @@ import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
 import { useMessageThreads } from '@/lib/useMessageThreads';
 import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutionById, saveInstitution, deleteInstitution, getInstitutionVerificationDocuments, saveInstitutionVerificationDocuments } from '@/core/services/institutionService';
-import { getInstitutionInquiries, updateInquiryStatus, getApprovedReviews } from '@/core/services/reviewService';
+import { subscribeToInstitutionInquiries, updateInquiryStatus, getApprovedReviews } from '@/core/services/reviewService';
 import { getInstitutionJobs, getInstitutionJobApplications, updateJob, createJob } from '@/core/services/jobService';
 import { getInstitutionAdmissionApplications } from '@/core/services/admissionService';
-import { sendInstitutionMessage } from '@/core/services/messagingService';
+import { sendInstitutionMessage, subscribeToInstitutionThreads } from '@/core/services/messagingService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Inquiry, Review } from '@/core/types/review';
+import { Thread } from '@/core/types/message';
 import { Job } from '@/core/types/job';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
+import NotificationsToggle from '@/components/shared/NotificationsToggle';
+import { formatShortDate, todayLocalDate } from '@/lib/utils';
 
 function emptyJob(institutionId: string): Omit<Job, 'id' | 'createdAt' | 'updatedAt'> {
   return {
@@ -54,6 +57,7 @@ export default function InstitutionDashboardPage() {
   const [tab, setTab] = useState<'profile' | 'programs' | 'jobs' | 'inquiries' | 'reviews'>('profile');
   const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [institution, setInstitution] = useState<Institution | null>(null);
+  const [threadsByInquiry, setThreadsByInquiry] = useState<Record<string, Thread>>({});
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [taxonomies, setTaxonomies] = useState<TaxonomyItem[]>([]);
@@ -81,6 +85,7 @@ export default function InstitutionDashboardPage() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const hasChosenInitialTab = useRef(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -94,12 +99,12 @@ export default function InstitutionDashboardPage() {
         const id = tokenResult.claims.institutionId as string | undefined;
         if (!id) return;
         setInstitutionId(id);
-        const [inst, govs, cats, taxes, instInquiries, instReviews, verifDocs, instJobs, instApplications, instAdmissionApplications] = await Promise.all([
+        // Inquiries are not fetched here — they arrive through the live subscription below.
+        const [inst, govs, cats, taxes, instReviews, verifDocs, instJobs, instApplications, instAdmissionApplications] = await Promise.all([
           getInstitutionById(id),
           getGovernorates(false),
           getCategories(false),
           getTaxonomies(undefined, false),
-          getInstitutionInquiries(id),
           getApprovedReviews(id),
           getInstitutionVerificationDocuments(id),
           getInstitutionJobs(id),
@@ -112,7 +117,6 @@ export default function InstitutionDashboardPage() {
         setGovernorates(govs);
         setCategories(cats);
         setTaxonomies(taxes);
-        setInquiries(instInquiries);
         setReviews(instReviews);
         setVerificationDocuments(verifDocs);
         setJobs(instJobs);
@@ -135,13 +139,70 @@ export default function InstitutionDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Live: a new inquiry from the public profile lands here without a refresh, and the per-inquiry
+  // unread-reply dots stay current. Everything else on this dashboard is still a load-time fetch.
+  useEffect(() => {
+    if (!institutionId) return;
+    const unsubInquiries = subscribeToInstitutionInquiries(institutionId, (nextInquiries) => {
+      setInquiries(nextInquiries);
+      // Land on the queue that needs attention rather than a long profile form — same reasoning
+      // as the tutor dashboard. Done once, so switching tabs afterwards stays intentional.
+      if (!hasChosenInitialTab.current) {
+        hasChosenInitialTab.current = true;
+        if (nextInquiries.some((inq) => inq.status === 'NEW')) setTab('inquiries');
+      }
+    });
+    const unsubThreads = subscribeToInstitutionThreads(institutionId, (threads) => {
+      setThreadsByInquiry(Object.fromEntries(threads.map((th) => [th.id, th])));
+    });
+    return () => {
+      unsubInquiries();
+      unsubThreads();
+    };
+  }, [institutionId]);
+
+  const isThreadUnread = (inquiryId: string) => {
+    const th = threadsByInquiry[inquiryId];
+    if (!th || !institutionId || th.lastMessageSenderId === institutionId) return false;
+    const readAt = th.readBy?.[institutionId];
+    return !readAt || th.lastMessageAt > readAt;
+  };
+
   const addProgram = () => setPrograms([...programs, emptyProgram()]);
   const removeProgram = (id: string) => setPrograms(programs.filter((p) => p.id !== id));
   const updateProgram = (id: string, patch: Partial<InstitutionProgram>) =>
     setPrograms(programs.map((p) => (p.id === id ? { ...p, ...patch } : p)));
 
+  // Catches the contradictions this form could otherwise save silently, the same way the tutor
+  // dashboard validates availability blocks before writing them.
+  const profileIssue = () => {
+    if (institution && institution.tuition && institution.tuition.min > institution.tuition.max) {
+      return t('الحد الأدنى للقسط أكبر من الحد الأعلى.', 'The minimum tuition is higher than the maximum.');
+    }
+    for (const prog of programs) {
+      if (typeof prog.capacity === 'number' && prog.capacity < (prog.acceptedCount || 0)) {
+        return t(
+          `السعة المحددة لبرنامج "${prog.name.ar || prog.name.en}" أقل من عدد المقبولين بالفعل.`,
+          `The capacity set for "${prog.name.en || prog.name.ar}" is below the number of students already accepted.`
+        );
+      }
+      if (prog.applicationDeadline && prog.isAcceptingApplications !== false && prog.applicationDeadline < todayLocalDate()) {
+        return t(
+          `آخر موعد للتقديم لبرنامج "${prog.name.ar || prog.name.en}" مضى بالفعل، لكنه ما زال مفتوحاً للتقديم.`,
+          `The application deadline for "${prog.name.en || prog.name.ar}" has already passed while it is still marked as accepting applications.`
+        );
+      }
+    }
+    return null;
+  };
+
   const handleSave = async () => {
     if (!institution) return;
+    const issue = profileIssue();
+    if (issue) {
+      setMessage({ text: issue, type: 'error' });
+      return;
+    }
     setSaving(true);
     try {
       const updated: Institution = {
@@ -172,7 +233,10 @@ export default function InstitutionDashboardPage() {
       setInquiries((prev) => prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'CONTACTED' } : i)));
     }
     return sent;
-  });
+    // The reader id was missing, so markThreadRead never ran for institutions and
+    // thread.readBy[institutionId] was never written — leaving nothing for an unread indicator
+    // to compare against. The tutor dashboard passes its tutorId for the same reason.
+  }, institutionId || undefined);
 
   const handleSaveJob = async () => {
     if (!editingJob || !institution) return;
@@ -301,6 +365,7 @@ export default function InstitutionDashboardPage() {
 
   const pendingInquiries = inquiries.filter((i) => i.status === 'NEW').length;
   const pendingReviewReplies = reviews.filter((r) => !r.reply).length;
+  const unreadReplies = inquiries.filter((i) => isThreadUnread(i.id)).length;
 
   return (
     <div className="space-y-6">
@@ -310,6 +375,36 @@ export default function InstitutionDashboardPage() {
         </h1>
         <p className="text-xs text-slate-500 mt-1">{t('إدارة ملف مؤسستك، البرامج، الاستفسارات، والتقييمات', 'Manage your institution profile, programs, inquiries, and reviews')}</p>
       </div>
+
+      <NotificationsToggle />
+
+      {(pendingInquiries > 0 || unreadReplies > 0 || pendingReviewReplies > 0) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-extrabold text-amber-900">
+              {pendingInquiries > 0
+                ? t(`${pendingInquiries} استفسار بانتظار الرد`, `${pendingInquiries} inquir${pendingInquiries === 1 ? 'y' : 'ies'} awaiting a reply`)
+                : unreadReplies > 0
+                ? t(`${unreadReplies} رد جديد`, `${unreadReplies} new repl${unreadReplies === 1 ? 'y' : 'ies'}`)
+                : t(`${pendingReviewReplies} تقييم بلا رد`, `${pendingReviewReplies} review${pendingReviewReplies === 1 ? '' : 's'} without a reply`)}
+            </p>
+            {(pendingInquiries > 0 && (unreadReplies > 0 || pendingReviewReplies > 0)) && (
+              <p className="text-xs text-amber-800 mt-1">
+                {[
+                  unreadReplies > 0 ? t(`${unreadReplies} رد جديد`, `${unreadReplies} new repl${unreadReplies === 1 ? 'y' : 'ies'}`) : null,
+                  pendingReviewReplies > 0 ? t(`${pendingReviewReplies} تقييم بلا رد`, `${pendingReviewReplies} review${pendingReviewReplies === 1 ? '' : 's'} to answer`) : null,
+                ].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setTab(pendingInquiries > 0 || unreadReplies > 0 ? 'inquiries' : 'reviews')}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0"
+          >
+            {pendingInquiries > 0 || unreadReplies > 0 ? t('فتح الاستفسارات', 'Open inquiries') : t('فتح التقييمات', 'Open reviews')}
+          </button>
+        </div>
+      )}
 
       {message && (
         <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
@@ -410,18 +505,30 @@ export default function InstitutionDashboardPage() {
                     }`}>
                       {inq.status}
                     </span>
+                    {isThreadUnread(inq.id) && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        <MessageCircle className="w-2.5 h-2.5" />
+                        {t('رد جديد', 'New reply')}
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={() => threads.toggle(inq.id)}
-                    className={`p-2 rounded-lg ${threads.expandedId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                    className={`relative p-2 rounded-lg ${threads.expandedId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                     title={t('مراسلة', 'Message')}
                   >
                     <MessageCircle className="w-4 h-4" />
+                    {isThreadUnread(inq.id) && (
+                      <span className="absolute -top-0.5 -end-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />
+                    )}
                   </button>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-slate-500">
                   <span className="flex items-center gap-1" dir="ltr"><Phone className="w-3 h-3" />{inq.phone}</span>
                   {inq.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{inq.email}</span>}
+                  {/* The list showed no date at all, so a three-month-old inquiry looked identical
+                      to one that arrived this morning. */}
+                  <span className="text-slate-400">{formatShortDate(inq.createdAt, language)}</span>
                 </div>
                 {inq.message && <p className="text-xs text-slate-600">{inq.message}</p>}
 

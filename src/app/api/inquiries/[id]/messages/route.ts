@@ -4,6 +4,7 @@ import { loadInquiryAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_M
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { guestThreadMessageSchema } from '@/core/validation/schemas';
 import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
+import { notifyInstitutionOfInquiryReply } from '@/core/server/notifications';
 
 // GET /api/inquiries/[id]/messages?phone=... — a guest (parent) reads their thread for this inquiry.
 // Rate-limited by IP: the phone is the only credential, so an unlimited GET here is a brute-force
@@ -63,5 +64,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     senderName,
     text
   );
+
+  await notifyInstitutionOfInquiryReply(adminDb, inquiry.institutionId, id, senderName, text);
+
   return NextResponse.json({ success: true, message });
 }

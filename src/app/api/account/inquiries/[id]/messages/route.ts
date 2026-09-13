@@ -4,6 +4,7 @@ import { getSessionUser } from '@/core/server/session';
 import { loadInquiryAndVerifyPhone, listThreadMessages, sendThreadMessage, MAX_MESSAGE_LENGTH } from '@/core/server/threads';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { threadMessageSchema } from '@/core/validation/schemas';
+import { notifyInstitutionOfInquiryReply } from '@/core/server/notifications';
 
 
 async function requireStudentPhone(request: NextRequest): Promise<string | null> {
@@ -66,5 +67,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     senderName,
     text
   );
+
+  await notifyInstitutionOfInquiryReply(adminDb, inquiry.institutionId, id, senderName, text);
+
   return NextResponse.json({ success: true, message });
 }

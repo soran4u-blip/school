@@ -122,15 +122,17 @@ export default function ProfileTab({
           onChangeEn={(v) => setInstitution({ ...institution, description: { ...institution.description, en: v } })}
         />
 
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('العنوان', 'Address')}</label>
-          <input
-            type="text"
-            value={institution.address?.ar || ''}
-            onChange={(e) => setInstitution({ ...institution, address: { ar: e.target.value, en: institution.address?.en || '' } })}
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
-          />
-        </div>
+        {/* Address is a LocalizedString and the public profile renders whichever half matches the
+            visitor's language — but the form only ever exposed the Arabic one, so the English
+            address could never be filled in. */}
+        <BilingualTextField
+          labelAr={t('العنوان بالعربية', 'Address (Arabic)')}
+          labelEn={t('العنوان بالإنجليزية', 'Address (English)')}
+          valueAr={institution.address?.ar || ''}
+          valueEn={institution.address?.en || ''}
+          onChangeAr={(v) => setInstitution({ ...institution, address: { ...institution.address, ar: v } })}
+          onChangeEn={(v) => setInstitution({ ...institution, address: { ...institution.address, en: v } })}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -166,19 +168,21 @@ export default function ProfileTab({
             <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
             <input
               type="text"
+              dir="ltr"
               value={institution.contact?.phonePrimary || ''}
               onChange={(e) => setInstitution({ ...institution, contact: { ...institution.contact, phonePrimary: e.target.value } })}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono text-left"
             />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
             <input
               type="text"
+              dir="ltr"
               value={institution.contact?.whatsappNumber || ''}
               onChange={(e) => setInstitution({ ...institution, contact: { ...institution.contact, whatsappNumber: e.target.value } })}
               placeholder="9647801234567"
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono text-left"
             />
           </div>
           <div>
@@ -194,12 +198,26 @@ export default function ProfileTab({
             <label className="block text-xs font-bold text-slate-700 mb-1">{t('الموقع الإلكتروني', 'Website')}</label>
             <input
               type="text"
+              dir="ltr"
               value={institution.contact?.website || ''}
               onChange={(e) => setInstitution({ ...institution, contact: { ...institution.contact, website: e.target.value } })}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono text-left"
             />
           </div>
         </div>
+
+        {/* Working hours show on the public contact card but had no field here at all, so no
+            institution could ever set them. */}
+        <BilingualTextField
+          labelAr={t('ساعات الدوام بالعربية', 'Working Hours (Arabic)')}
+          labelEn={t('ساعات الدوام بالإنجليزية', 'Working Hours (English)')}
+          valueAr={institution.contact?.workingHours?.ar || ''}
+          valueEn={institution.contact?.workingHours?.en || ''}
+          onChangeAr={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: { ar: v, en: institution.contact?.workingHours?.en || '' } } })}
+          onChangeEn={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: { ar: institution.contact?.workingHours?.ar || '', en: v } } })}
+          placeholderAr="الأحد - الخميس، 8:00 ص - 3:00 م"
+          placeholderEn="Sun - Thu, 8:00 AM - 3:00 PM"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>

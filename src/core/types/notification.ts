@@ -2,8 +2,11 @@ export type NotificationType =
   | 'CHAT_MESSAGE'
   | 'BOOKING_REQUEST'
   | 'BOOKING_STATUS'
+  // A student applying to a program (institution-facing); ADMISSION_DECISION is the reply.
+  | 'ADMISSION_APPLICATION'
   | 'ADMISSION_DECISION'
   | 'JOB_APPLICATION'
+  | 'INQUIRY'
   | 'REVIEW'
   | 'SYSTEM';
 

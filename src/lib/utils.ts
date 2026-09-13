@@ -36,6 +36,40 @@ export function formatCurrencyUSD(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * Today as 'YYYY-MM-DD' in the viewer's own timezone. `new Date().toISOString().slice(0, 10)` is
+ * UTC, which in Iraq (UTC+3) still reads as yesterday until 3am — long enough to keep a passed
+ * application deadline looking open.
+ */
+export function todayLocalDate(): string {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+/**
+ * A plain 'YYYY-MM-DD' (or ISO timestamp) rendered in the reader's language. Anchored at noon so
+ * the calendar day can't shift under a timezone offset the way midnight can.
+ */
+export function formatShortDate(date: string, language: string): string {
+  const dayOnly = date.slice(0, 10);
+  return new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(`${dayOnly}T12:00:00`));
+}
+
+// Institutions price in either dinars or dollars (Institution.tuition.currency,
+// InstitutionProgram.tuitionAnnual.currency). The public profile used to hardcode a '$' regardless,
+// so an institution that priced in IQD had its fees published as dollars.
+export function formatCurrency(amount: number, currency: 'IQD' | 'USD'): string {
+  return currency === 'IQD' ? formatCurrencyIQD(amount) : formatCurrencyUSD(amount);
+}
+
 export interface ProfileCompleteness {
   complete: boolean;
   missingFields: LocalizedString[];

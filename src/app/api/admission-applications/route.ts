@@ -6,6 +6,7 @@ import { Institution } from '@/core/types/institution';
 import { Student } from '@/core/types/student';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { admissionApplicationSchema } from '@/core/validation/schemas';
+import { dispatchNotification } from '@/core/server/notifications';
 
 // Statuses that count as "already in progress" for a student re-applying to the same program.
 const ACTIVE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'WAITLISTED', 'ACCEPTED'];
@@ -83,6 +84,25 @@ export async function POST(request: NextRequest) {
     updatedAt: now,
   };
   await ref.set(application);
+
+  // The institution otherwise finds out only by logging in and refreshing: the decision route
+  // already pushes to the student, but nothing ever notified the other direction.
+  await dispatchNotification(adminDb, {
+    recipientId: institution.userId || institution.id,
+    pushOwnerId: institution.id,
+    recipientRole: 'institution',
+    type: 'ADMISSION_APPLICATION',
+    title: {
+      ar: 'طلب تقديم جديد',
+      en: 'New admission application',
+    },
+    body: {
+      ar: `${student.fullName} تقدّم إلى ${program.name.ar || program.name.en}`,
+      en: `${student.fullName} applied to ${program.name.en || program.name.ar}`,
+    },
+    linkUrl: `/institution/dashboard/programs/${programId}`,
+    metadata: { applicationId: ref.id, programId, studentName: student.fullName },
+  }).catch(() => {});
 
   return NextResponse.json({ success: true, application });
 }

@@ -21,6 +21,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
+import { formatCurrency } from '@/lib/utils';
 import {
   MapPin,
   ShieldCheck,
@@ -33,6 +34,7 @@ import {
   Globe,
   Clock,
   MessageSquare,
+  MessageCircle,
   CheckCircle2,
   Sparkles,
   Send,
@@ -362,22 +364,29 @@ export default function InstitutionProfile({
             <div>
               <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('متوسط القسط السنوي', 'Tuition Tier')}</span>
               <span className="font-extrabold text-xs text-slate-800">
-                {institution.tuition.min === 0 ? t('مجاني بالكامل', '100% Free') : `$${institution.tuition.min.toLocaleString()} - $${institution.tuition.max.toLocaleString()}`}
+                {institution.tuition.min === 0
+                  ? t('مجاني بالكامل', '100% Free')
+                  : `${formatCurrency(institution.tuition.min, institution.tuition.currency)} - ${formatCurrency(institution.tuition.max, institution.tuition.currency)}`}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5" />
+          {/* Only shown when the institution actually reported a rate. This used to fall back to a
+              hardcoded 92%, which published an invented statistic for every institution that had
+              never supplied one. */}
+          {typeof institution.metrics.graduateEmploymentRate === 'number' && (
+            <div className="flex items-center gap-3 justify-center sm:justify-start">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('نسبة توظيف الخريجين', 'Graduate Rate')}</span>
+                <span className="font-extrabold text-xs text-emerald-600 font-mono">
+                  {institution.metrics.graduateEmploymentRate}%
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('نسبة توظيف الخريجين', 'Graduate Rate')}</span>
-              <span className="font-extrabold text-xs text-emerald-600 font-mono">
-                {institution.metrics.graduateEmploymentRate || 92}%
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -537,16 +546,63 @@ export default function InstitutionProfile({
                 </p>
               </div>
 
-              {/* Direct WhatsApp CTA Button */}
-              <a
-                href={`https://wa.me/${institution.contact.whatsappNumber}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن القبول والتسجيل في ${institution.name.ar}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>{t('مراسلة عبر واتساب الرسمي', 'Chat on Official WhatsApp')}</span>
-              </a>
+              {/* In-app chat, for students who'd rather not hand over a WhatsApp number. Only
+                  shown once the institution has a linked account to receive it — conversations are
+                  keyed by Auth uid, so institution.userId (not institution.id) is the recipient. */}
+              {institution.userId && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/conversations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          recipientId: institution.userId,
+                          recipientRole: 'institution',
+                          recipientName: language === 'en' ? institution.name.en : institution.name.ar,
+                          recipientPhone: institution.contact?.phonePrimary,
+                          context: {
+                            type: 'institution',
+                            title: language === 'en' ? `Admissions — ${institution.name.en}` : `القبول — ${institution.name.ar}`,
+                            id: institution.id,
+                          },
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success && data.conversation) {
+                        router.push(`/messages?conversationId=${data.conversation.id}`);
+                      } else {
+                        router.push('/login');
+                      }
+                    } catch {
+                      router.push('/login');
+                    }
+                  }}
+                  className="w-full py-3.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>{t('مراسلة فورية', 'Chat Now')}</span>
+                </button>
+              )}
+
+              {/* Direct WhatsApp CTA Button — hidden when no number is set, which otherwise
+                  produced a broken `wa.me/` link. */}
+              {institution.contact?.whatsappNumber && (
+                <a
+                  href={`https://wa.me/${institution.contact.whatsappNumber}?text=${encodeURIComponent(
+                    t(
+                      `مرحباً، أود الاستفسار عن القبول والتسجيل في ${institution.name.ar}`,
+                      `Hi, I'd like to ask about admissions at ${institution.name.en || institution.name.ar}`
+                    )
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>{t('مراسلة عبر واتساب الرسمي', 'Chat on Official WhatsApp')}</span>
+                </a>
+              )}
 
               <button
                 onClick={() => setInquiryOpen(true)}

@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
+import { CalendarClock, Users } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
+import { formatCurrency, formatShortDate, todayLocalDate } from '@/lib/utils';
 
 const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
   SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
@@ -34,6 +36,7 @@ export default function ProgramsTab({
   openApply: (program: InstitutionProgram) => void;
 }) {
   const { language, t } = useLanguage();
+  const today = todayLocalDate();
 
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
@@ -62,22 +65,39 @@ export default function ProgramsTab({
                     </span>
                   </div>
                 )}
+
+                {/* Deadline and remaining seats already gated the Apply button but were never
+                    shown, so an applicant couldn't see how long they had or how full it was. */}
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {prog.applicationDeadline && prog.applicationDeadline >= today && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                      <CalendarClock className="w-3 h-3" />
+                      {t('آخر موعد للتقديم:', 'Applications close:')} {formatShortDate(prog.applicationDeadline, language)}
+                    </span>
+                  )}
+                  {typeof prog.capacity === 'number' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                      <Users className="w-3 h-3" />
+                      {t(
+                        `${Math.max(0, prog.capacity - (prog.acceptedCount || 0))} مقعد متبقٍ`,
+                        `${Math.max(0, prog.capacity - (prog.acceptedCount || 0))} seat${Math.max(0, prog.capacity - (prog.acceptedCount || 0)) === 1 ? '' : 's'} left`
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="text-end space-y-2">
                 <div>
                   <span className="block text-sm font-black text-[#0B192C]">
-                    ${prog.tuitionAnnual.amount.toLocaleString()} / {t('سنوياً', 'year')}
-                  </span>
-                  <span className="text-[10px] text-emerald-600 font-bold">
-                    {t('إمكانية التقسيط متاحة', 'Installments Available')}
+                    {formatCurrency(prog.tuitionAnnual.amount, prog.tuitionAnnual.currency)} / {t('سنوياً', 'year')}
                   </span>
                 </div>
                 {myApplicationStatus[prog.id] ? (
                   <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full ${ADMISSION_STATUS_STYLES[myApplicationStatus[prog.id]]}`}>
                     {language === 'en' ? ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].en : ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].ar}
                   </span>
-                ) : prog.isActive && prog.isAcceptingApplications !== false && (!prog.applicationDeadline || prog.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? (
+                ) : prog.isActive && prog.isAcceptingApplications !== false && (!prog.applicationDeadline || prog.applicationDeadline >= today) ? (
                   <button
                     onClick={() => openApply(prog)}
                     className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg text-xs font-bold transition-colors"

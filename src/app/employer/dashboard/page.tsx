@@ -14,6 +14,7 @@ import { Governorate } from '@/core/types/masterData';
 import {
   Briefcase, Plus, Users, ExternalLink, AlertCircle,
 } from 'lucide-react';
+import NotificationsToggle from '@/components/shared/NotificationsToggle';
 
 const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
   FULL_TIME: { ar: 'دوام كامل', en: 'Full-time' },
@@ -127,6 +128,8 @@ export default function EmployerDashboardPage() {
         <h1 className="text-2xl font-extrabold text-[#0B192C]">{employer.name}</h1>
         <p className="text-xs text-slate-500 mt-1">{t('انشر الوظائف والتدريب المهني وأدر المتقدمين', 'Post jobs and internships, and manage applicants')}</p>
       </div>
+
+      <NotificationsToggle />
 
       {message && (
         <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>

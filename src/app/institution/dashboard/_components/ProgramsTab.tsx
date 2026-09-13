@@ -63,17 +63,26 @@ export default function ProgramsTab({
                         className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
                       />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('الكلية', 'Faculty')}</label>
-                        <input
-                          type="text"
-                          placeholder={t('الكلية', 'Faculty')}
-                          value={prog.facultyName.en}
-                          onChange={(e) => updateProgram(prog.id, { facultyName: { ar: e.target.value, en: e.target.value } })}
-                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                        />
-                      </div>
+                    {/* Faculty gets one input per language, same as the program name above. It used
+                        to be a single field writing the same string into both halves, so typing an
+                        Arabic faculty name silently overwrote the English one (and vice versa). */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder={t('الكلية (عربي)', 'Faculty (Arabic)')}
+                        value={prog.facultyName.ar}
+                        onChange={(e) => updateProgram(prog.id, { facultyName: { ...prog.facultyName, ar: e.target.value } })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                      />
+                      <input
+                        type="text"
+                        placeholder={t('الكلية (إنجليزي)', 'Faculty (English)')}
+                        value={prog.facultyName.en}
+                        onChange={(e) => updateProgram(prog.id, { facultyName: { ...prog.facultyName, en: e.target.value } })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('عدد سنوات الدراسة', 'Duration (Years)')}</label>
                         <input
@@ -86,13 +95,26 @@ export default function ProgramsTab({
                       </div>
                       <div className="col-span-2 sm:col-span-1">
                         <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('القسط السنوي', 'Annual Tuition')}</label>
-                        <input
-                          type="number"
-                          placeholder={t('القسط السنوي', 'Annual Tuition')}
-                          value={prog.tuitionAnnual.amount}
-                          onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, amount: Number(e.target.value) } })}
-                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
-                        />
+                        {/* Currency sits with the amount: programs used to be locked to the USD
+                            default they were created with, with no way for an institution pricing
+                            in dinars to say so. */}
+                        <div className="flex gap-1">
+                          <input
+                            type="number"
+                            placeholder={t('القسط السنوي', 'Annual Tuition')}
+                            value={prog.tuitionAnnual.amount}
+                            onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, amount: Number(e.target.value) } })}
+                            className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                          />
+                          <select
+                            value={prog.tuitionAnnual.currency}
+                            onChange={(e) => updateProgram(prog.id, { tuitionAnnual: { ...prog.tuitionAnnual, currency: e.target.value as 'IQD' | 'USD' } })}
+                            className="px-1.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-bold shrink-0"
+                          >
+                            <option value="IQD">IQD</option>
+                            <option value="USD">USD</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="flex items-end">
                         <button

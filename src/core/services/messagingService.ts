@@ -74,6 +74,12 @@ export function subscribeToTutorThreads(tutorId: string, cb: (threads: Thread[])
   return onSnapshot(q, (snap) => cb(snap.docs.map(d => d.data() as Thread)));
 }
 
+// Same, for an institution's inquiry threads — isOwnerOfThread covers institutionId too.
+export function subscribeToInstitutionThreads(institutionId: string, cb: (threads: Thread[]) => void): Unsubscribe {
+  const q = query(collection(db, 'threads'), where('institutionId', '==', institutionId));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => d.data() as Thread)));
+}
+
 // Marks a thread read by the given reader (tutor's own tutorId, or a participant student's uid).
 // Firestore rules restrict a participant student's update to touching only this one map key.
 export async function markThreadRead(threadId: string, readerId: string): Promise<void> {
