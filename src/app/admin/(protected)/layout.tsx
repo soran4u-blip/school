@@ -30,8 +30,10 @@ import {
   Users,
   BarChart3,
   ScrollText,
-  Bug
+  Bug,
+  MessageCircle,
 } from 'lucide-react';
+import NotificationCenter from '@/components/shared/NotificationCenter';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -265,6 +267,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/messages"
+              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              title={t('الرسائل', 'Messages')}
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Link>
+            <NotificationCenter />
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               {t('قاعدة البيانات متصلة وجاهزة', 'Firebase Live Connected')}

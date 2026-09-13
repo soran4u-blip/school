@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   User,
@@ -52,6 +53,7 @@ export default function BookingsTab({
   isThreadUnread: (bookingId: string) => boolean;
 }) {
   const { t } = useLanguage();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'by_student' | 'by_date'>('by_student');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -596,6 +598,38 @@ export default function BookingsTab({
                           <CheckCheck className="w-3.5 h-3.5" />
                         )}
                         <span>{t(`تأكيد الكل (${group.pendingCount})`, `Confirm All (${group.pendingCount})`)}</span>
+                      </button>
+                    )}
+
+                    {group.studentId && group.studentId !== 'unknown' && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const res = await fetch('/api/conversations', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                recipientId: group.studentId,
+                                recipientRole: 'student',
+                                recipientName: group.name,
+                                recipientPhone: group.phone,
+                                context: {
+                                  type: 'booking',
+                                  title: `Student: ${group.name}`,
+                                },
+                              }),
+                            });
+                            const data = await res.json();
+                            if (data.success && data.conversation) {
+                              router.push(`/messages?conversationId=${data.conversation.id}`);
+                            }
+                          } catch {}
+                        }}
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                        title={t('مراسلة الطالب في مركز الرسائل', 'Chat with student in Messages Hub')}
+                      >
+                        <MessageCircle className="w-4 h-4" />
                       </button>
                     )}
 

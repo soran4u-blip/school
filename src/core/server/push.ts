@@ -60,3 +60,20 @@ export async function sendPushToTutor(
 ): Promise<void> {
   return sendPushToSubscribers(adminDb, 'tutors', tutorId, payload);
 }
+
+// Universal push dispatch for any role (student, tutor, institution, employer, admin)
+export async function sendPushToUser(
+  adminDb: Firestore,
+  role: string,
+  userId: string,
+  payload: { title: string; body: string; url?: string }
+): Promise<void> {
+  const collectionName =
+    role === 'student' ? 'students' :
+    role === 'tutor' ? 'tutors' :
+    role === 'institution' ? 'institutions' :
+    role === 'employer' ? 'employers' : 'users';
+
+  return sendPushToSubscribers(adminDb, collectionName, userId, payload);
+}
+

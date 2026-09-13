@@ -103,6 +103,18 @@ export const pushUnsubscribeSchema = z.object({
   endpoint: z.string().min(1),
 });
 
+export const createConversationSchema = z.object({
+  recipientId: z.string().min(1),
+  recipientRole: z.enum(['student', 'tutor', 'institution', 'employer', 'admin']),
+  recipientName: z.string().min(1).max(100),
+  recipientPhone: z.string().optional(),
+  context: z.object({
+    type: z.enum(['tutor', 'institution', 'booking']).optional(),
+    title: z.string().optional(),
+    id: z.string().optional(),
+  }).optional(),
+});
+
 export const clientErrorReportSchema = z.object({
   message: z.string().min(1).max(2000),
   stack: z.string().max(4000).optional(),

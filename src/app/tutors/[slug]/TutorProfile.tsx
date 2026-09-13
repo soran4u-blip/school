@@ -28,6 +28,7 @@ import {
   GraduationCap,
   Laptop,
   Award,
+  MessageCircle,
 } from 'lucide-react';
 
 const DELIVERY_MODE_LABEL: Record<string, { ar: string; en: string }> = {
@@ -293,15 +294,59 @@ export default function TutorProfile({
               )}
             </div>
           </div>
-          <a
-            href={`https://wa.me/${tutor.whatsappNumber}?text=${encodeURIComponent(t(`مرحباً، أود الاستفسار عن الدروس الخصوصية مع ${tutor.fullName.ar}`, `Hi, I'd like to ask about private tutoring with ${tutor.fullName.en}`))}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs shrink-0"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>{t('واتساب', 'WhatsApp')}</span>
-          </a>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {tutor.userId && (
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/conversations', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        // tutor.id is the tutor's directory-listing id (tutorId claim), not their
+                        // Auth uid — conversations are keyed by uid everywhere (rules, the
+                        // participant queries), so this must be tutor.userId or the tutor's own
+                        // session never matches this conversation's participantIds.
+                        recipientId: tutor.userId,
+                        recipientRole: 'tutor',
+                        recipientName: language === 'en' ? tutor.fullName.en : tutor.fullName.ar,
+                        recipientPhone: tutor.phone,
+                        context: {
+                          type: 'tutor',
+                          title: language === 'en' ? `Tutoring with ${tutor.fullName.en}` : `دروس مع ${tutor.fullName.ar}`,
+                          id: tutor.id,
+                        },
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success && data.conversation) {
+                      router.push(`/messages?conversationId=${data.conversation.id}`);
+                    } else {
+                      router.push('/login');
+                    }
+                  } catch {
+                    router.push('/login');
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>{t('مراسلة فورية', 'Chat Now')}</span>
+              </button>
+            )}
+
+            {tutor.whatsappNumber && (
+              <a
+                href={`https://wa.me/${tutor.whatsappNumber}?text=${encodeURIComponent(t(`مرحباً، أود الاستفسار عن الدروس الخصوصية مع ${tutor.fullName.ar}`, `Hi, I'd like to ask about private tutoring with ${tutor.fullName.en}`))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>{t('واتساب', 'WhatsApp')}</span>
+              </a>
+            )}
+          </div>
         </div>
 
         {tutor.bio?.ar && (

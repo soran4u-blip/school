@@ -15,11 +15,22 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await getSessionUser(request);
-  const ownerId = user?.role === 'student' ? user.uid : user?.role === 'tutor' ? user.tutorId : null;
+  const ownerId =
+    user?.role === 'student' ? user.uid :
+    user?.role === 'tutor' ? user.tutorId :
+    user?.role === 'institution' ? user.institutionId :
+    user?.role === 'employer' ? user.employerId :
+    user?.uid || null;
+
   if (!ownerId || !user?.role) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-  const collectionName = user.role === 'student' ? 'students' : 'tutors';
+
+  const collectionName =
+    user.role === 'student' ? 'students' :
+    user.role === 'tutor' ? 'tutors' :
+    user.role === 'institution' ? 'institutions' :
+    user.role === 'employer' ? 'employers' : 'users';
 
   const parsed = await parseJsonBody(request, pushSubscribeSchema);
   if (parsed.error) return parsed.error;

@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
-import { Building2, LogOut, Home } from 'lucide-react';
+import { Building2, LogOut, Home, MessageCircle } from 'lucide-react';
+import NotificationCenter from '@/components/shared/NotificationCenter';
 
 export default function InstitutionDashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -32,6 +33,17 @@ export default function InstitutionDashboardLayout({ children }: { children: Rea
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/messages"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
+              title={t('الرسائل', 'Messages')}
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t('الرسائل', 'Messages')}</span>
+            </Link>
+            <div className="bg-white rounded-xl text-slate-800">
+              <NotificationCenter />
+            </div>
             <Link
               href="/"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
