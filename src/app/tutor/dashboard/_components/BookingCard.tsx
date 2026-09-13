@@ -29,7 +29,13 @@ export default function BookingCard({
   showDate?: boolean;
   showStudent?: boolean;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const formattedDate = new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(`${booking.date}T12:00:00`));
 
   return (
     <div className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 transition-colors space-y-3">
@@ -51,7 +57,7 @@ export default function BookingCard({
             {showDate && (
               <span className="font-bold text-sm text-slate-900 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                {booking.date}
+                {formattedDate}
               </span>
             )}
 

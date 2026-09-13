@@ -48,7 +48,7 @@ export default function BookingsTab({
   threads: MessageThreads;
   isThreadUnread: (bookingId: string) => boolean;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'by_student' | 'by_date'>('by_student');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'>('ALL');
@@ -56,7 +56,19 @@ export default function BookingsTab({
   const [expandedStudents, setExpandedStudents] = useState<Record<string, boolean>>({});
   const [batchLoadingStudentId, setBatchLoadingStudentId] = useState<string | null>(null);
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // Keep the calendar date in the tutor's local time. `toISOString()` uses UTC and can show
+  // tomorrow late at night in Iraq, which makes the agenda's "Today" grouping misleading.
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+  }, []);
+
+  const formatDate = (date: string) =>
+    new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(`${date}T12:00:00`));
 
   // Filter bookings by status and search query
   const filteredBookings = useMemo(() => {
@@ -413,7 +425,7 @@ export default function BookingsTab({
                           <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                             <Clock className="w-3 h-3 text-slate-400" />
                             {t('الموعد القادم:', 'Next:')}{' '}
-                            <span className="font-bold text-slate-800">{group.nextSession.date}</span> (
+                            <span className="font-bold text-slate-800">{formatDate(group.nextSession.date)}</span> (
                             <span className="font-mono">{group.nextSession.startTime}</span>)
                           </span>
                         )}

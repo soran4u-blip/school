@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Repeat, X, MessageCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Repeat, CalendarDays } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Booking } from '@/core/types/booking';
 import { dayOfWeekFromDate, addDaysToDateString } from '@/lib/bookingLogic';
@@ -21,20 +21,6 @@ const WEEKDAY_LABELS: { ar: string; en: string }[] = [
   { ar: 'الجمعة', en: 'Fri' },
   { ar: 'السبت', en: 'Sat' },
 ];
-
-function statusChipClasses(status: Booking['status']): string {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'bg-emerald-50 border-emerald-400 text-emerald-800 hover:bg-emerald-100';
-    case 'COMPLETED':
-      return 'bg-blue-50 border-blue-400 text-blue-800 hover:bg-blue-100';
-    case 'CANCELLED':
-    case 'NO_SHOW':
-      return 'bg-rose-50 border-rose-400 text-rose-700 hover:bg-rose-100 opacity-70';
-    default:
-      return 'bg-amber-50 border-amber-400 text-amber-800 hover:bg-amber-100';
-  }
-}
 
 interface SeriesInfo {
   index: number;
@@ -59,7 +45,6 @@ export default function BookingsCalendarView({
 }) {
   const { t, language } = useLanguage();
   const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   const weekStart = useMemo(
     () => addDaysToDateString(addDaysToDateString(todayStr, -dayOfWeekFromDate(todayStr)), weekOffset * 7),
@@ -110,8 +95,12 @@ export default function BookingsCalendarView({
 
   const formatDayHeader = (dateStr: string) => {
     const dow = dayOfWeekFromDate(dateStr);
-    const dayNum = Number(dateStr.slice(8, 10));
-    return { weekday: language === 'ar' ? WEEKDAY_LABELS[dow].ar : WEEKDAY_LABELS[dow].en, dayNum };
+    const fullDate = new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(`${dateStr}T12:00:00`));
+    return { weekday: language === 'ar' ? WEEKDAY_LABELS[dow].ar : WEEKDAY_LABELS[dow].en, fullDate };
   };
 
   const formatWeekRange = () => {
@@ -121,17 +110,7 @@ export default function BookingsCalendarView({
   };
 
   const weekTotal = weekDates.reduce((sum, d) => sum + (bookingsByDate.get(d)?.length || 0), 0);
-
-  const selectedBooking = selectedBookingId ? bookings.find((b) => b.id === selectedBookingId) || null : null;
-
-  useEffect(() => {
-    if (!selectedBookingId) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedBookingId(null);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [selectedBookingId]);
+  const agendaDates = weekDates.filter((date) => (bookingsByDate.get(date)?.length || 0) > 0);
 
   return (
     <div className="space-y-3">
@@ -165,63 +144,64 @@ export default function BookingsCalendarView({
         )}
       </div>
 
-      {/* Week Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-        {weekDates.map((date) => {
-          const { weekday, dayNum } = formatDayHeader(date);
+      {/* Agenda: dates are a reading order, rather than cramped calendar columns. */}
+      <div className="space-y-4">
+        {agendaDates.map((date) => {
+          const { weekday, fullDate } = formatDayHeader(date);
           const isToday = date === todayStr;
           const dayBookings = bookingsByDate.get(date) || [];
+          const isTomorrow = date === addDaysToDateString(todayStr, 1);
+          const hasPending = dayBookings.some((booking) => booking.status === 'PENDING');
 
           return (
-            <div
-              key={date}
-              className={`bg-white rounded-2xl border shadow-xs overflow-hidden flex flex-col ${
-                isToday ? 'border-[#0B192C]/40 ring-1 ring-[#0B192C]/10' : 'border-slate-200'
-              }`}
-            >
+            <section key={date} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div
-                className={`px-3 py-2 flex md:flex-col items-center md:items-stretch justify-between md:justify-center gap-2 md:gap-0.5 border-b border-slate-100 ${
-                  isToday ? 'bg-[#0B192C] text-white' : 'bg-slate-50/70 text-slate-700'
+                className={`px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b ${
+                  isToday
+                    ? 'bg-[#0B192C] text-white border-[#0B192C]'
+                    : hasPending
+                    ? 'bg-amber-50/70 border-amber-100 text-slate-900'
+                    : 'bg-slate-50/70 border-slate-100 text-slate-900'
                 }`}
               >
-                <span className="text-[11px] font-bold uppercase tracking-wide md:text-center">{weekday}</span>
-                <span className="text-sm font-extrabold md:text-center">{dayNum}</span>
+                <div className="flex items-center gap-3">
+                  <CalendarDays className={`w-4 h-4 ${isToday ? 'text-white/75' : 'text-slate-400'}`} />
+                  <div>
+                    <p className="font-extrabold text-sm">
+                      {isToday ? t('اليوم', 'Today') : isTomorrow ? t('غداً', 'Tomorrow') : weekday}
+                    </p>
+                    <p className={`text-xs ${isToday ? 'text-white/75' : 'text-slate-500'}`}>{fullDate}</p>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full w-fit ${
+                  isToday ? 'bg-white/15 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                }`}>
+                  {dayBookings.length} {dayBookings.length === 1 ? t('موعد', 'session') : t('مواعيد', 'sessions')}
+                </span>
               </div>
-
-              <div className="p-2 space-y-1.5 flex-1 min-h-[3rem]">
-                {dayBookings.length === 0 ? (
-                  <div className="text-center text-[11px] text-slate-300 py-3 md:py-6">—</div>
-                ) : (
-                  dayBookings.map((booking) => {
-                    const info = seriesInfoFor(booking);
-                    return (
-                      <button
-                        key={booking.id}
-                        onClick={() => setSelectedBookingId(booking.id)}
-                        className={`w-full text-start p-2 rounded-lg border-s-4 text-[11px] transition-colors ${statusChipClasses(booking.status)}`}
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono font-bold">{booking.startTime}</span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {info && (
-                              <span title={seriesLabel(info)}>
-                                <Repeat className="w-3 h-3 opacity-70" />
-                              </span>
-                            )}
-                            {isThreadUnread(booking.id) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="truncate font-medium">
-                          {booking.participants?.map((p) => p.name).join(', ') || t('غير محدد', 'Unassigned')}
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
+              <div className="p-3 space-y-2">
+                {dayBookings.map((booking) => {
+                  const info = seriesInfoFor(booking);
+                  return (
+                    <div key={booking.id} className="relative">
+                      {info && (
+                        <span className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-1.5 py-0.5" title={seriesLabel(info)}>
+                          <Repeat className="w-3 h-3" /> {t(`${info.index}/${info.total}`, `${info.index}/${info.total}`)}
+                        </span>
+                      )}
+                      <BookingCard
+                        booking={booking}
+                        handleBookingStatus={handleBookingStatus}
+                        threads={threads}
+                        isThreadUnread={isThreadUnread}
+                        showDate={false}
+                        showStudent
+                      />
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           );
         })}
       </div>
@@ -232,47 +212,6 @@ export default function BookingsCalendarView({
         </div>
       )}
 
-      {/* Detail Modal */}
-      {selectedBooking && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
-          onClick={() => setSelectedBookingId(null)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-slate-400" />
-                {t('تفاصيل الموعد', 'Session Details')}
-              </h3>
-              <button
-                onClick={() => setSelectedBookingId(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              {seriesInfoFor(selectedBooking) && (
-                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200/60 text-xs text-blue-800">
-                  <Repeat className="w-3.5 h-3.5 shrink-0" />
-                  <span>{seriesLabel(seriesInfoFor(selectedBooking)!)}</span>
-                </div>
-              )}
-              <BookingCard
-                booking={selectedBooking}
-                handleBookingStatus={handleBookingStatus}
-                threads={threads}
-                isThreadUnread={isThreadUnread}
-                showDate
-                showStudent
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
