@@ -3,14 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users,
-  User,
   MessageCircle,
   Phone,
-  Check,
-  ListChecks,
-  UserX,
-  X,
   ChevronDown,
   ChevronUp,
   Calendar,
@@ -21,11 +15,13 @@ import {
   UserCheck,
   Sparkles,
   Loader2,
+  X,
 } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Booking } from '@/core/types/booking';
-import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
 import { MessageThreads } from '@/lib/useMessageThreads';
+import BookingCard from './BookingCard';
+import BookingsCalendarView from './BookingsCalendarView';
 
 interface StudentGroup {
   key: string;
@@ -41,15 +37,6 @@ interface StudentGroup {
   hasUnread: boolean;
 }
 
-interface DateGroup {
-  date: string;
-  bookings: Booking[];
-  pendingCount: number;
-  confirmedCount: number;
-  completedCount: number;
-  cancelledCount: number;
-}
-
 export default function BookingsTab({
   bookings,
   handleBookingStatus,
@@ -61,7 +48,7 @@ export default function BookingsTab({
   threads: MessageThreads;
   isThreadUnread: (bookingId: string) => boolean;
 }) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'by_student' | 'by_date'>('by_student');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'>('ALL');
@@ -171,61 +158,6 @@ export default function BookingsTab({
     return groups;
   }, [filteredBookings, isThreadUnread, todayStr, t]);
 
-  // Group filtered bookings by calendar date, for the "By Date" view — a flat chronological list
-  // gave no sense of "what's happening on which day" at a glance, especially with several
-  // students' sessions interleaved.
-  const dateGroups = useMemo(() => {
-    const map = new Map<string, DateGroup>();
-
-    for (const booking of filteredBookings) {
-      if (!map.has(booking.date)) {
-        map.set(booking.date, {
-          date: booking.date,
-          bookings: [],
-          pendingCount: 0,
-          confirmedCount: 0,
-          completedCount: 0,
-          cancelledCount: 0,
-        });
-      }
-      const group = map.get(booking.date)!;
-      group.bookings.push(booking);
-
-      if (booking.status === 'PENDING') group.pendingCount += 1;
-      else if (booking.status === 'CONFIRMED') group.confirmedCount += 1;
-      else if (booking.status === 'COMPLETED') group.completedCount += 1;
-      else if (booking.status === 'CANCELLED' || booking.status === 'NO_SHOW') group.cancelledCount += 1;
-    }
-
-    const groups = Array.from(map.values());
-    for (const group of groups) {
-      group.bookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    }
-    groups.sort((a, b) => a.date.localeCompare(b.date));
-    return groups;
-  }, [filteredBookings]);
-
-  // "Today"/"Tomorrow"/"Yesterday" read far better than a bare ISO date, and the weekday matters
-  // more than the year for a tutor scanning their week. Both dateStr and todayStr are plain
-  // 'YYYY-MM-DD' strings, which Date always parses as UTC midnight, so the day-diff is safe
-  // regardless of the browser's local timezone.
-  const formatDateLabel = (dateStr: string) => {
-    const diffDays = Math.round((new Date(dateStr).getTime() - new Date(todayStr).getTime()) / 86400000);
-    const prefix =
-      diffDays === 0 ? t('اليوم', 'Today')
-      : diffDays === 1 ? t('غداً', 'Tomorrow')
-      : diffDays === -1 ? t('أمس', 'Yesterday')
-      : null;
-
-    // Noon avoids the date shifting a day when toLocaleDateString renders in the local timezone.
-    const formatted = new Date(`${dateStr}T12:00:00`).toLocaleDateString(language === 'ar' ? 'ar-IQ' : 'en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
-    return prefix ? `${prefix} · ${formatted}` : formatted;
-  };
-
   // Overall counts across ALL bookings (not just filtered)
   const stats = useMemo(() => {
     let pending = 0;
@@ -277,156 +209,6 @@ export default function BookingsTab({
       setBatchLoadingStudentId(null);
     }
   };
-
-  // `showDate` is skipped inside the By Date view, where the date group header already carries
-  // it; `showStudent` is turned on there instead, since without the By Student grouping there's
-  // otherwise no indication of whose session a card is for.
-  const renderBookingCard = (booking: Booking, { showDate = true, showStudent = false }: { showDate?: boolean; showStudent?: boolean } = {}) => (
-    <div
-      key={booking.id}
-      className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 transition-colors space-y-3"
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            {booking.type === 'GROUP' ? (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-                <Users className="w-3 h-3" />
-                {t(`مجموعة (${booking.participants.length}/${booking.maxGroupSize})`, `Group (${booking.participants.length}/${booking.maxGroupSize})`)}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">
-                <User className="w-3 h-3" />
-                {t('فردي', '1-on-1')}
-              </span>
-            )}
-
-            {showDate && (
-              <span className="font-bold text-sm text-slate-900 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                {booking.date}
-              </span>
-            )}
-
-            <span className={`text-xs text-slate-600 font-mono flex items-center gap-1 ${!showDate ? 'font-bold text-sm text-slate-900' : ''}`}>
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              {booking.startTime}–{booking.endTime}
-            </span>
-
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                booking.status === 'CONFIRMED'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                  : booking.status === 'COMPLETED'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-                  : booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                  : 'bg-amber-50 text-amber-700 border border-amber-200/60 animate-pulse'
-              }`}
-            >
-              {booking.status === 'PENDING' ? t('قيد الانتظار', 'Pending') :
-               booking.status === 'CONFIRMED' ? t('مؤكد', 'Confirmed') :
-               booking.status === 'COMPLETED' ? t('مكتمل', 'Completed') :
-               booking.status === 'CANCELLED' ? t('ملغي', 'Cancelled') :
-               booking.status === 'NO_SHOW' ? t('لم يحضر', 'No Show') : booking.status}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs text-slate-600">
-            <span className="font-bold font-mono text-slate-800">
-              {booking.pricePerStudent.iqd.toLocaleString()} IQD
-            </span>
-            {booking.participants?.length > 0 && (showStudent || booking.participants.length > 1) && (
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500 text-[11px]">
-                {booking.participants.map((p, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    <Phone className="w-2.5 h-2.5" />
-                    {p.name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => threads.toggle(booking.id)}
-            className={`relative p-2 rounded-lg transition-colors ${
-              threads.expandedId === booking.id
-                ? 'bg-[#0B192C] text-white shadow-xs'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
-            }`}
-            title={t('مراسلة بخصوص هذا الموعد', 'Message about this session')}
-          >
-            <MessageCircle className="w-4 h-4" />
-            {isThreadUnread(booking.id) && (
-              <span className="absolute -top-1 -end-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />
-            )}
-          </button>
-
-          {booking.status === 'PENDING' && (
-            <button
-              onClick={() => handleBookingStatus(booking, 'CONFIRMED')}
-              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition-colors"
-              title={t('تأكيد هذا الموعد', 'Confirm this session')}
-            >
-              <Check className="w-4 h-4" />
-            </button>
-          )}
-
-          {booking.status === 'CONFIRMED' && (
-            <>
-              <button
-                onClick={() => handleBookingStatus(booking, 'COMPLETED')}
-                className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition-colors"
-                title={t('اكتملت الجلسة', 'Mark Completed')}
-              >
-                <ListChecks className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleBookingStatus(booking, 'NO_SHOW')}
-                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
-                title={t('لم يحضر الطالب', 'Mark No-show')}
-              >
-                <UserX className="w-4 h-4" />
-              </button>
-            </>
-          )}
-
-          {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
-            <button
-              onClick={() => {
-                if (
-                  booking.status === 'CONFIRMED' &&
-                  !confirm(
-                    t(
-                      'هذا الحجز مؤكد بالفعل. هل تريد إلغاءه فعلاً؟',
-                      'This booking is already confirmed. Cancel it anyway?'
-                    )
-                  )
-                ) {
-                  return;
-                }
-                handleBookingStatus(booking, 'CANCELLED');
-              }}
-              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition-colors"
-              title={t('إلغاء الموعد', 'Cancel Session')}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {threads.expandedId === booking.id && (
-        <div className="pt-2 border-t border-slate-200">
-          <MessageThreadPanel threadId={booking.id} threads={threads} ownRole="tutor" />
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="space-y-4">
@@ -728,7 +510,15 @@ export default function BookingsTab({
                     </div>
 
                     <div className="space-y-2">
-                      {group.bookings.map((booking) => renderBookingCard(booking))}
+                      {group.bookings.map((booking) => (
+                        <BookingCard
+                          key={booking.id}
+                          booking={booking}
+                          handleBookingStatus={handleBookingStatus}
+                          threads={threads}
+                          isThreadUnread={isThreadUnread}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
@@ -737,60 +527,14 @@ export default function BookingsTab({
           })}
         </div>
       ) : (
-        /* Grouped by calendar date — a day-by-day agenda instead of one long undifferentiated
-           list, so "what's happening today/tomorrow" is a glance, not a scan. */
-        <div className="space-y-3">
-          {dateGroups.map((group) => {
-            const isToday = group.date === todayStr;
-            const isPast = group.date < todayStr;
-            const hasPending = group.pendingCount > 0;
-
-            return (
-              <div
-                key={group.date}
-                className={`bg-white rounded-2xl border shadow-xs overflow-hidden ${
-                  hasPending ? 'border-amber-300/80 ring-1 ring-amber-200' : 'border-slate-200'
-                } ${isPast ? 'opacity-60' : ''}`}
-              >
-                <div className="p-3.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        hasPending ? 'bg-amber-100 text-amber-700' : isToday ? 'bg-[#0B192C] text-white' : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      <CalendarDays className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm text-slate-900">{formatDateLabel(group.date)}</div>
-                      <div className="text-[11px] text-slate-400">
-                        {group.bookings.length} {t('جلسة', group.bookings.length === 1 ? 'session' : 'sessions')}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {hasPending && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                        <Sparkles className="w-2.5 h-2.5" />
-                        {group.pendingCount} {t('بانتظار', 'pending')}
-                      </span>
-                    )}
-                    {group.confirmedCount > 0 && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                        {group.confirmedCount} {t('مؤكدة', 'confirmed')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-3.5 bg-slate-50/30 space-y-2">
-                  {group.bookings.map((booking) => renderBookingCard(booking, { showDate: false, showStudent: true }))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <BookingsCalendarView
+          bookings={bookings}
+          filteredBookings={filteredBookings}
+          todayStr={todayStr}
+          handleBookingStatus={handleBookingStatus}
+          threads={threads}
+          isThreadUnread={isThreadUnread}
+        />
       )}
     </div>
   );
