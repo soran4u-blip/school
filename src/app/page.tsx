@@ -7,6 +7,7 @@ import {
   getPublicQuickSearchTags,
   getPublicSystemSettings,
   getPublicTaxonomies,
+  getPublicActiveBanners,
 } from '@/core/server/data/masterData';
 
 // Server-rendered — see the note on /institutions/[slug]/page.tsx for why this is force-dynamic
@@ -15,7 +16,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [categories, governorates, quickTags, institutions, tutors, settings, taxonomies] = await Promise.all([
+  const [categories, governorates, quickTags, institutions, tutors, settings, taxonomies, banners] = await Promise.all([
     getPublicCategories(),
     getPublicGovernorates(),
     getPublicQuickSearchTags(),
@@ -23,6 +24,7 @@ export default async function HomePage() {
     getActiveTutors(),
     getPublicSystemSettings(),
     getPublicTaxonomies(),
+    getPublicActiveBanners(),
   ]);
 
   return (
@@ -34,6 +36,7 @@ export default async function HomePage() {
       featuredTutors={tutors}
       subjects={taxonomies.filter((tx) => tx.type === 'SUBJECT')}
       settings={settings}
+      banners={banners}
     />
   );
 }

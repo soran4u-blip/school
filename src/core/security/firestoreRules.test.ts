@@ -312,6 +312,10 @@ describe.skipIf(!available)('firestore.rules', () => {
       await assertFails(setDoc(doc(moderator(), 'taxonomies_master', 'tax-1'), { id: 'tax-1', isActive: true }));
     });
 
+    it('may not manage ad banners', async () => {
+      await assertFails(setDoc(doc(moderator(), 'cms_banners', 'banner-1'), { id: 'banner-1', isActive: true }));
+    });
+
     it('may not change site settings', async () => {
       await assertFails(setDoc(doc(moderator(), 'system_settings', 'global'), { contactEmail: 'x@y.z' }, { merge: true }));
     });
@@ -325,6 +329,19 @@ describe.skipIf(!available)('firestore.rules', () => {
     it('may edit master data', async () => {
       await assertSucceeds(
         setDoc(doc(editor(), 'taxonomies_master', 'tax-1'), { id: 'tax-1', isActive: true, displayOrder: 1 })
+      );
+    });
+
+    it('may manage ad banners', async () => {
+      await assertSucceeds(
+        setDoc(doc(editor(), 'cms_banners', 'banner-1'), {
+          id: 'banner-1',
+          title: { ar: '', en: '' },
+          subtitle: { ar: '', en: '' },
+          location: 'DIRECTORY_FEED',
+          isActive: true,
+          weight: 50,
+        })
       );
     });
 

@@ -6,8 +6,10 @@ import {
   TaxonomyItem,
   QuickSearchTag,
   SystemSettings,
+  CMSBanner,
 } from '@/core/types/masterData';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/core/services/settingsService';
+import { isBannerActive } from '@/lib/bannerLogic';
 import { CACHE_TAGS, REVALIDATE_SECONDS, requireAdminDb, withId } from './cache';
 
 // Server-side reads of the master data every page needs (governorate and category names, subject
@@ -82,6 +84,25 @@ export const getPublicQuickSearchTags = unstable_cache(
       .sort(byDisplayOrder);
   },
   ['public-quick-search-tags'],
+  { tags: [CACHE_TAGS.masterData], revalidate: REVALIDATE_SECONDS }
+);
+
+// Only the homepage's in-feed slot ('DIRECTORY_FEED') is built/consumed today; HERO_TOP and
+// ANNOUNCEMENT_STICKY are reserved on the type for future placements. Eligibility (isActive +
+// date range) is filtered here rather than left to the client, so a browser never even receives
+// an expired or not-yet-started campaign; which ONE eligible banner to show is a separate,
+// per-visitor decision made client-side by pickWeightedBanner (core/lib/bannerLogic.ts) — baking
+// that pick into this cached snapshot would show every visitor the same banner for up to
+// REVALIDATE_SECONDS.
+export const getPublicActiveBanners = unstable_cache(
+  async (): Promise<CMSBanner[]> => {
+    const snap = await requireAdminDb().collection('cms_banners').where('location', '==', 'DIRECTORY_FEED').get();
+    const today = new Date().toISOString().slice(0, 10);
+    return snap.docs
+      .map((d) => withId<CMSBanner>(d.id, d.data()))
+      .filter((b) => isBannerActive(b, today) && !!b.imageUrl);
+  },
+  ['public-active-banners'],
   { tags: [CACHE_TAGS.masterData], revalidate: REVALIDATE_SECONDS }
 );
 

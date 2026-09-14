@@ -105,7 +105,15 @@ export interface CMSBanner {
   ctaLink?: string;
   imageUrl?: string;
   location: 'HERO_TOP' | 'DIRECTORY_FEED' | 'ANNOUNCEMENT_STICKY';
+  // Manual kill switch, independent of the date range below — an admin can pause a campaign
+  // without losing its dates, or let a scheduled campaign sit inactive until it's ready to run.
   isActive: boolean;
+  startDate?: string; // 'YYYY-MM-DD' — absent means no lower bound
+  endDate?: string; // 'YYYY-MM-DD' — absent means no upper bound
+  // Relative odds in the weighted rotation when more than one banner is eligible at once, e.g.
+  // a 50/30/20 split between three campaigns. Not a percentage — only relative to the other
+  // eligible banners' weights.
+  weight: number;
 }
 
 export interface SystemSettings {

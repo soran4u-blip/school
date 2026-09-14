@@ -32,6 +32,7 @@ import {
   ScrollText,
   Bug,
   MessageCircle,
+  Megaphone,
 } from 'lucide-react';
 import NotificationCenter from '@/components/shared/NotificationCenter';
 
@@ -113,6 +114,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/taxonomies',
       label: { ar: 'الاعتمادات والمناهج', en: 'Accreditations & Taxonomies' },
       icon: Tags,
+    },
+    {
+      href: '/admin/banners',
+      label: { ar: 'الإعلانات', en: 'Ad Banners' },
+      icon: Megaphone,
     },
     {
       href: '/admin/institutions',

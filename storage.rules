@@ -28,6 +28,16 @@ service firebase.storage {
             || request.resource.contentType.matches('application/.*document.*'));
     }
 
+    // Homepage ad-banner creative. Firestore's cms_banners rule allows canEditDirectory()
+    // (superadmin + editor), but storage.rules here has no equivalent scoped-role helper — only
+    // isSuperAdmin() plus per-owner checks — so this is deliberately narrower: an editor can manage
+    // a banner's text/dates/weight but only a superadmin can upload its image, rather than
+    // introducing a new cross-file role concept for this one path.
+    match /cms_banners/{bannerId}/{fileName} {
+      allow read: if true;
+      allow write: if isSuperAdmin() && isValidImage();
+    }
+
     match /institutions/{institutionId}/{fileName} {
       allow read: if true;
       allow write: if (isSuperAdmin() || isOwnerInstitution(institutionId)) && isValidImage();

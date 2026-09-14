@@ -12,7 +12,8 @@ import {
   Category,
   QuickSearchTag,
   SystemSettings,
-  TaxonomyItem
+  TaxonomyItem,
+  CMSBanner
 } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
@@ -20,6 +21,7 @@ import { Megaphone } from 'lucide-react';
 import HeroSearchSection from './_components/HeroSearchSection';
 import CategoriesGrid from './_components/CategoriesGrid';
 import FeaturedInstitutionsSection from './_components/FeaturedInstitutionsSection';
+import AdBannerSection from './_components/AdBannerSection';
 import GovernoratesExplorer from './_components/GovernoratesExplorer';
 import FeaturedTutorsSection from './_components/FeaturedTutorsSection';
 
@@ -33,6 +35,7 @@ export default function HomeContent({
   featuredTutors,
   subjects,
   settings,
+  banners,
 }: {
   categories: Category[];
   governorates: Governorate[];
@@ -41,6 +44,7 @@ export default function HomeContent({
   featuredTutors: Tutor[];
   subjects: TaxonomyItem[];
   settings: SystemSettings;
+  banners: CMSBanner[];
 }) {
   const { language, t } = useLanguage();
   const router = useRouter();
@@ -103,6 +107,8 @@ export default function HomeContent({
         governorates={governorates}
         categories={categories}
       />
+
+      <AdBannerSection banners={banners} />
 
       <GovernoratesExplorer governorates={governorates} />
 

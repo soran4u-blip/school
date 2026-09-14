@@ -83,6 +83,7 @@ const ROUTE_PERMISSIONS: Array<[prefix: string, permission: Permission]> = [
   ['/admin/locations', 'masterData:write'],
   ['/admin/categories', 'masterData:write'],
   ['/admin/taxonomies', 'masterData:write'],
+  ['/admin/banners', 'masterData:write'],
   ['/admin/settings', 'settings:write'],
   ['/admin/errors', 'settings:write'],
   ['/admin/audit', 'audit:read'],

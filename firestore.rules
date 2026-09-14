@@ -133,6 +133,15 @@ service cloud.firestore {
       allow write: if canEditDirectory();
     }
 
+    // Homepage ad-banner campaigns. Public read (the homepage picks one client-side from whatever
+    // is eligible today); write is direct client-SDK from /admin/banners, same as the taxonomies
+    // block above — the save path calls revalidatePublicData('masterData') itself, it just does so
+    // over HTTP rather than needing this write to go through the Admin SDK.
+    match /cms_banners/{bannerId} {
+      allow read: if true;
+      allow write: if canEditDirectory();
+    }
+
     // Writes go through /api/admin/settings (Admin SDK) only, not a direct client-SDK write, so a
     // save can call revalidatePublicData() — Navbar/Footer/HomeContent read this doc through a
     // cached snapshot, and nothing else was ever telling that cache to drop on an edit.
