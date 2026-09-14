@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -21,9 +22,15 @@ import { Megaphone } from 'lucide-react';
 import HeroSearchSection from './_components/HeroSearchSection';
 import CategoriesGrid from './_components/CategoriesGrid';
 import FeaturedInstitutionsSection from './_components/FeaturedInstitutionsSection';
-import AdBannerSection from './_components/AdBannerSection';
 import GovernoratesExplorer from './_components/GovernoratesExplorer';
 import FeaturedTutorsSection from './_components/FeaturedTutorsSection';
+
+// The banner it picks is decided by Math.random() — server-rendering that content would have the
+// server's random pick baked into the HTML, but hydration re-runs the same random draw on the
+// client and (being random) gets a different answer, which React treats as a hydration mismatch
+// and throws away/re-renders the whole subtree on every single page load. Skipping SSR for this
+// one component sidesteps the mismatch entirely: nothing is rendered until the client picks once.
+const AdBannerSection = dynamic(() => import('./_components/AdBannerSection'), { ssr: false });
 
 // The homepage's directory content is fetched on the server (./page.tsx) and handed in, so the
 // featured institutions and tutors are in the initial HTML. Only the hero search stays stateful.

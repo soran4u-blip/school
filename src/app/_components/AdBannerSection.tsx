@@ -65,7 +65,7 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
         href={banner.ctaLink || '#'}
         target="_blank"
         rel="noopener noreferrer sponsored"
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg w-full aspect-[300/250] sm:aspect-[970/250] block transition-opacity"
+        className="relative rounded-xl sm:rounded-3xl overflow-hidden shadow-lg w-full aspect-[300/125] sm:aspect-[970/250] block transition-opacity"
         style={{ transitionDuration: `${FADE_MS}ms`, opacity: visible ? 1 : 0 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary advertiser-supplied URL, not worth configuring next/image's remote-host allowlist for */}
@@ -86,15 +86,15 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
         <span className="absolute top-2.5 start-2.5 z-10 bg-white/15 backdrop-blur text-slate-200 text-[10px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full tracking-wide">
           {t('إعلان', 'Ad')}
         </span>
-        <div className="absolute inset-0 flex flex-col justify-center gap-1.5 sm:gap-2.5 text-white p-4 sm:p-9 max-w-[92%] sm:max-w-[56%]">
-          <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide text-[#F1C40F]">
+        <div className="absolute inset-0 flex flex-col justify-center gap-0.5 sm:gap-2.5 text-white p-3 sm:p-9 max-w-[92%] sm:max-w-[56%]">
+          <span className="hidden sm:block text-[11px] font-extrabold uppercase tracking-wide text-[#F1C40F]">
             {language === 'en' ? banner.title.en : banner.title.ar}
           </span>
-          <h3 className="text-sm sm:text-2xl font-extrabold leading-snug">
+          <h3 className="text-xs sm:text-2xl font-extrabold leading-snug line-clamp-2 sm:line-clamp-none">
             {language === 'en' ? banner.subtitle.en : banner.subtitle.ar}
           </h3>
           {banner.ctaText && (
-            <span className="mt-1 self-start bg-[#F1C40F] text-[#0B192C] font-extrabold text-[10px] sm:text-xs px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full">
+            <span className="mt-0.5 sm:mt-1 self-start bg-[#F1C40F] text-[#0B192C] font-extrabold text-[9px] sm:text-xs px-2.5 py-1 sm:px-5 sm:py-2.5 rounded-full">
               {language === 'en' ? banner.ctaText.en : banner.ctaText.ar}
             </span>
           )}
