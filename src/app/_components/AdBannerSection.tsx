@@ -1,9 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { CMSBanner } from '@/core/types/masterData';
 import { pickWeightedBanner } from '@/lib/bannerLogic';
+
+// How long one campaign stays up before the next weighted-random draw. Long enough to actually
+// read the headline, short enough that a visitor who lingers on the homepage still sees more than
+// one campaign — a single draw per page load only ever showed one banner to anyone who didn't
+// reload, which read as "not rotating" even though the distribution across many page loads really
+// was proportional to each campaign's weight.
+const ROTATE_INTERVAL_MS = 6000;
+const FADE_MS = 300;
 
 // The homepage's in-feed ad slot. An advertiser's creative is still supplied at one of the two
 // standard IAB ratios (300x250 Medium Rectangle on mobile, 970x250 Billboard from the sm
@@ -14,11 +22,40 @@ import { pickWeightedBanner } from '@/lib/bannerLogic';
 // scales the creative up proportionally instead.
 //
 // `banners` has already been filtered to today's eligible campaigns server-side (see
-// getPublicActiveBanners); which ONE of them shows is decided once per page load right here, so
-// two visitors hitting the same 5-minute cache window still see different campaigns.
+// getPublicActiveBanners).
 export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
   const { language, t } = useLanguage();
-  const [banner] = useState(() => pickWeightedBanner(banners));
+  const [banner, setBanner] = useState(() => pickWeightedBanner(banners));
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (banners.length < 2) return; // nothing else to rotate through
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const interval = setInterval(() => {
+      // A background tab redrawing every 6s costs nothing visible but still burns a timer; skip it.
+      if (document.hidden) return;
+
+      setVisible(false);
+      window.setTimeout(() => {
+        setBanner((current) => {
+          // A plain weighted draw can land on the same campaign twice in a row (expected — that's
+          // what "weighted" means), but a tick where nothing visibly changes reads as broken, not
+          // as "still rotating, just landed on the same one." Redraw once more, excluding the
+          // current pick, so every tick is a visible change.
+          const next = pickWeightedBanner(banners);
+          if (next && current && next.id === current.id) {
+            return pickWeightedBanner(banners.filter((b) => b.id !== current.id)) ?? next;
+          }
+          return next;
+        });
+        setVisible(true);
+      }, FADE_MS);
+    }, ROTATE_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `banners` is a stable server-fetched prop for the lifetime of this page view
+  }, []);
 
   if (!banner || !banner.imageUrl) return null;
 
@@ -28,7 +65,8 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
         href={banner.ctaLink || '#'}
         target="_blank"
         rel="noopener noreferrer sponsored"
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg w-full aspect-[300/250] sm:aspect-[970/250] block"
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg w-full aspect-[300/250] sm:aspect-[970/250] block transition-opacity"
+        style={{ transitionDuration: `${FADE_MS}ms`, opacity: visible ? 1 : 0 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary advertiser-supplied URL, not worth configuring next/image's remote-host allowlist for */}
         <img src={banner.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
