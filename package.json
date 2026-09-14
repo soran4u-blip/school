@@ -11,6 +11,11 @@
     "test:rules": "firebase emulators:exec --only firestore --project eduraq-rules-test \"vitest run src/core/security src/app/api/bookings\"",
     "verify": "npm run lint && tsc --noEmit && npm test"
   },
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "5.10.0"
+    }
+  },
   "dependencies": {
     "clsx": "^2.1.1",
     "firebase": "^12.18.0",
