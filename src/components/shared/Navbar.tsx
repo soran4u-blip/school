@@ -24,6 +24,7 @@ import {
   X,
   LogOut,
   MessageCircle,
+  MessageCircleMore,
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import { useTotalUnreadMessages } from '@/lib/useTotalUnreadMessages';
@@ -41,7 +42,7 @@ export default function Navbar() {
   const pathname = usePathname();
   // Provided by the root layout from one server-side read, rather than fetched here on every
   // page load — see core/context/MasterDataContext.tsx.
-  const { categories, governorates } = useMasterData();
+  const { categories, governorates, systemSettings } = useMasterData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
@@ -100,14 +101,29 @@ export default function Navbar() {
       <div className="hidden lg:block bg-[#0B192C] text-white/80 text-[11px]">
         <div className="max-w-6xl mx-auto px-6 h-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="mailto:support@eduraq.iq" className="flex items-center gap-1.5 hover:text-white transition-colors">
-              <Mail className="w-3 h-3" />
-              support@eduraq.iq
-            </a>
-            <a href="tel:+9647800000000" className="flex items-center gap-1.5 hover:text-white transition-colors" dir="ltr">
-              <Phone className="w-3 h-3" />
-              +964 780 000 0000
-            </a>
+            {systemSettings.contactEmail && (
+              <a href={`mailto:${systemSettings.contactEmail}`} className="flex items-center gap-1.5 hover:text-white transition-colors">
+                <Mail className="w-3 h-3" />
+                {systemSettings.contactEmail}
+              </a>
+            )}
+            {systemSettings.contactPhone && (
+              <a href={`tel:${systemSettings.contactPhone.replace(/\s+/g, '')}`} className="flex items-center gap-1.5 hover:text-white transition-colors" dir="ltr">
+                <Phone className="w-3 h-3" />
+                {systemSettings.contactPhone}
+              </a>
+            )}
+            {systemSettings.contactWhatsApp && (
+              <a
+                href={`https://wa.me/${systemSettings.contactWhatsApp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:text-white transition-colors"
+              >
+                <MessageCircleMore className="w-3 h-3" />
+                {t('واتساب', 'WhatsApp')}
+              </a>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <button onClick={toggleLanguage} className="flex items-center gap-1 hover:text-white transition-colors">

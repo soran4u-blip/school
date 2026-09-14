@@ -79,6 +79,23 @@ export const listingAdminUpdateSchema = z
     message: 'Nothing to update',
   });
 
+// Superadmin edit to the single system_settings/global doc (/api/admin/settings). Every field is
+// optional so the admin settings form can PATCH just the section it changed.
+const localizedStringSchema = z.object({ ar: z.string(), en: z.string() });
+
+export const systemSettingsUpdateSchema = z.object({
+  siteName: localizedStringSchema.optional(),
+  contactEmail: z.string().trim().max(200).optional(),
+  contactPhone: z.string().trim().max(30).optional(),
+  contactWhatsApp: z.string().trim().max(30).optional(),
+  exchangeRateUsdToIqd: z.number().positive().optional(),
+  emergencyAnnouncement: z.object({
+    enabled: z.boolean(),
+    text: localizedStringSchema,
+    level: z.enum(['INFO', 'WARNING', 'ALERT']),
+  }).optional(),
+});
+
 export const admissionDecisionSchema = z.object({
   status: z.enum(['UNDER_REVIEW', 'ACCEPTED', 'WAITLISTED', 'REJECTED']),
   decisionNote: z.string().trim().max(2000).optional(),

@@ -133,9 +133,12 @@ service cloud.firestore {
       allow write: if canEditDirectory();
     }
 
+    // Writes go through /api/admin/settings (Admin SDK) only, not a direct client-SDK write, so a
+    // save can call revalidatePublicData() — Navbar/Footer/HomeContent read this doc through a
+    // cached snapshot, and nothing else was ever telling that cache to drop on an edit.
     match /system_settings/{settingId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if false;
     }
 
     // Homepage quick-search chips. Previously this master-data type lived only in seedData.json

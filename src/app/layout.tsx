@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
 import { MasterDataProvider } from '@/core/context/MasterDataContext';
-import { getPublicCategories, getPublicGovernorates } from '@/core/server/data/masterData';
+import { getPublicCategories, getPublicGovernorates, getPublicSystemSettings } from '@/core/server/data/masterData';
 import ErrorReporter from '@/components/shared/ErrorReporter';
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar';
 
@@ -68,7 +68,11 @@ export default async function RootLayout({
 }>) {
   // Read once here for the whole app: Navbar and Footer both need these on every page and used to
   // fetch them separately from the browser.
-  const [categories, governorates] = await Promise.all([getPublicCategories(), getPublicGovernorates()]);
+  const [categories, governorates, systemSettings] = await Promise.all([
+    getPublicCategories(),
+    getPublicGovernorates(),
+    getPublicSystemSettings(),
+  ]);
 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
@@ -77,7 +81,7 @@ export default async function RootLayout({
         <ErrorReporter />
         <ServiceWorkerRegistrar />
         <LanguageProvider>
-          <MasterDataProvider value={{ categories, governorates }}>
+          <MasterDataProvider value={{ categories, governorates, systemSettings }}>
             {children}
           </MasterDataProvider>
         </LanguageProvider>

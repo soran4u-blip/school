@@ -95,6 +95,7 @@ const ROUTE_PERMISSIONS: Array<[prefix: string, permission: Permission]> = [
   ['/api/admin/audit', 'audit:read'],
   ['/api/admin/analytics', 'analytics:read'],
   ['/api/admin/maintenance', 'settings:write'],
+  ['/api/admin/settings', 'settings:write'],
   ['/api/applications', 'applications:write'],
   ['/api/seed', 'seed:run'],
 ];

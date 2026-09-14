@@ -358,6 +358,21 @@ describe.skipIf(!available)('firestore.rules', () => {
     });
   });
 
+  describe('system_settings', () => {
+    it('cannot be written from a client, even by a superadmin', async () => {
+      // Goes through /api/admin/settings instead, so a save can call revalidatePublicData() —
+      // see the comment on this match block in firestore.rules.
+      await assertFails(setDoc(doc(superadmin(), 'system_settings', 'global'), { contactEmail: 'x@y.z' }, { merge: true }));
+    });
+
+    it('is still world-readable', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'system_settings', 'global'), { contactEmail: 'support@eduraq.iq' });
+      });
+      await assertSucceeds(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'system_settings', 'global')));
+    });
+  });
+
   describe('bookingViews', () => {
     const STUDENT_ID = 'student-1';
     const OTHER_STUDENT_ID = 'student-2';

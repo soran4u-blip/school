@@ -18,6 +18,7 @@ const ACTION_STYLES: Record<AuditAction, string> = {
   'listing.delete': 'bg-rose-50 text-rose-700 border-rose-200',
   'tutor.verification.approve': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'tutor.verification.reject': 'bg-rose-50 text-rose-700 border-rose-200',
+  'settings.update': 'bg-amber-50 text-amber-700 border-amber-200',
   'analytics.recompute': 'bg-slate-100 text-slate-600 border-slate-200',
   'counters.repair': 'bg-slate-100 text-slate-600 border-slate-200',
   'database.seed': 'bg-rose-50 text-rose-700 border-rose-200',

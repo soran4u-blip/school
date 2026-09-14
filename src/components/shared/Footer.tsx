@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
-import { GraduationCap, ShieldCheck, Mail, Phone } from 'lucide-react';
+import { GraduationCap, ShieldCheck, Mail, Phone, MessageCircleMore } from 'lucide-react';
 
 export default function Footer() {
   const { language, t } = useLanguage();
   // Provided by the root layout from one server-side read — see MasterDataContext.
-  const { categories, governorates: allGovernorates } = useMasterData();
+  const { categories, governorates: allGovernorates, systemSettings } = useMasterData();
   const governorates = allGovernorates.slice(0, 8); // Top governorates for footer links
 
   return (
@@ -111,15 +111,30 @@ export default function Footer() {
                   {t('مجتمع الأهالي', 'Community')}
                 </Link>
               </li>
-              <li className="pt-2 text-xs text-slate-400">
-                <div className="flex items-center gap-2 mb-1">
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>support@eduraq.iq</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span dir="ltr">+964 780 000 0000</span>
-                </div>
+              <li className="pt-2 text-xs text-slate-400 space-y-1">
+                {systemSettings.contactEmail && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>{systemSettings.contactEmail}</span>
+                  </div>
+                )}
+                {systemSettings.contactPhone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span dir="ltr">{systemSettings.contactPhone}</span>
+                  </div>
+                )}
+                {systemSettings.contactWhatsApp && (
+                  <a
+                    href={`https://wa.me/${systemSettings.contactWhatsApp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-white transition-colors"
+                  >
+                    <MessageCircleMore className="w-3.5 h-3.5" />
+                    <span>{t('واتساب', 'WhatsApp')}</span>
+                  </a>
+                )}
               </li>
             </ul>
           </div>

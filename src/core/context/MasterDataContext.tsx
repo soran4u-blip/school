@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { Category, Governorate } from '@/core/types/masterData';
+import { Category, Governorate, SystemSettings } from '@/core/types/masterData';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/core/services/settingsService';
 
 // Site chrome (Navbar, Footer) needs the category and governorate lists on every page. Each of
 // them used to fetch both from Firestore in its own useEffect, so a single page load produced two
@@ -15,9 +16,14 @@ import { Category, Governorate } from '@/core/types/masterData';
 export interface MasterData {
   categories: Category[];
   governorates: Governorate[];
+  systemSettings: SystemSettings;
 }
 
-const MasterDataContext = createContext<MasterData>({ categories: [], governorates: [] });
+const MasterDataContext = createContext<MasterData>({
+  categories: [],
+  governorates: [],
+  systemSettings: DEFAULT_SYSTEM_SETTINGS,
+});
 
 export function MasterDataProvider({ value, children }: { value: MasterData; children: React.ReactNode }) {
   return <MasterDataContext.Provider value={value}>{children}</MasterDataContext.Provider>;
