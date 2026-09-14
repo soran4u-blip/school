@@ -270,10 +270,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Inquiries & Leads (Anyone can create inquiry; recipient institution or admin can read/reply)
+    // Inquiries & Leads (Anyone can create inquiry; recipient institution or admin can triage
+    // status — the actual reply happens over the unified messaging/threads system, not on this
+    // doc, so the only field an institution ever legitimately changes here is `status`).
     function isInstitutionUpdatingOwnInquiry() {
       return isOwnerInstitution(resource.data.institutionId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reply']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
     }
 
     match /inquiries/{inquiryId} {

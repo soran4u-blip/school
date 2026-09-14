@@ -170,9 +170,3 @@ export function subscribeToInstitutionInquiries(institutionId: string, cb: (inqu
     );
   });
 }
-
-export async function replyToInquiry(inquiryId: string, text: string): Promise<void> {
-  await updateDoc(doc(db, 'inquiries', inquiryId), {
-    reply: { text, createdAt: new Date().toISOString() },
-  });
-}

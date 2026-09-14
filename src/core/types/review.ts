@@ -31,11 +31,4 @@ export interface Inquiry {
   message: string;
   status: 'NEW' | 'CONTACTED' | 'CLOSED';
   createdAt: string;
-  // A single private reply from the institution, visible to admin (and the institution itself)
-  // — inquiries have no lookup page for the parent yet, so this isn't shown to them in-app;
-  // it's the institution's own record of how they followed up.
-  reply?: {
-    text: string;
-    createdAt: string;
-  };
 }
