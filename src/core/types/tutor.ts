@@ -5,6 +5,19 @@ export interface AvailabilitySlot {
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Sunday
   startTime: string; // 'HH:MM' 24h
   endTime: string; // 'HH:MM' 24h
+  // Opt-in per slot, since a tutor may want group sessions on some slots but stay 1:1 on others
+  // (e.g. a review slot right before an exam). Absent/false means individual-only.
+  allowsGroup?: boolean;
+}
+
+// Shape of tutors/{id}/private/verification — see the note on Tutor.status below for why
+// documents and their review status live off the public tutor doc.
+export interface TutorVerificationRequest {
+  documents: string[];
+  status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  submittedAt?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface Tutor {
@@ -53,7 +66,13 @@ export interface Tutor {
   // an owner to pause/unpause (ACTIVE<->SUSPENDED) without also letting an unapproved tutor
   // walk themselves from PENDING to ACTIVE.
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
-  
+
+  // Mirrors the private verification doc's `status`, kept in sync by /api/tutor/verification/submit
+  // and /api/admin/tutors/[id]/verification/{approve,reject} — a non-sensitive enum (no document
+  // URLs), public on this doc purely so the admin tutors list can filter/display it without an
+  // extra read per tutor. Absent means 'NONE' (never submitted).
+  verificationRequestStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
   ratingAvg: number; // derived, always ratingSum / reviewCount rounded to 1dp
   reviewCount: number;
   // Sum of every approved review's rating — see the note on Institution['metrics'].ratingSum.

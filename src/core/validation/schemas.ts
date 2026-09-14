@@ -55,6 +55,17 @@ export const applicationRejectSchema = z.object({
   rejectionReason: z.string().trim().max(2000).optional(),
 });
 
+// A tutor submitting their own verification documents for review (/api/tutor/verification/submit).
+export const tutorVerificationSubmitSchema = z.object({
+  documents: z.array(z.string().trim().min(1)).min(1).max(10),
+});
+
+// Admin rejecting a tutor's verification request (/api/admin/tutors/[id]/verification/reject).
+// Same shape as applicationRejectSchema but kept separate — the two describe unrelated decisions.
+export const tutorVerificationRejectSchema = z.object({
+  rejectionReason: z.string().trim().max(2000).optional(),
+});
+
 // Admin edits to a listing's trust/visibility fields (/api/admin/listings/[type]/[id]).
 // `.refine` rejects an empty body so a no-op PATCH doesn't write an audit entry saying nothing
 // happened.

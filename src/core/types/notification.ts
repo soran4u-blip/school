@@ -8,6 +8,7 @@ export type NotificationType =
   | 'JOB_APPLICATION'
   | 'INQUIRY'
   | 'REVIEW'
+  | 'VERIFICATION'
   | 'SYSTEM';
 
 export interface NotificationItem {

@@ -54,6 +54,17 @@ export async function POST(request: NextRequest) {
   if ((tutor.unavailableDates || []).includes(date)) {
     return NextResponse.json({ success: false, error: 'Tutor is unavailable on this date' }, { status: 400 });
   }
+  // A tutor opts individual slots into group bookings one at a time (AvailabilitySlot.allowsGroup);
+  // the client hides the "Start group" button accordingly, but the client's request body is not
+  // trusted for this — a slot the tutor never opted in must reject GROUP here too.
+  if (!joinBookingId && type === 'GROUP') {
+    const matchedSlot = (tutor.availability || []).find(
+      (slot) => slot.dayOfWeek === dayOfWeek && startTime >= slot.startTime && endTime <= slot.endTime
+    );
+    if (!matchedSlot?.allowsGroup) {
+      return NextResponse.json({ success: false, error: 'This tutor does not offer group bookings for this time slot' }, { status: 400 });
+    }
+  }
 
   const participant = { studentId, name: student.fullName.slice(0, 100), phone: student.phone.slice(0, 30) };
 
@@ -147,7 +158,13 @@ export async function POST(request: NextRequest) {
       const conflictSnap = await tx.get(conflictQuery);
       const conflict = conflictSnap.docs.some((d) => {
         const b = d.data() as Booking;
-        return b.status !== 'CANCELLED' && (b.type === 'INDIVIDUAL' || bookingType === 'INDIVIDUAL');
+        if (b.status === 'CANCELLED') return false;
+        if (b.type === 'INDIVIDUAL' || bookingType === 'INDIVIDUAL') return true;
+        // Two GROUP bookings should never coexist on the same slot/time — a second student wanting
+        // to book that slot as a group belongs in the existing one via joinBookingId, not a
+        // separate parallel group. Only clash on a group that still has room; a full one leaves
+        // the slot free for a fresh group booking.
+        return b.participants.length < b.maxGroupSize;
       });
       if (conflict) return null;
 

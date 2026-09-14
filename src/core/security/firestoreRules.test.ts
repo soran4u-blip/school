@@ -215,6 +215,30 @@ describe.skipIf(!available)('firestore.rules', () => {
       });
       await assertFails(updateDoc(doc(tutorOwner(), 'tutors', TUTOR_ID), { status: 'ACTIVE' }));
     });
+
+    it('may not grant themselves a verification request status', async () => {
+      await assertFails(updateDoc(doc(tutorOwner(), 'tutors', TUTOR_ID), { verificationRequestStatus: 'APPROVED' }));
+    });
+  });
+
+  describe('tutor verification documents', () => {
+    it('let the owner submit documents for review', async () => {
+      await assertSucceeds(
+        setDoc(doc(tutorOwner(), 'tutors', TUTOR_ID, 'private', 'verification'), { documents: ['https://x/id.png'], status: 'PENDING' })
+      );
+    });
+
+    it('do not let the owner approve their own request', async () => {
+      await assertFails(
+        setDoc(doc(tutorOwner(), 'tutors', TUTOR_ID, 'private', 'verification'), { documents: ['https://x/id.png'], status: 'APPROVED' })
+      );
+    });
+
+    it('let an editor approve a request', async () => {
+      await assertSucceeds(
+        setDoc(doc(editor(), 'tutors', TUTOR_ID, 'private', 'verification'), { documents: ['https://x/id.png'], status: 'APPROVED', reviewedAt: new Date().toISOString() })
+      );
+    });
   });
 
   describe('jobs', () => {

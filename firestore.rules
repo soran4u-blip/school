@@ -176,7 +176,7 @@ service cloud.firestore {
       allow create: if canEditDirectory();
       allow update: if canEditDirectory() || (
         ownsTutorDoc(tutorId)
-        && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'ratingAvg', 'reviewCount', 'createdAt'])
+        && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'verificationRequestStatus', 'ratingAvg', 'reviewCount', 'createdAt'])
         && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
       );
       allow delete: if canEditDirectory() || ownsTutorDoc(tutorId);
@@ -186,8 +186,17 @@ service cloud.firestore {
       // is world-readable the moment status is 'ACTIVE'. Storage download-URL tokens also
       // bypass storage.rules on a direct fetch, so keeping these URLs off the public doc is
       // the only real privacy boundary for identity documents.
+      //
+      // The owner may still write `documents` directly (their own upload widget), but may only
+      // ever leave `status` at 'NONE' or 'PENDING' — actually submitting for review and every
+      // review decision goes through /api/tutor/verification/submit and
+      // /api/admin/tutors/[id]/verification/{approve,reject} (Admin SDK, bypasses this rule
+      // entirely), so an owner can never write themselves straight to APPROVED.
       match /private/{docId} {
-        allow read, write: if canEditDirectory() || isOwnerTutor(tutorId);
+        allow read: if canEditDirectory() || isOwnerTutor(tutorId);
+        allow write: if canEditDirectory() || (
+          isOwnerTutor(tutorId) && request.resource.data.get('status', 'NONE') in ['NONE', 'PENDING']
+        );
       }
 
       // Web push subscriptions — Admin SDK only (/api/push/subscribe, /api/push/unsubscribe),

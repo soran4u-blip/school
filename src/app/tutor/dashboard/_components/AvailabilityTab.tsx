@@ -121,6 +121,14 @@ export default function AvailabilityTab({
                               onChange={(e) => updateSlot(idx, { endTime: e.target.value })}
                               className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
                             />
+                            <label className="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!!slot.allowsGroup}
+                                onChange={(e) => updateSlot(idx, { allowsGroup: e.target.checked })}
+                              />
+                              <span>{t('السماح بالحجز الجماعي', 'Allow group booking')}</span>
+                            </label>
                             <button onClick={() => removeSlot(idx)} className="p-1.5 text-slate-400 hover:text-rose-600">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

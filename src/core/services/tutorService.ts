@@ -1,4 +1,4 @@
-import { Tutor } from '../types/tutor';
+import { Tutor, TutorVerificationRequest } from '../types/tutor';
 import { db } from '../firebase/config';
 import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 
@@ -102,11 +102,26 @@ export async function deleteTutor(id: string): Promise<void> {
 
 // Verification documents live in a private subcollection, not on the tutor doc itself —
 // that doc is world-readable once status is 'ACTIVE', which would leak these otherwise.
-export async function getTutorVerificationDocuments(tutorId: string): Promise<string[]> {
+// Reads the full request (documents + review status), not just the document list — used by both
+// the tutor's own dashboard and the admin verification queue (canEditDirectory() can read this
+// doc directly per firestore.rules).
+export async function getTutorVerificationRequest(tutorId: string): Promise<TutorVerificationRequest> {
   const snap = await getDoc(doc(db, COLLECTION, tutorId, 'private', 'verification'));
-  return snap.exists() ? (snap.data().documents as string[]) || [] : [];
+  if (!snap.exists()) return { documents: [], status: 'NONE' };
+  const data = snap.data();
+  return {
+    documents: (data.documents as string[]) || [],
+    status: (data.status as TutorVerificationRequest['status']) || 'NONE',
+    submittedAt: data.submittedAt as string | undefined,
+    reviewedAt: data.reviewedAt as string | undefined,
+    rejectionReason: data.rejectionReason as string | undefined,
+  };
 }
 
+// Saves just the document list, from the dashboard's document-upload widget. `merge: true` is
+// load-bearing: without it this would blow away the `status`/`reviewedAt`/`rejectionReason`
+// fields that the submit/approve/reject routes set on the same doc every time the tutor clicks
+// "Save Changes".
 export async function saveTutorVerificationDocuments(tutorId: string, documents: string[]): Promise<void> {
-  await setDoc(doc(db, COLLECTION, tutorId, 'private', 'verification'), { documents });
+  await setDoc(doc(db, COLLECTION, tutorId, 'private', 'verification'), { documents }, { merge: true });
 }

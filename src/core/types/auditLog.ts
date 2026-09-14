@@ -15,6 +15,8 @@ export type AuditAction =
   | 'listing.verify'
   | 'listing.feature'
   | 'listing.delete'
+  | 'tutor.verification.approve'
+  | 'tutor.verification.reject'
   | 'analytics.recompute'
   | 'counters.repair'
   | 'database.seed'

@@ -10,7 +10,8 @@ import BilingualTextField from '@/components/shared/BilingualTextField';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
 import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
 import { getTutorCompleteness } from '@/lib/utils';
-import { Save, ShieldCheck, UserCog } from 'lucide-react';
+import { TutorVerificationRequest } from '@/core/types/tutor';
+import { Save, ShieldCheck, ShieldQuestion, UserCog } from 'lucide-react';
 
 // The tutor dashboard's Profile tab: personal details form, verification documents, and the
 // shared account-management footer (publish/pause, change password, danger zone).
@@ -22,6 +23,10 @@ export default function ProfileTab({
   studentLevels,
   verificationDocuments,
   setVerificationDocuments,
+  verificationStatus,
+  verificationRejectionReason,
+  submittingVerification,
+  onSubmitVerification,
   handleSave,
   saving,
 
@@ -47,6 +52,10 @@ export default function ProfileTab({
   studentLevels: TaxonomyItem[];
   verificationDocuments: string[];
   setVerificationDocuments: (urls: string[]) => void;
+  verificationStatus: TutorVerificationRequest['status'];
+  verificationRejectionReason?: string;
+  submittingVerification: boolean;
+  onSubmitVerification: () => void;
   handleSave: () => void;
   saving: boolean;
 
@@ -228,6 +237,39 @@ export default function ProfileTab({
           onChange={setVerificationDocuments}
           pathPrefix={`tutors/${tutor.id}/verification`}
         />
+
+        {verificationStatus === 'PENDING' && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+            <ShieldQuestion className="w-4 h-4 shrink-0" />
+            <span>{t('طلبك قيد المراجعة من قبل الإدارة. سنعلمك فور اتخاذ قرار.', "Your request is awaiting admin review. We'll notify you once a decision is made.")}</span>
+          </div>
+        )}
+        {verificationStatus === 'APPROVED' && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span>{t('تم توثيق ملفك. شكراً لك!', 'Your profile is verified. Thank you!')}</span>
+          </div>
+        )}
+        {verificationStatus === 'REJECTED' && (
+          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold space-y-1">
+            <span>{t('لم تتم الموافقة على طلبك السابق.', 'Your previous request was not approved.')}</span>
+            {verificationRejectionReason && <p className="font-normal">{verificationRejectionReason}</p>}
+          </div>
+        )}
+
+        {(verificationStatus === 'NONE' || verificationStatus === 'REJECTED') && (
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={onSubmitVerification}
+              disabled={verificationDocuments.length === 0 || submittingVerification}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold disabled:opacity-50"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{submittingVerification ? t('جاري الإرسال...', 'Submitting...') : t('إرسال للمراجعة', 'Submit for Review')}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end">

@@ -407,26 +407,33 @@ export default function TutorProfile({
         </div>
 
         {/* Pricing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5" />
+        {(() => {
+          const offersGroup = tutor.availability.some((s) => s.allowsGroup);
+          return (
+            <div className={`grid grid-cols-1 ${offersGroup ? 'sm:grid-cols-2' : ''} gap-4 mb-6`}>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('جلسة فردية', 'Individual Session')}</span>
+                  <span className="font-extrabold text-sm text-slate-900">{tutor.hourlyRate.iqd.toLocaleString()} {t('د.ع.', 'IQD')}</span>
+                </div>
+              </div>
+              {offersGroup && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-400 font-bold uppercase">{t(`جلسة جماعية (حتى ${tutor.groupMaxSize} طلاب)`, `Group Session (up to ${tutor.groupMaxSize})`)}</span>
+                    <span className="font-extrabold text-sm text-slate-900">{tutor.groupRate.iqd.toLocaleString()} {t('د.ع. إجمالاً — يُقسّم على عدد الطلاب', 'IQD total — split across students')}</span>
+                  </div>
+                </div>
+              )}
             </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('جلسة فردية', 'Individual Session')}</span>
-              <span className="font-extrabold text-sm text-slate-900">{tutor.hourlyRate.iqd.toLocaleString()} {t('د.ع.', 'IQD')}</span>
-            </div>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t(`جلسة جماعية (حتى ${tutor.groupMaxSize} طلاب)`, `Group Session (up to ${tutor.groupMaxSize})`)}</span>
-              <span className="font-extrabold text-sm text-slate-900">{tutor.groupRate.iqd.toLocaleString()} {t('د.ع. إجمالاً — يُقسّم على عدد الطلاب', 'IQD total — split across students')}</span>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Availability Calendar */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
@@ -464,12 +471,14 @@ export default function TutorProfile({
                               >
                                 {t(`فردي · ${tutor.hourlyRate.iqd.toLocaleString()} د.ع.`, `Individual · ${tutor.hourlyRate.iqd.toLocaleString()} IQD`)}
                               </button>
-                              <button
-                                onClick={() => openBooking(daySlot, 'GROUP')}
-                                className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
-                              >
-                                {t(`بدء مجموعة · ${tutor.groupRate.iqd.toLocaleString()} د.ع.`, `Start group · ${tutor.groupRate.iqd.toLocaleString()} IQD total`)}
-                              </button>
+                              {slot.allowsGroup && (
+                                <button
+                                  onClick={() => openBooking(daySlot, 'GROUP')}
+                                  className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
+                                >
+                                  {t(`بدء مجموعة · ${tutor.groupRate.iqd.toLocaleString()} د.ع.`, `Start group · ${tutor.groupRate.iqd.toLocaleString()} IQD total`)}
+                                </button>
+                              )}
                             </div>
                           );
                         }

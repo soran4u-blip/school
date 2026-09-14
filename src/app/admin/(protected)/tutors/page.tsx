@@ -4,15 +4,101 @@ import React, { useState } from 'react';
 import Thumbnail from '@/components/shared/Thumbnail';
 import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { getTutors } from '@/core/services/tutorService';
+import { getTutors, getTutorVerificationRequest } from '@/core/services/tutorService';
 import { updateListing, deleteListing } from '@/core/services/adminListingService';
+import { approveTutorVerification, rejectTutorVerification } from '@/core/services/tutorVerificationService';
 import { getGovernorates } from '@/core/services/masterDataService';
-import { Tutor } from '@/core/types/tutor';
+import { Tutor, TutorVerificationRequest } from '@/core/types/tutor';
 import { Governorate } from '@/core/types/masterData';
-import { UserCheck, ShieldCheck, ShieldQuestion, Star, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
+import { UserCheck, ShieldCheck, ShieldQuestion, Star, MessageSquare, Plus, Edit, Trash2, FileText, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrencyIQD } from '@/lib/utils';
 import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
+
+// One row of the verification queue below: the tutor plus their submitted documents, fetched
+// lazily since the documents live in a private subcollection the main tutor list doesn't read.
+function VerificationRequestRow({ tutor, onDecided }: { tutor: Tutor; onDecided: () => void }) {
+  const { language, t } = useLanguage();
+  const [request, setRequest] = useState<TutorVerificationRequest | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useLoadOnMount(async () => {
+    setRequest(await getTutorVerificationRequest(tutor.id));
+  });
+
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+      onDecided();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="p-4 border border-amber-200 bg-amber-50/50 rounded-xl space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Thumbnail src={tutor.photoUrl} alt={tutor.fullName.en} width={36} height={36} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
+          <div>
+            <div className="font-bold text-slate-900 text-xs">{language === 'en' ? tutor.fullName.en : tutor.fullName.ar}</div>
+            <div className="text-[11px] text-slate-500">{language === 'en' ? tutor.title.en : tutor.title.ar}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => run(() => approveTutorVerification(tutor.id))}
+            disabled={busy}
+            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold disabled:opacity-50"
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>{t('موافقة', 'Approve')}</span>
+          </button>
+          <button
+            onClick={() => run(() => rejectTutorVerification(tutor.id, rejectionReason || undefined))}
+            disabled={busy}
+            className="flex items-center gap-1 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold disabled:opacity-50"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>{t('رفض', 'Reject')}</span>
+          </button>
+        </div>
+      </div>
+
+      {request && request.documents.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {request.documents.map((url) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:text-blue-700"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{t('عرض الوثيقة', 'View document')}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      <input
+        type="text"
+        value={rejectionReason}
+        onChange={(e) => setRejectionReason(e.target.value)}
+        placeholder={t('سبب الرفض (اختياري)', 'Rejection reason (optional)')}
+        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+      />
+      {error && <p className="text-[11px] font-bold text-rose-700">{error}</p>}
+    </div>
+  );
+}
 
 export default function AdminTutorsPage() {
   const { language, t } = useLanguage();
@@ -30,6 +116,8 @@ export default function AdminTutorsPage() {
   };
 
   useLoadOnMount(loadData);
+
+  const pendingVerification = tutors.filter((tutor) => tutor.verificationRequestStatus === 'PENDING');
 
   // These go through /api/admin/listings so they land in the audit trail.
   const run = async (action: () => Promise<void>) => {
@@ -85,6 +173,21 @@ export default function AdminTutorsPage() {
 
       {error && (
         <div className="p-4 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">{error}</div>
+      )}
+
+      {pendingVerification.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <ShieldQuestion className="w-4 h-4 text-amber-600" />
+            <span>{t('طلبات التوثيق قيد الانتظار', 'Pending Verification Requests')}</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">{pendingVerification.length}</span>
+          </h2>
+          <div className="space-y-2">
+            {pendingVerification.map((tutor) => (
+              <VerificationRequestRow key={tutor.id} tutor={tutor} onDecided={loadData} />
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">

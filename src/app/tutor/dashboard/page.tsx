@@ -11,12 +11,13 @@ import AvailabilityTab from './_components/AvailabilityTab';
 import BookingsTab from './_components/BookingsTab';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import { useMessageThreads } from '@/lib/useMessageThreads';
-import { getTutorById, saveTutor, getTutorVerificationDocuments, saveTutorVerificationDocuments, deleteTutor } from '@/core/services/tutorService';
+import { getTutorById, saveTutor, getTutorVerificationRequest, saveTutorVerificationDocuments, deleteTutor } from '@/core/services/tutorService';
+import { submitTutorVerification } from '@/core/services/tutorVerificationService';
 import { subscribeToTutorBookings } from '@/core/services/bookingService';
 import { subscribeToTutorThreads } from '@/core/services/messagingService';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
 import { getApprovedTutorReviews } from '@/core/services/reviewService';
-import { Tutor, AvailabilitySlot } from '@/core/types/tutor';
+import { Tutor, AvailabilitySlot, TutorVerificationRequest } from '@/core/types/tutor';
 import { Booking } from '@/core/types/booking';
 import { ThreadMessage, Thread } from '@/core/types/message';
 import { Review } from '@/core/types/review';
@@ -50,6 +51,9 @@ export default function TutorDashboardPage() {
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [newBlockedDate, setNewBlockedDate] = useState('');
   const [verificationDocuments, setVerificationDocuments] = useState<string[]>([]);
+  const [verificationStatus, setVerificationStatus] = useState<TutorVerificationRequest['status']>('NONE');
+  const [verificationRejectionReason, setVerificationRejectionReason] = useState<string | undefined>();
+  const [submittingVerification, setSubmittingVerification] = useState(false);
   const [threadsByBooking, setThreadsByBooking] = useState<Record<string, Thread>>({});
   const hasChosenInitialTab = useRef(false);
 
@@ -74,7 +78,7 @@ export default function TutorDashboardPage() {
           getTaxonomies('SUBJECT', false),
           getTaxonomies('STUDENT_LEVEL', false),
           getApprovedTutorReviews(id),
-          getTutorVerificationDocuments(id),
+          getTutorVerificationRequest(id),
         ]);
         setTutor(tutorDoc);
         setAvailability(tutorDoc?.availability || []);
@@ -83,7 +87,9 @@ export default function TutorDashboardPage() {
         setSubjects(subs);
         setStudentLevels(levels);
         setReviews(tutorReviews);
-        setVerificationDocuments(verifDocs);
+        setVerificationDocuments(verifDocs.documents);
+        setVerificationStatus(verifDocs.status);
+        setVerificationRejectionReason(verifDocs.rejectionReason);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -163,6 +169,21 @@ export default function TutorDashboardPage() {
       setMessage({ text: t('تعذر حفظ التغييرات', 'Failed to save changes'), type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmitVerification = async () => {
+    if (verificationDocuments.length === 0) return;
+    setSubmittingVerification(true);
+    try {
+      await submitTutorVerification(verificationDocuments);
+      setVerificationStatus('PENDING');
+      setVerificationRejectionReason(undefined);
+      setMessage({ text: t('تم إرسال طلب التوثيق للمراجعة', 'Verification request submitted for review'), type: 'success' });
+    } catch {
+      setMessage({ text: t('تعذر إرسال طلب التوثيق', 'Could not submit the verification request'), type: 'error' });
+    } finally {
+      setSubmittingVerification(false);
     }
   };
 
@@ -391,6 +412,10 @@ export default function TutorDashboardPage() {
           studentLevels={studentLevels}
           verificationDocuments={verificationDocuments}
           setVerificationDocuments={setVerificationDocuments}
+          verificationStatus={verificationStatus}
+          verificationRejectionReason={verificationRejectionReason}
+          submittingVerification={submittingVerification}
+          onSubmitVerification={handleSubmitVerification}
           handleSave={handleSave}
           saving={saving}
           currentPassword={currentPassword}

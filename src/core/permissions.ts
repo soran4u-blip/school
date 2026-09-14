@@ -89,6 +89,7 @@ const ROUTE_PERMISSIONS: Array<[prefix: string, permission: Permission]> = [
   ['/admin/analytics', 'analytics:read'],
   // API equivalents, for the routes a scoped role could otherwise call directly.
   ['/api/admin/listings', 'directory:write'],
+  ['/api/admin/tutors', 'directory:write'],
   ['/api/admin/applications', 'applications:write'],
   ['/api/admin/reviews', 'reviews:write'],
   ['/api/admin/audit', 'audit:read'],

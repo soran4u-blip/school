@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getTaxonomies } from '@/core/services/masterDataService';
-import { getTutorById, getTutorVerificationDocuments, saveTutor } from '@/core/services/tutorService';
+import { getTutorById, getTutorVerificationRequest, saveTutor } from '@/core/services/tutorService';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { UserCheck, Save, AlertCircle, ArrowRight } from 'lucide-react';
@@ -62,12 +62,12 @@ function TutorForm() {
       setStudentLevels(levels);
 
       if (editId) {
-        const [existing, docs] = await Promise.all([
+        const [existing, verification] = await Promise.all([
           getTutorById(editId),
-          getTutorVerificationDocuments(editId),
+          getTutorVerificationRequest(editId),
         ]);
         if (existing) setForm(existing);
-        setVerificationDocuments(docs);
+        setVerificationDocuments(verification.documents);
       }
     }
     load();
