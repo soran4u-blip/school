@@ -2,13 +2,19 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
 import { Governorate, Category, QuickSearchTag, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
-import { Search, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, MapPin, ArrowRight } from 'lucide-react';
+
+// Students studying together — replaces the previous flat navy hero background. The dark gradient
+// overlay below keeps the headline/search bar exactly as legible as they were against the solid
+// color; only the ground behind them changed.
+const HERO_IMAGE_URL = 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80';
 
 // The homepage's hero section: the headline, the OmniSearch bar (keyword + category +
 // governorate), and the popular-search quick tags. The parent owns the search field state and
@@ -48,16 +54,23 @@ export default function HeroSearchSection({
 
   return (
     <section className="relative bg-[#0B192C] text-white pt-20 pb-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      {/* Photo background + the same-strength navy gradient the flat color used to be, so the
+          headline/search bar read exactly as they did before — only the ground changed. */}
+      <Image
+        src={HERO_IMAGE_URL}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[center_30%]"
+      />
+      <div className="absolute inset-0 bg-linear-to-b from-[#0B192C]/88 via-[#0B192C]/80 to-[#0B192C]/93"></div>
+
       {/* Subtle geometric background patterns */}
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F1C40F_1px,transparent_1px)] [background-size:24px_24px]"></div>
       <div className="absolute top-0 end-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="relative max-w-5xl mx-auto text-center space-y-6">
-        <div className="inline-flex items-center gap-2 bg-[#1E3E62]/80 border border-slate-700/80 px-4 py-1.5 rounded-full text-xs font-bold text-amber-300 backdrop-blur-md">
-          <Sparkles className="w-3.5 h-3.5 text-[#F1C40F]" />
-          <span>{t('منصة العراق لاكتشاف التعليم واتخاذ القرار', 'Iraq\'s Education Discovery & Decision Platform')}</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
           {t(
             'اكتشف الخيار الأنسب... واتخذ القرار الصحيح',
