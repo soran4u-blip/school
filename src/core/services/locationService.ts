@@ -1,6 +1,7 @@
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Governorate, City } from '../types/masterData';
+import { revalidateMasterDataCache } from './cacheRevalidation';
 
 // Governorates and their city subcollections. Master data: tiny (≈18 governorates, a few dozen
 // cities per governorate), public-read, superadmin-write.
@@ -31,6 +32,7 @@ export async function getGovernorateById(id: string): Promise<Governorate | null
 
 export async function saveGovernorate(gov: Governorate): Promise<Governorate> {
   await setDoc(doc(db, GOVERNORATES, gov.id), gov, { merge: true });
+  await revalidateMasterDataCache();
   return gov;
 }
 
@@ -40,6 +42,7 @@ export async function deleteGovernorate(id: string): Promise<void> {
   const cities = await getDocs(collection(db, GOVERNORATES, id, CITIES));
   await Promise.all(cities.docs.map((c) => deleteDoc(c.ref)));
   await deleteDoc(doc(db, GOVERNORATES, id));
+  await revalidateMasterDataCache();
 }
 
 export async function getCities(governorateId: string, activeOnly = true): Promise<City[]> {
@@ -50,9 +53,11 @@ export async function getCities(governorateId: string, activeOnly = true): Promi
 
 export async function saveCity(city: City): Promise<City> {
   await setDoc(doc(db, GOVERNORATES, city.governorateId, CITIES, city.id), city, { merge: true });
+  await revalidateMasterDataCache();
   return city;
 }
 
 export async function deleteCity(governorateId: string, cityId: string): Promise<void> {
   await deleteDoc(doc(db, GOVERNORATES, governorateId, CITIES, cityId));
+  await revalidateMasterDataCache();
 }

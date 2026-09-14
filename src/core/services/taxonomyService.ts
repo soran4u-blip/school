@@ -1,6 +1,7 @@
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { TaxonomyItem, TaxonomyType, QuickSearchTag } from '../types/masterData';
+import { revalidateMasterDataCache } from './cacheRevalidation';
 
 // Cross-cutting taxonomy items (accreditations, curricula, subjects, degree/student levels,
 // facilities) plus the homepage quick-search tags. Same in-memory-filter reasoning as
@@ -24,11 +25,13 @@ export async function getTaxonomies(type?: TaxonomyType | string, activeOnly = t
 
 export async function saveTaxonomy(item: TaxonomyItem): Promise<TaxonomyItem> {
   await setDoc(doc(db, TAXONOMIES, item.id), item, { merge: true });
+  await revalidateMasterDataCache();
   return item;
 }
 
 export async function deleteTaxonomy(id: string): Promise<void> {
   await deleteDoc(doc(db, TAXONOMIES, id));
+  await revalidateMasterDataCache();
 }
 
 export async function getQuickSearchTags(activeOnly = true): Promise<QuickSearchTag[]> {
@@ -39,9 +42,11 @@ export async function getQuickSearchTags(activeOnly = true): Promise<QuickSearch
 
 export async function saveQuickSearchTag(tag: QuickSearchTag): Promise<QuickSearchTag> {
   await setDoc(doc(db, QUICK_SEARCH_TAGS, tag.id), tag, { merge: true });
+  await revalidateMasterDataCache();
   return tag;
 }
 
 export async function deleteQuickSearchTag(id: string): Promise<void> {
   await deleteDoc(doc(db, QUICK_SEARCH_TAGS, id));
+  await revalidateMasterDataCache();
 }

@@ -27,8 +27,8 @@ export default function AdminSettingsPage() {
     try {
       await updateSystemSettings(settings);
       setMessage({ text: t('تم حفظ إعدادات النظام بنجاح وتطبيقها فورياً', 'System settings saved successfully'), type: 'success' });
-    } catch {
-      setMessage({ text: t('تعذر حفظ الإعدادات', 'Could not save settings'), type: 'error' });
+    } catch (e) {
+      setMessage({ text: e instanceof Error ? e.message : t('تعذر حفظ الإعدادات', 'Could not save settings'), type: 'error' });
     }
   };
 
