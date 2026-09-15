@@ -23,6 +23,7 @@ export default function Thumbnail({
   sizes,
   fill = false,
   priority = false,
+  objectPosition,
 }: {
   src: string | undefined | null;
   alt: string;
@@ -33,6 +34,9 @@ export default function Thumbnail({
   sizes?: string;
   fill?: boolean;
   priority?: boolean;
+  // CSS object-position, e.g. '30% 20%' — for a subject-provided focal point on a cropped
+  // (object-cover) thumbnail. Only meaningful alongside object-cover in `className`.
+  objectPosition?: string;
 }) {
   if (!src) {
     return (
@@ -46,8 +50,10 @@ export default function Thumbnail({
     );
   }
 
+  const style = objectPosition ? { objectPosition } : undefined;
+
   if (fill) {
-    return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={className} />;
+    return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={className} style={style} />;
   }
 
   return (
@@ -59,6 +65,7 @@ export default function Thumbnail({
       sizes={sizes}
       priority={priority}
       className={className}
+      style={style}
     />
   );
 }

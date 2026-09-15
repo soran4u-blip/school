@@ -5,6 +5,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Tutor } from '@/core/types/tutor';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
+import PhotoFocalPointPicker from '@/components/shared/PhotoFocalPointPicker';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
 import BilingualTextField from '@/components/shared/BilingualTextField';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
@@ -88,10 +89,24 @@ export default function ProfileTab({
           <ImageUploadField
             label={t('الصورة الشخصية', 'Photo')}
             value={tutor.photoUrl || ''}
-            onChange={(url) => setTutor({ ...tutor, photoUrl: url })}
+            onChange={(url) => {
+              // Firestore rejects an explicit `undefined` field value, so drop the stale focal
+              // point (it belonged to the old photo) rather than setting the key to undefined.
+              const next: Tutor = { ...tutor, photoUrl: url };
+              delete next.photoFocalPoint;
+              setTutor(next);
+            }}
             pathPrefix={`tutors/${tutor.id}`}
           />
         </div>
+
+        {tutor.photoUrl && (
+          <PhotoFocalPointPicker
+            photoUrl={tutor.photoUrl}
+            focalPoint={tutor.photoFocalPoint}
+            onChange={(point) => setTutor({ ...tutor, photoFocalPoint: point })}
+          />
+        )}
 
         <BilingualTextField
           labelAr={t('الاسم الكامل بالعربية', 'Full Name (Arabic)')}

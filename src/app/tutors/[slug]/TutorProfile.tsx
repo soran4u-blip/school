@@ -284,6 +284,7 @@ export default function TutorProfile({
             width={96}
             height={96}
             className="w-24 h-24 rounded-2xl object-cover border border-slate-200 shrink-0"
+            objectPosition={tutor.photoFocalPoint ? `${tutor.photoFocalPoint.x}% ${tutor.photoFocalPoint.y}%` : undefined}
           />
           <div className="flex-1 space-y-1.5">
             <h1 className="text-xl font-extrabold text-[#0B192C]">{language === 'en' ? tutor.fullName.en : tutor.fullName.ar}</h1>

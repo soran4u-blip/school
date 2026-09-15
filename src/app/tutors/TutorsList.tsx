@@ -257,6 +257,7 @@ export default function TutorsList({
                     width={64}
                     height={64}
                     className="w-16 h-16 rounded-xl object-cover border border-slate-200 shrink-0"
+                    objectPosition={tutor.photoFocalPoint ? `${tutor.photoFocalPoint.x}% ${tutor.photoFocalPoint.y}%` : undefined}
                   />
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">

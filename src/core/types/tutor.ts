@@ -28,6 +28,9 @@ export interface Tutor {
   title: LocalizedString; // e.g. 'Senior Baccalaureate Physics Instructor / أستاذ الفيزياء للفرع العلمي'
   bio: LocalizedString;
   photoUrl: string;
+  // Where a cropped square/avatar view of photoUrl should center, as percentages of the full
+  // image (matches CSS object-position). Unset means the default center crop.
+  photoFocalPoint?: { x: number; y: number };
 
   governorateId: string;
   cityId?: string;
