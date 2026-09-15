@@ -49,12 +49,12 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
               key={tutor.id}
               className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_26px_-24px_rgba(15,23,42,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_20px_35px_-24px_rgba(15,23,42,0.68)]"
             >
-              <Link href={profileHref} className="relative block aspect-[4/5] overflow-hidden bg-slate-100">
+              <Link href={profileHref} className="relative block aspect-square overflow-hidden bg-slate-100">
                 <Thumbnail
                   src={tutor.photoUrl}
                   alt={name}
                   width={400}
-                  height={500}
+                  height={400}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <span className="absolute start-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[11px] font-extrabold text-amber-800 backdrop-blur">
