@@ -18,12 +18,14 @@ import {
 } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
+import { EduEvent } from '@/core/types/event';
 import { Megaphone } from 'lucide-react';
 import HeroSearchSection from './_components/HeroSearchSection';
 import CategoriesGrid from './_components/CategoriesGrid';
 import FeaturedInstitutionsSection from './_components/FeaturedInstitutionsSection';
 import GovernoratesExplorer from './_components/GovernoratesExplorer';
 import FeaturedTutorsSection from './_components/FeaturedTutorsSection';
+import UpcomingEventsSection from './_components/UpcomingEventsSection';
 
 // The banner it picks is decided by Math.random() — server-rendering that content would have the
 // server's random pick baked into the HTML, but hydration re-runs the same random draw on the
@@ -43,6 +45,7 @@ export default function HomeContent({
   subjects,
   settings,
   banners,
+  upcomingEvents,
 }: {
   categories: Category[];
   governorates: Governorate[];
@@ -52,6 +55,7 @@ export default function HomeContent({
   subjects: TaxonomyItem[];
   settings: SystemSettings;
   banners: CMSBanner[];
+  upcomingEvents: EduEvent[];
 }) {
   const { language, t } = useLanguage();
   const router = useRouter();
@@ -120,6 +124,8 @@ export default function HomeContent({
       <GovernoratesExplorer governorates={governorates} />
 
       <FeaturedTutorsSection featuredTutors={featuredTutors} />
+
+      <UpcomingEventsSection events={upcomingEvents} />
 
       {/* Dual CTA Banner */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">

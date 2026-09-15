@@ -9,18 +9,21 @@ import OwnerReviewsPanel from '@/components/shared/OwnerReviewsPanel';
 import ProfileTab from './_components/ProfileTab';
 import ProgramsTab from './_components/ProgramsTab';
 import JobsTab from './_components/JobsTab';
+import EventsManager, { DraftEvent } from '@/components/shared/EventsManager';
 import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
 import { useMessageThreads } from '@/lib/useMessageThreads';
 import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutionById, saveInstitution, deleteInstitution, getInstitutionVerificationDocuments, saveInstitutionVerificationDocuments } from '@/core/services/institutionService';
 import { subscribeToInstitutionInquiries, updateInquiryStatus, getApprovedReviews } from '@/core/services/reviewService';
 import { getInstitutionJobs, getInstitutionJobApplications, updateJob, createJob } from '@/core/services/jobService';
+import { getInstitutionEvents, createEvent, updateEvent } from '@/core/services/eventService';
 import { getInstitutionAdmissionApplications } from '@/core/services/admissionService';
 import { sendInstitutionMessage, subscribeToInstitutionThreads } from '@/core/services/messagingService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Inquiry, Review } from '@/core/types/review';
 import { Thread } from '@/core/types/message';
 import { Job } from '@/core/types/job';
+import { EduEvent } from '@/core/types/event';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
@@ -34,6 +37,19 @@ function emptyJob(institutionId: string): Omit<Job, 'id' | 'createdAt' | 'update
     employmentType: 'FULL_TIME',
     governorateId: '',
     isRemote: false,
+    status: 'DRAFT',
+  };
+}
+
+function emptyEvent(institutionId: string): Omit<EduEvent, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    institutionId,
+    title: { ar: '', en: '' },
+    description: { ar: '', en: '' },
+    eventType: 'OPEN_HOUSE',
+    governorateId: '',
+    isOnline: false,
+    startDate: '',
     status: 'DRAFT',
   };
 }
@@ -56,7 +72,7 @@ function emptyProgram(): InstitutionProgram {
 export default function InstitutionDashboardPage() {
   const router = useRouter();
   const { language, t } = useLanguage();
-  const [tab, setTab] = useState<'profile' | 'programs' | 'jobs' | 'inquiries' | 'reviews'>('profile');
+  const [tab, setTab] = useState<'profile' | 'programs' | 'jobs' | 'events' | 'inquiries' | 'reviews'>('profile');
   const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [threadsByInquiry, setThreadsByInquiry] = useState<Record<string, Thread>>({});
@@ -73,6 +89,9 @@ export default function InstitutionDashboardPage() {
   const [admissionApplicationCounts, setAdmissionApplicationCounts] = useState<Record<string, number>>({});
   const [editingJob, setEditingJob] = useState<Job | Omit<Job, 'id' | 'createdAt' | 'updatedAt'> | null>(null);
   const [savingJob, setSavingJob] = useState(false);
+  const [events, setEvents] = useState<EduEvent[]>([]);
+  const [editingEvent, setEditingEvent] = useState<DraftEvent | null>(null);
+  const [savingEvent, setSavingEvent] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +121,7 @@ export default function InstitutionDashboardPage() {
         if (!id) return;
         setInstitutionId(id);
         // Inquiries are not fetched here — they arrive through the live subscription below.
-        const [inst, govs, cats, taxes, instReviews, verifDocs, instJobs, instApplications, instAdmissionApplications] = await Promise.all([
+        const [inst, govs, cats, taxes, instReviews, verifDocs, instJobs, instApplications, instAdmissionApplications, instEvents] = await Promise.all([
           getInstitutionById(id),
           getGovernorates(false),
           getCategories(false),
@@ -112,6 +131,7 @@ export default function InstitutionDashboardPage() {
           getInstitutionJobs(id),
           getInstitutionJobApplications(id),
           getInstitutionAdmissionApplications(id),
+          getInstitutionEvents(id),
         ]);
         setInstitution(inst);
         setFacilitiesText((inst?.facilities || []).join(', '));
@@ -131,6 +151,7 @@ export default function InstitutionDashboardPage() {
           admissionCounts[app.programId] = (admissionCounts[app.programId] || 0) + 1;
         }
         setAdmissionApplicationCounts(admissionCounts);
+        setEvents(instEvents);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -267,6 +288,35 @@ export default function InstitutionDashboardPage() {
   const handleJobStatus = async (jobId: string, status: Job['status']) => {
     await updateJob(jobId, { status });
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status } : j)));
+  };
+
+  const handleSaveEvent = async () => {
+    if (!editingEvent || !institution) return;
+    setSavingEvent(true);
+    try {
+      if ('id' in editingEvent) {
+        await updateEvent(editingEvent.id, editingEvent);
+        setEvents((prev) => prev.map((ev) => (ev.id === editingEvent.id ? { ...ev, ...editingEvent } : ev)));
+      } else {
+        const created = await createEvent({
+          ...editingEvent,
+          posterName: institution.name.en || institution.name.ar,
+          posterLogoUrl: institution.logoUrl,
+        });
+        setEvents((prev) => [created, ...prev]);
+      }
+      setEditingEvent(null);
+      setMessage({ text: t('تم حفظ الفعالية بنجاح', 'Event saved successfully'), type: 'success' });
+    } catch {
+      setMessage({ text: t('تعذر حفظ الفعالية', 'Failed to save the event'), type: 'error' });
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  const handleEventStatus = async (eventId: string, status: EduEvent['status']) => {
+    await updateEvent(eventId, { status });
+    setEvents((prev) => prev.map((ev) => (ev.id === eventId ? { ...ev, status } : ev)));
   };
 
   const handleInquiryStatus = async (inquiryId: string, status: Inquiry['status']) => {
@@ -427,6 +477,9 @@ export default function InstitutionDashboardPage() {
         <button onClick={() => setTab('jobs')} className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'jobs' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
           {t('الوظائف', 'Jobs')}
         </button>
+        <button onClick={() => setTab('events')} className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'events' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
+          {t('الفعاليات', 'Events')}
+        </button>
         <button onClick={() => setTab('inquiries')} className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all ${tab === 'inquiries' ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
           {t('الاستفسارات', 'Inquiries')} {pendingInquiries > 0 && <span className="ms-1 text-amber-400">({pendingInquiries})</span>}
         </button>
@@ -489,6 +542,19 @@ export default function InstitutionDashboardPage() {
           handleJobStatus={handleJobStatus}
           savingJob={savingJob}
           emptyJob={emptyJob}
+        />
+      )}
+
+      {tab === 'events' && institution && (
+        <EventsManager
+          events={events}
+          governorates={governorates}
+          editingEvent={editingEvent}
+          setEditingEvent={setEditingEvent}
+          handleSaveEvent={handleSaveEvent}
+          handleEventStatus={handleEventStatus}
+          savingEvent={savingEvent}
+          onCreateNew={() => setEditingEvent(emptyEvent(institution.id))}
         />
       )}
 

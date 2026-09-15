@@ -1,6 +1,8 @@
 import HomeContent from './HomeContent';
 import { getActiveInstitutions } from '@/core/server/data/institutions';
 import { getActiveTutors } from '@/core/server/data/tutors';
+import { getActiveEvents } from '@/core/server/data/events';
+import { todayLocalDate } from '@/lib/utils';
 import {
   getPublicCategories,
   getPublicGovernorates,
@@ -16,7 +18,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [categories, governorates, quickTags, institutions, tutors, settings, taxonomies, banners] = await Promise.all([
+  const [categories, governorates, quickTags, institutions, tutors, settings, taxonomies, banners, events] = await Promise.all([
     getPublicCategories(),
     getPublicGovernorates(),
     getPublicQuickSearchTags(),
@@ -25,7 +27,13 @@ export default async function HomePage() {
     getPublicSystemSettings(),
     getPublicTaxonomies(),
     getPublicActiveBanners(),
+    getActiveEvents(),
   ]);
+
+  const today = todayLocalDate();
+  const upcomingEvents = events
+    .filter((ev) => ev.startDate >= today)
+    .slice(0, 3);
 
   return (
     <HomeContent
@@ -37,6 +45,7 @@ export default async function HomePage() {
       subjects={taxonomies.filter((tx) => tx.type === 'SUBJECT')}
       settings={settings}
       banners={banners}
+      upcomingEvents={upcomingEvents}
     />
   );
 }

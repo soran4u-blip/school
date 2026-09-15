@@ -105,6 +105,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href={localeHref('/events', language)} className="hover:text-white transition-colors">
+                  {t('الفعاليات', 'Events')}
+                </Link>
+              </li>
+              <li>
                 <Link href="/my-applications" className="hover:text-white transition-colors">
                   {t('طلبات التوظيف الخاصة بي', 'My Job Applications')}
                 </Link>

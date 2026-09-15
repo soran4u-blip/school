@@ -20,6 +20,7 @@ export const CACHE_TAGS = {
   institutions: 'institutions',
   tutors: 'tutors',
   jobs: 'jobs',
+  events: 'events',
   community: 'community',
   masterData: 'master-data',
 } as const;

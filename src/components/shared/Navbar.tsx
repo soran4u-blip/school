@@ -17,6 +17,7 @@ import {
   PlusCircle,
   ShieldCheck,
   Briefcase,
+  CalendarDays,
   UserCheck,
   Users,
   ChevronDown,
@@ -87,6 +88,7 @@ export default function Navbar() {
 
   const isExploreActive = pathname === '/explore';
   const isJobsActive = pathname === '/jobs';
+  const isEventsActive = pathname === '/events';
   const isTutorsActive = pathname === '/tutors';
   const isCommunityActive = pathname === '/community';
 
@@ -226,6 +228,11 @@ export default function Navbar() {
                 {t('الوظائف', 'Jobs')}
               </Link>
 
+              <Link href={localeHref('/events', language)} className={navPill(isEventsActive)}>
+                <CalendarDays className="w-3.5 h-3.5" />
+                {t('الفعاليات', 'Events')}
+              </Link>
+
               <Link href={localeHref('/tutors', language)} className={navPill(isTutorsActive)}>
                 <UserCheck className="w-3.5 h-3.5" />
                 {t('الأساتذة', 'Tutors')}
@@ -340,6 +347,14 @@ export default function Navbar() {
             className="block text-sm font-bold text-[#0B192C] py-2"
           >
             {t('الوظائف الشاغرة', 'Job Openings')}
+          </Link>
+
+          <Link
+            href={localeHref('/events', language)}
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold text-[#0B192C] py-2"
+          >
+            {t('الفعاليات', 'Events')}
           </Link>
 
           <Link

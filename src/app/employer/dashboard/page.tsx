@@ -8,14 +8,17 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { getEmployerById, saveEmployer } from '@/core/services/employerService';
 import { getGovernorates } from '@/core/services/masterDataService';
 import { getEmployerJobs, getEmployerJobApplications, updateJob, createJob } from '@/core/services/jobService';
+import { getEmployerEvents, createEvent, updateEvent } from '@/core/services/eventService';
 import { Employer } from '@/core/types/employer';
 import { Job } from '@/core/types/job';
+import { EduEvent } from '@/core/types/event';
 import { Governorate } from '@/core/types/masterData';
 import {
   Briefcase, Plus, Users, ExternalLink, AlertCircle,
 } from 'lucide-react';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import ProfileTab from './_components/ProfileTab';
+import EventsManager, { DraftEvent } from '@/components/shared/EventsManager';
 
 const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
   FULL_TIME: { ar: 'دوام كامل', en: 'Full-time' },
@@ -36,6 +39,20 @@ function emptyJob(employerId: string): Omit<Job, 'id' | 'createdAt' | 'updatedAt
   };
 }
 
+function emptyEvent(employerId: string): Omit<EduEvent, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    employerId,
+    posterType: 'NGO',
+    title: { ar: '', en: '' },
+    description: { ar: '', en: '' },
+    eventType: 'OPEN_HOUSE',
+    governorateId: '',
+    isOnline: false,
+    startDate: '',
+    status: 'DRAFT',
+  };
+}
+
 export default function EmployerDashboardPage() {
   const { language, t } = useLanguage();
   const [employer, setEmployer] = useState<Employer | null>(null);
@@ -44,6 +61,9 @@ export default function EmployerDashboardPage() {
   const [jobApplicationCounts, setJobApplicationCounts] = useState<Record<string, number>>({});
   const [editingJob, setEditingJob] = useState<Job | Omit<Job, 'id' | 'createdAt' | 'updatedAt'> | null>(null);
   const [savingJob, setSavingJob] = useState(false);
+  const [events, setEvents] = useState<EduEvent[]>([]);
+  const [editingEvent, setEditingEvent] = useState<DraftEvent | null>(null);
+  const [savingEvent, setSavingEvent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -60,11 +80,12 @@ export default function EmployerDashboardPage() {
         const id = tokenResult.claims.employerId as string | undefined;
         if (!id) return;
 
-        const [emp, govs, empJobs, empApplications] = await Promise.all([
+        const [emp, govs, empJobs, empApplications, empEvents] = await Promise.all([
           getEmployerById(id),
           getGovernorates(false),
           getEmployerJobs(id),
           getEmployerJobApplications(id),
+          getEmployerEvents(id),
         ]);
         setEmployer(emp);
         setGovernorates(govs);
@@ -72,6 +93,7 @@ export default function EmployerDashboardPage() {
         const counts: Record<string, number> = {};
         for (const app of empApplications) counts[app.jobId] = (counts[app.jobId] || 0) + 1;
         setJobApplicationCounts(counts);
+        setEvents(empEvents);
       } catch {
         setMessage({ text: t('تعذر تحميل بيانات لوحة التحكم', 'Failed to load dashboard data'), type: 'error' });
       } finally {
@@ -122,6 +144,36 @@ export default function EmployerDashboardPage() {
   const handleJobStatus = async (jobId: string, status: Job['status']) => {
     await updateJob(jobId, { status });
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status } : j)));
+  };
+
+  const handleSaveEvent = async () => {
+    if (!editingEvent || !employer) return;
+    setSavingEvent(true);
+    try {
+      if ('id' in editingEvent) {
+        await updateEvent(editingEvent.id, editingEvent);
+        setEvents((prev) => prev.map((ev) => (ev.id === editingEvent.id ? { ...ev, ...editingEvent } : ev)));
+      } else {
+        const created = await createEvent({
+          ...editingEvent,
+          posterName: employer.name,
+          posterLogoUrl: employer.logoUrl,
+          posterType: 'NGO',
+        });
+        setEvents((prev) => [created, ...prev]);
+      }
+      setEditingEvent(null);
+      setMessage({ text: t('تم حفظ الفعالية بنجاح', 'Event saved successfully'), type: 'success' });
+    } catch {
+      setMessage({ text: t('تعذر حفظ الفعالية', 'Failed to save the event'), type: 'error' });
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  const handleEventStatus = async (eventId: string, status: EduEvent['status']) => {
+    await updateEvent(eventId, { status });
+    setEvents((prev) => prev.map((ev) => (ev.id === eventId ? { ...ev, status } : ev)));
   };
 
   if (loading) {
@@ -323,6 +375,19 @@ export default function EmployerDashboardPage() {
           </div>
         )}
       </div>
+
+      {employer.type === 'NGO' && (
+        <EventsManager
+          events={events}
+          governorates={governorates}
+          editingEvent={editingEvent}
+          setEditingEvent={setEditingEvent}
+          handleSaveEvent={handleSaveEvent}
+          handleEventStatus={handleEventStatus}
+          savingEvent={savingEvent}
+          onCreateNew={() => setEditingEvent(emptyEvent(employer.id))}
+        />
+      )}
     </div>
   );
 }

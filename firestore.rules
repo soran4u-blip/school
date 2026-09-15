@@ -49,6 +49,11 @@ service cloud.firestore {
       return isOwnerInstitution(data.get('institutionId', null)) || isOwnerEmployer(data.get('employerId', null));
     }
 
+    // Same "exactly one owner" shape as isOwnerOfJob, for Events (institution- or NGO-posted).
+    function isOwnerOfEvent(data) {
+      return isOwnerInstitution(data.get('institutionId', null)) || isOwnerEmployer(data.get('employerId', null));
+    }
+
     // ---- Owner-write guards ----------------------------------------------------------------
     // Institution/tutor/employer/job owners write their own documents straight from the browser
     // with the client SDK, so a rule is the only thing standing between them and the fields that
@@ -338,6 +343,19 @@ service cloud.firestore {
       allow read: if isAdmin() || isOwnerOfJob(resource.data);
       allow update: if canEditDirectory() || isOwnerUpdatingOwnJobApplication();
       allow delete: if canEditDirectory();
+    }
+
+    // Events (institution or NGO-employer postings — exactly one of institutionId/employerId is
+    // set, same shape as Jobs). Registration is external-link/WhatsApp only, so — unlike Jobs —
+    // there's no applicant sub-collection or counter to protect here.
+    match /events/{eventId} {
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerOfEvent(resource.data);
+      allow create: if canEditDirectory() || isOwnerOfEvent(request.resource.data);
+      allow update: if canEditDirectory() || (
+        isOwnerOfEvent(resource.data)
+        && keepsReservedFields(['id', 'institutionId', 'employerId', 'createdAt'])
+      );
+      allow delete: if canEditDirectory() || isOwnerOfEvent(resource.data);
     }
 
     // Admission Applications (a student applying to an institution's program). Unlike
