@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
 import { MasterDataProvider } from '@/core/context/MasterDataContext';
@@ -78,6 +79,14 @@ export default async function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+        {/* Google tag (gtag.js) — loaded after hydration so it doesn't compete with page interactivity. */}
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-6XJ5PFT1T3" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-6XJ5PFT1T3');`}
+        </Script>
         <ErrorReporter />
         <ServiceWorkerRegistrar />
         <LanguageProvider>
