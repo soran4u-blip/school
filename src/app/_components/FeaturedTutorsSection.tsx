@@ -55,7 +55,7 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
                   alt={name}
                   width={400}
                   height={220}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />
                 <span className="absolute start-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[11px] font-extrabold text-amber-800 backdrop-blur">
                   <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" aria-hidden="true" />
