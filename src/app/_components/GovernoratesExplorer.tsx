@@ -2,47 +2,58 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Governorate } from '@/core/types/masterData';
 
-// The homepage's "browse by governorate" grid covering all 18 Iraqi governorates.
+// A compact location directory between the campaign card and tutor showcase. Each tile keeps the
+// full governorate route and live listing total, but is easier to scan as a set of destinations.
 export default function GovernoratesExplorer({ governorates }: { governorates: Governorate[] }) {
   const { language, t } = useLanguage();
 
   return (
-    <section className="bg-slate-100 py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-200">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">{t('تغطية وطنية شاملة', 'Nationwide Coverage')}</span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B192C] mt-1">
-            {t('تصفح المدارس والجامعات حسب المحافظة العراقية', 'Browse by Iraqi Governorate')}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            {t('اختر محافظتك للعثور على كافة الصروح التعليمية المعتمدة والأقرب لموقعك.', 'Select your governorate to find accredited institutions nearest to you.')}
-          </p>
-        </div>
+    <section className="border-y border-slate-200 bg-slate-50 px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] lg:items-start lg:gap-12">
+          <div className="lg:pt-1">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-blue-700">
+              {t('تغطية وطنية شاملة', 'Nationwide coverage')}
+            </p>
+            <h2 className="mt-2 max-w-md text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
+              {t('ابحث بالقرب منك، في أي محافظة عراقية', 'Find the right place, closer to home')}
+            </h2>
+            <p className="mt-3 max-w-md text-xs leading-6 text-slate-500 sm:text-sm">
+              {t('اختر محافظتك لتصفح المدارس والجامعات والمؤسسات التعليمية المتاحة فيها.', 'Choose a governorate to browse the schools, universities, and education providers available there.')}
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-800">
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              {t(`${governorates.length} محافظة مغطاة`, `${governorates.length} governorates covered`)}
+            </div>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {governorates.map((gov) => (
-            <Link
-              key={gov.id}
-              href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
-              className="p-3.5 bg-white rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 shadow-xs transition-all flex items-center justify-between group"
-            >
-              <div>
-                <div className="font-extrabold text-xs text-slate-800 group-hover:text-blue-700 transition-colors">
-                  {language === 'en' ? gov.name.en : gov.name.ar}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {governorates.map((gov) => (
+              <Link
+                key={gov.id}
+                href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
+                className="group flex min-h-24 flex-col justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_18px_-18px_rgba(15,23,42,0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_14px_24px_-18px_rgba(15,23,42,0.58)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="line-clamp-1 text-xs font-extrabold text-slate-800 transition-colors group-hover:text-blue-700 sm:text-sm">
+                    {language === 'en' ? gov.name.en : gov.name.ar}
+                  </span>
+                  <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1 font-mono text-[9px] font-bold text-slate-500 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                    {gov.code}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  {gov.institutionsCount || 0} {t('مؤسسة', 'listings')}
-                </span>
-              </div>
-              <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                {gov.code}
-              </div>
-            </Link>
-          ))}
+                <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-slate-400">
+                  <span>{gov.institutionsCount || 0} {t('مؤسسة', 'listings')}</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-300 rtl:rotate-180 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600" aria-hidden="true" />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
