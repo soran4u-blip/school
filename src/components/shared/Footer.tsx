@@ -14,10 +14,13 @@ export default function Footer() {
   const governorates = allGovernorates.slice(0, 8); // Top governorates for footer links
 
   return (
-    <footer className="bg-[#0B192C] text-slate-300 pt-16 pb-12 border-t border-slate-800 mt-auto">
+    <footer className="relative isolate mt-auto overflow-hidden border-t border-slate-800 bg-[#0B192C] pt-16 pb-12 text-slate-300">
+      <div className="pointer-events-none absolute -top-32 start-[6%] -z-10 h-80 w-80 rounded-full bg-blue-400/8 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 end-[10%] -z-10 h-72 w-72 rounded-full bg-[#F1C40F]/8 blur-3xl" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800">
-          
+        <div className="grid grid-cols-1 gap-10 border-b border-slate-800 pb-12 md:grid-cols-2 lg:grid-cols-5">
+
           {/* Col 1: Brand & Ministry Note */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
@@ -34,8 +37,8 @@ export default function Footer() {
                 'The unified national discovery platform for verified schools, universities, institutes, and private tutors across all Iraqi governorates.'
               )}
             </p>
-            <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-3 py-2 rounded-lg max-w-sm">
-              <ShieldCheck className="w-4 h-4 shrink-0" />
+            <div className="inline-flex max-w-sm items-center gap-2 rounded-full border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-[11px] font-bold text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>
                 {t('متوافق مع معايير وزارة التعليم العالي ووزارة التربية العراقية', 'Aligned with Iraqi Ministry of Education & MoHESR standards')}
               </span>
@@ -44,7 +47,7 @@ export default function Footer() {
 
           {/* Col 2: Educational Categories (Dynamic) */}
           <div>
-            <h3 className="text-white font-bold text-sm mb-4 tracking-wider uppercase">
+            <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
               {t('الفئات التعليمية', 'Directory Categories')}
             </h3>
             <ul className="space-y-2.5 text-sm">
@@ -63,7 +66,7 @@ export default function Footer() {
 
           {/* Col 3: Key Governorates (Dynamic) */}
           <div>
-            <h3 className="text-white font-bold text-sm mb-4 tracking-wider uppercase">
+            <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
               {t('أبرز المحافظات', 'Major Governorates')}
             </h3>
             <ul className="space-y-2.5 text-sm">
@@ -82,7 +85,7 @@ export default function Footer() {
 
           {/* Col 4: Platform & Admin */}
           <div>
-            <h3 className="text-white font-bold text-sm mb-4 tracking-wider uppercase">
+            <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
               {t('روابط المنصة والإدارة', 'Platform & Admin')}
             </h3>
             <ul className="space-y-2.5 text-sm">
@@ -141,7 +144,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-500 sm:flex-row">
           <p>© {new Date().getFullYear()} Eduraq. {t('جميع الحقوق محفوظة لجمهورية العراق.', 'All rights reserved. Republic of Iraq.')}</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-white transition-colors">{t('سياسة الخصوصية', 'Privacy Policy')}</Link>
