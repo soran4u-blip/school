@@ -7,9 +7,10 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
-import { MapPin, ShieldCheck, Star, ArrowRight, MessageSquare } from 'lucide-react';
+import { ArrowRight, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 
-// The homepage's featured-institutions showcase grid.
+// The directory's first content showcase. Cards make the institution itself the focal point and
+// keep the profile action dominant, while the secondary WhatsApp route remains available.
 export default function FeaturedInstitutionsSection({
   featuredInstitutions,
   governorates,
@@ -22,129 +23,115 @@ export default function FeaturedInstitutionsSection({
   const { language, t } = useLanguage();
 
   return (
-    <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold text-blue-700 uppercase tracking-wider mb-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>{t('مؤسسات تعليمية معتمدة وموثقة', 'Vetted & Accredited Institutions')}</span>
+    <section className="max-w-7xl mx-auto w-full px-4 pt-14 pb-20 sm:px-6 sm:pt-16 lg:px-8">
+      <div className="mb-8 flex flex-col gap-4 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            {t('مؤسسات تعليمية معتمدة وموثقة', 'Vetted & accredited institutions')}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B192C]">
-            {t('أبرز الصروح التعليمية في العراق', 'Featured Iraqi Educational Institutions')}
+          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
+            {t('أبرز الصروح التعليمية في العراق', 'Featured Iraqi educational institutions')}
           </h2>
+          <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
+            {t('اكتشف مؤسسات موثوقة، وقارن التفاصيل قبل اتخاذ الخطوة التالية.', 'Discover trusted institutions and compare the details before your next step.')}
+          </p>
         </div>
 
         <Link
           href={localeHref('/explore', language)}
-          className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 group self-start"
+          className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-blue-700 transition-colors hover:text-blue-900 sm:self-auto"
         >
-          <span>{t('عرض جميع المؤسسات في الدليل', 'View All Listings')}</span>
-          <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 transition-transform" />
+          <span>{t('عرض جميع المؤسسات', 'View all institutions')}</span>
+          <ArrowRight className="h-4 w-4 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
         </Link>
       </div>
 
-      {/* Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {featuredInstitutions.map((inst) => {
-          const gov = governorates.find(g => g.id === inst.governorateId);
-          const cat = categories.find(c => c.id === inst.categoryId);
+          const gov = governorates.find((item) => item.id === inst.governorateId);
+          const cat = categories.find((item) => item.id === inst.categoryId);
+          const profileHref = localeHref(`/institutions/${inst.slug}`, language);
 
           return (
-            <div
+            <article
               key={inst.id}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all flex flex-col group"
+              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_26px_-24px_rgba(15,23,42,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_20px_35px_-24px_rgba(15,23,42,0.68)]"
             >
-              {/* Cover Image & Badges */}
-              <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
+              <Link href={profileHref} className="relative block h-48 overflow-hidden bg-slate-100">
                 <Thumbnail
                   src={inst.coverImageUrl}
-                  alt={inst.name.en}
+                  alt={language === 'en' ? inst.name.en : inst.name.ar}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                   fallbackClassName="absolute inset-0"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-[#071220]/70 via-[#071220]/5 to-transparent" />
+                <div className="absolute top-3 start-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-extrabold text-[#0B192C] shadow-sm backdrop-blur-sm">
+                  {cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}
+                </div>
+                <div className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full bg-[#0B192C]/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+                  <Star className="h-3.5 w-3.5 fill-[#F1C40F] text-[#F1C40F]" aria-hidden="true" />
+                  {inst.metrics.ratingAvg}
+                </div>
+                <div className="absolute bottom-3 start-4 end-4 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1 text-[11px] font-semibold text-white/85">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {gov ? (language === 'en' ? gov.name.en : gov.name.ar) : inst.governorateId}
+                    </p>
+                  </div>
+                  <Thumbnail
+                    src={inst.logoUrl}
+                    alt=""
+                    width={52}
+                    height={52}
+                    className="h-[3.25rem] w-[3.25rem] shrink-0 rounded-xl border-2 border-white bg-white object-cover shadow-md"
+                  />
+                </div>
+              </Link>
 
-                {/* Category Pill */}
-                <div className="absolute top-3 start-3">
-                  <span className="px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-[#0B192C]/90 text-white backdrop-blur-xs">
-                    {cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}
+              <div className="p-5">
+                <Link href={profileHref} className="block">
+                  <h3 className="line-clamp-1 text-base font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
+                    {language === 'en' ? inst.name.en : inst.name.ar}
+                  </h3>
+                </Link>
+                <p className="mt-2 min-h-10 text-xs leading-5 text-slate-600 line-clamp-2">
+                  {language === 'en' ? inst.tagline.en : inst.tagline.ar}
+                </p>
+
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                  <span className="inline-flex min-w-0 items-center gap-1 text-[10px] font-bold text-emerald-800">
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                    <span className="truncate">{language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar}</span>
+                  </span>
+                  <span className="shrink-0 text-[11px] font-extrabold text-slate-700">
+                    {inst.tuition.min === 0 ? t('مجاني', 'Free') : `$${inst.tuition.min.toLocaleString()} / ${t('سنوياً', 'yr')}`}
                   </span>
                 </div>
 
-                {/* Rating */}
-                <div className="absolute top-3 end-3 bg-white/95 px-2 py-0.5 rounded-md flex items-center gap-1 text-xs font-bold text-slate-800 shadow-xs">
-                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                  <span>{inst.metrics.ratingAvg}</span>
-                </div>
-
-                {/* Logo overlay */}
-                <div className="absolute -bottom-4 start-5">
-                  <Thumbnail
-                    src={inst.logoUrl}
-                    alt={inst.name.en}
-                    width={56}
-                    height={56}
-                    className="w-14 h-14 rounded-xl object-cover border-2 border-white shadow-md bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Body Content */}
-              <div className="pt-6 p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{gov ? (language === 'en' ? gov.name.en : gov.name.ar) : inst.governorateId}</span>
-                  </div>
-
-                  <Link href={localeHref(`/institutions/${inst.slug}`, language)}>
-                    <h3 className="font-extrabold text-base text-slate-900 hover:text-blue-700 transition-colors leading-snug">
-                      {language === 'en' ? inst.name.en : inst.name.ar}
-                    </h3>
+                <div className="mt-4 flex items-center gap-2">
+                  <Link
+                    href={profileHref}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#0B192C] py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1E3E62]"
+                  >
+                    {t('عرض التفاصيل', 'View profile')}
+                    <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
                   </Link>
-
-                  <p className="text-xs text-slate-600 line-clamp-2 mt-1.5 leading-relaxed">
-                    {language === 'en' ? inst.tagline.en : inst.tagline.ar}
-                  </p>
-                </div>
-
-                {/* Badges and CTAs */}
-                <div className="space-y-3 pt-3 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      <span>{language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar}</span>
-                    </span>
-
-                    <span className="text-[11px] font-bold text-slate-700">
-                      {inst.tuition.min === 0 ? t('مجاني 100%', '100% Free') : `$${inst.tuition.min.toLocaleString()} / ${t('سنوياً', 'yr')}`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={localeHref(`/institutions/${inst.slug}`, language)}
-                      className="flex-1 text-center py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
-                    >
-                      {t('التفاصيل والقبول', 'View Profile')}
-                    </Link>
-
-                    <a
-                      href={`https://wa.me/${inst.contact.whatsappNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
-                      title="WhatsApp Contact"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>واتساب</span>
-                    </a>
-                  </div>
+                  <a
+                    href={`https://wa.me/${inst.contact.whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t(`تواصل عبر واتساب مع ${inst.name.ar}`, `Contact ${inst.name.en} on WhatsApp`)}
+                    className="flex h-[2.375rem] w-[2.375rem] shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
+                  >
+                    <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                  </a>
                 </div>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
