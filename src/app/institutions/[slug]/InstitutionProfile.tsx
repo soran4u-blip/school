@@ -365,7 +365,11 @@ export default function InstitutionProfile({
 
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-md">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar}</span>
+                   <span>
+                     {institution.isVerified
+                       ? (language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar)
+                       : t('قيد التحقق', 'Verification pending')}
+                   </span>
                 </span>
               </div>
 
@@ -531,18 +535,32 @@ export default function InstitutionProfile({
                   </p>
                 </div>
 
-                {/* Accreditation Details Card */}
-                 <div className="p-5 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm">
-                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                    <span>{t('حالة الاعتماد والترخيص الحكومي الرسمي', 'Official Accreditation Status')}</span>
-                  </div>
-                  <p className="text-xs text-emerald-800 leading-relaxed">
-                    {t(
-                      'هذه المؤسسة معتمدة ومرخصة رسمياً من وزارة التعليم العالي والبحث العلمي العراقية أو وزارة التربية وتخضع لإشراف لجان التقييم الأكاديمي والامتحانات الوطنية.',
-                      'This institution is officially recognized and accredited by the Iraqi Ministry of Higher Education or Ministry of Education.'
-                    )}
+                 {/* Accreditation Details Card */}
+                 <div className={`p-5 rounded-2xl border space-y-2 ${institution.isVerified ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'}`}>
+                   <div className={`flex items-center gap-2 font-extrabold text-sm ${institution.isVerified ? 'text-emerald-900' : 'text-amber-900'}`}>
+                     <ShieldCheck className={`w-5 h-5 ${institution.isVerified ? 'text-emerald-600' : 'text-amber-600'}`} />
+                     <span>
+                       {institution.isVerified
+                         ? t('حالة الاعتماد والترخيص', 'Accreditation & licensing')
+                         : t('الاعتماد قيد التحقق', 'Accreditation pending verification')}
+                     </span>
+                   </div>
+                   {institution.accreditation?.authority && (
+                     <p className="text-xs font-bold text-slate-700">
+                       {language === 'en' ? institution.accreditation.authority.en : institution.accreditation.authority.ar}
+                     </p>
+                   )}
+                   <p className={`text-xs leading-relaxed ${institution.isVerified ? 'text-emerald-800' : 'text-amber-800'}`}>
+                     {institution.accreditation?.details?.[language === 'en' ? 'en' : 'ar'] || t(
+                       'لم تتم إضافة تفاصيل اعتماد خاصة بهذه المؤسسة بعد. تواصل مع قسم القبول للتحقق من المتطلبات الرسمية.',
+                       'Institution-specific accreditation details have not been supplied yet. Contact admissions to confirm official requirements.'
+                     )}
                    </p>
+                   {institution.accreditation?.verifiedAt && (
+                     <p className="text-[11px] text-slate-500">
+                       {t('آخر تحقق:', 'Last verified:')} {institution.accreditation.verifiedAt}
+                     </p>
+                   )}
                  </div>
 
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -620,14 +638,45 @@ export default function InstitutionProfile({
                 </h2>
 
                 <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
-                  <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
-                    <h3 className="font-bold text-blue-900 mb-1">{t('المستمسكات المطلوبة:', 'Required Documents:')}</h3>
-                    <ul className="list-disc list-inside space-y-1 text-xs text-blue-800">
-                      <li>{t('وثيقة تخرج السادس الإعدادي مصدقة من المديرية العامة للتربية', 'Certified 6th Preparatory graduation certificate')}</li>
-                      <li>{t('البطاقة الوطنية الموحدة وصور شخصية حديثة خلفية بيضاء (عدد 6)', 'Unified National ID & passport photos')}</li>
-                      <li>{t('الفحص الطبي واستمارة اللياقة الصحية للقبول', 'Official medical fitness examination sheet')}</li>
-                    </ul>
-                  </div>
+                  {institution.admissions?.overview?.[language === 'en' ? 'en' : 'ar'] && (
+                    <p className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
+                      {institution.admissions?.overview?.[language === 'en' ? 'en' : 'ar']}
+                    </p>
+                  )}
+
+                  {institution.admissions?.requiredDocuments?.some((document) => document.ar || document.en) ? (
+                    <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
+                      <h3 className="font-bold text-blue-900 mb-2">{t('المستمسكات المطلوبة:', 'Required Documents:')}</h3>
+                      <ul className="list-disc list-inside space-y-1 text-xs text-blue-800">
+                        {institution.admissions?.requiredDocuments
+                          ?.filter((document) => document.ar || document.en)
+                          .map((document, index) => (
+                            <li key={index}>{language === 'en' ? document.en || document.ar : document.ar || document.en}</li>
+                          ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-600">
+                      {t(
+                        'لم تنشر المؤسسة قائمة المستمسكات المطلوبة بعد. تواصل مع قسم القبول للتأكد من المتطلبات الرسمية.',
+                        'This institution has not published its required documents yet. Contact admissions to confirm the official requirements.'
+                      )}
+                    </div>
+                  )}
+
+                  {institution.admissions?.notes?.[language === 'en' ? 'en' : 'ar'] && (
+                    <p className="text-xs text-slate-600">
+                      {institution.admissions?.notes?.[language === 'en' ? 'en' : 'ar']}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={openInquiry}
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors"
+                  >
+                    {t('اسأل قسم القبول عن المتطلبات', 'Ask admissions about requirements')}
+                  </button>
                 </div>
               </div>
             )}

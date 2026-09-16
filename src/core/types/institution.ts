@@ -28,6 +28,18 @@ export interface InstitutionContact {
   workingHours?: LocalizedString;
 }
 
+export interface InstitutionAdmissions {
+  overview?: LocalizedString;
+  requiredDocuments?: LocalizedString[];
+  notes?: LocalizedString;
+}
+
+export interface InstitutionAccreditation {
+  authority?: LocalizedString;
+  details?: LocalizedString;
+  verifiedAt?: string;
+}
+
 export interface Institution {
   id: string;
   userId?: string; // linked Firebase Auth uid, once the institution has an owner account
@@ -52,6 +64,8 @@ export interface Institution {
   };
   
   contact: InstitutionContact;
+  admissions?: InstitutionAdmissions;
+  accreditation?: InstitutionAccreditation;
   
   establishedYear: number;
   genderPolicy: 'CO_ED' | 'BOYS_ONLY' | 'GIRLS_ONLY';
