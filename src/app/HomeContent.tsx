@@ -91,11 +91,12 @@ export default function HomeContent({
       (institution) => institution.governorateId === governorate.id
     ).length,
   }));
-  const announcementText = `${settings.emergencyAnnouncement?.text.ar ?? ''} ${settings.emergencyAnnouncement?.text.en ?? ''}`;
+  const emergencyAnnouncement = settings.emergencyAnnouncement;
+  const announcementText = `${emergencyAnnouncement?.text.ar ?? ''} ${emergencyAnnouncement?.text.en ?? ''}`;
   const announcementYearRange = announcementText.match(/\b20\d{2}[-/]20\d{2}\b/);
   const announcementEndYear = announcementYearRange ? Number(announcementYearRange[0].slice(-4)) : null;
   const showEmergencyAnnouncement = Boolean(
-    settings.emergencyAnnouncement?.enabled &&
+    emergencyAnnouncement?.enabled &&
       (announcementEndYear === null || announcementEndYear >= new Date().getFullYear())
   );
 
@@ -104,13 +105,13 @@ export default function HomeContent({
       <Navbar />
 
       {/* Top Emergency Announcement Ticker (Managed from Superadmin Dashboard) */}
-      {showEmergencyAnnouncement && (
+      {showEmergencyAnnouncement && emergencyAnnouncement && (
         <div className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-xs">
           <Megaphone className="w-4 h-4 shrink-0 animate-bounce" />
           <span>
             {language === 'en'
-              ? settings.emergencyAnnouncement.text.en
-              : settings.emergencyAnnouncement.text.ar}
+              ? emergencyAnnouncement.text.en
+              : emergencyAnnouncement.text.ar}
           </span>
         </div>
       )}
