@@ -12,6 +12,7 @@ import { Building2, Save, AlertCircle, ArrowRight } from 'lucide-react';
 import IdentityMediaFields from './_components/IdentityMediaFields';
 import ContactDetailsTuitionFields from './_components/ContactDetailsTuitionFields';
 import ProgramsAndStatusFields from './_components/ProgramsAndStatusFields';
+import AdmissionsAndAccreditationFields from './_components/AdmissionsAndAccreditationFields';
 
 function emptyProgram(): InstitutionProgram {
   return {
@@ -41,6 +42,16 @@ const emptyForm: Partial<Institution> = {
     whatsappNumber: '',
     email: '',
     website: '',
+  },
+  admissions: {
+    overview: { ar: '', en: '' },
+    requiredDocuments: [],
+    notes: { ar: '', en: '' },
+  },
+  accreditation: {
+    authority: { ar: '', en: '' },
+    details: { ar: '', en: '' },
+    verifiedAt: '',
   },
   establishedYear: new Date().getFullYear(),
   genderPolicy: 'CO_ED',
@@ -131,6 +142,28 @@ function InstitutionForm() {
         email: form.contact?.email || '',
         ...(form.contact?.website && { website: form.contact.website }),
       },
+      admissions: {
+        overview: {
+          ar: form.admissions?.overview?.ar || '',
+          en: form.admissions?.overview?.en || '',
+        },
+        requiredDocuments: form.admissions?.requiredDocuments || [],
+        notes: {
+          ar: form.admissions?.notes?.ar || '',
+          en: form.admissions?.notes?.en || '',
+        },
+      },
+      accreditation: {
+        authority: {
+          ar: form.accreditation?.authority?.ar || '',
+          en: form.accreditation?.authority?.en || '',
+        },
+        details: {
+          ar: form.accreditation?.details?.ar || '',
+          en: form.accreditation?.details?.en || '',
+        },
+        verifiedAt: form.accreditation?.verifiedAt || '',
+      },
       establishedYear: Number(form.establishedYear) || new Date().getFullYear(),
       genderPolicy: form.genderPolicy || 'CO_ED',
       languagesOfInstruction: form.languagesOfInstruction?.length ? form.languagesOfInstruction : ['AR'],
@@ -205,6 +238,11 @@ function InstitutionForm() {
           taxonomies={taxonomies}
           facilitiesText={facilitiesText}
           setFacilitiesText={setFacilitiesText}
+        />
+
+        <AdmissionsAndAccreditationFields
+          form={form}
+          setForm={setForm}
         />
 
         <ProgramsAndStatusFields
