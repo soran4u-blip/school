@@ -43,6 +43,7 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
           const profileHref = localeHref(`/tutors/${tutor.slug || tutor.id}`, language);
           const primaryMode = tutor.deliveryMode[0];
           const name = language === 'en' ? tutor.fullName.en : tutor.fullName.ar;
+          const hasReviews = tutor.reviewCount > 0;
 
           return (
             <article
@@ -59,8 +60,11 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
                   objectPosition={tutor.photoFocalPoint ? `${tutor.photoFocalPoint.x}% ${tutor.photoFocalPoint.y}%` : undefined}
                 />
                 <span className="absolute start-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-800 backdrop-blur">
-                  <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" aria-hidden="true" />
-                  {tutor.ratingAvg}
+                  <Star
+                    className={`h-2.5 w-2.5 ${hasReviews ? 'fill-amber-500 text-amber-500' : 'text-amber-300'}`}
+                    aria-hidden="true"
+                  />
+                  {hasReviews ? tutor.ratingAvg.toFixed(1) : t('لا توجد تقييمات', 'No reviews')}
                 </span>
                 {tutor.isVerified ? (
                   <span

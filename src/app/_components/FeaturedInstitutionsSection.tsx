@@ -52,6 +52,7 @@ export default function FeaturedInstitutionsSection({
           const gov = governorates.find((item) => item.id === inst.governorateId);
           const cat = categories.find((item) => item.id === inst.categoryId);
           const profileHref = localeHref(`/institutions/${inst.slug}`, language);
+          const hasReviews = inst.metrics.reviewCount > 0;
 
           return (
             <article
@@ -72,8 +73,11 @@ export default function FeaturedInstitutionsSection({
                   {cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}
                 </div>
                 <div className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full bg-[#0B192C]/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
-                  <Star className="h-3.5 w-3.5 fill-[#F1C40F] text-[#F1C40F]" aria-hidden="true" />
-                  {inst.metrics.ratingAvg}
+                  <Star
+                    className={`h-3.5 w-3.5 ${hasReviews ? 'fill-[#F1C40F] text-[#F1C40F]' : 'text-white/70'}`}
+                    aria-hidden="true"
+                  />
+                  {hasReviews ? inst.metrics.ratingAvg.toFixed(1) : t('لا توجد تقييمات', 'No reviews')}
                 </div>
                 <div className="absolute bottom-3 start-4 end-4 flex items-end justify-between gap-3">
                   <div className="min-w-0">

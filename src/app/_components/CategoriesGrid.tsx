@@ -69,7 +69,12 @@ export default function CategoriesGrid({ categories }: { categories: Category[] 
               </h3>
               <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-300 group-hover:bg-[#F1C40F]" />
-                {cat.institutionsCount || 0} {t('مؤسسة', 'listings')}
+                {cat.institutionsCount
+                  ? `${cat.institutionsCount} ${cat.slug === 'tutors' ? t('أستاذ', 'tutors') : t('مؤسسة', 'institutions')}`
+                  : t(
+                      cat.slug === 'tutors' ? 'لا يوجد أساتذة بعد' : 'لا توجد مؤسسات بعد',
+                      cat.slug === 'tutors' ? 'No tutors yet' : 'No institutions yet'
+                    )}
               </div>
             </Link>
           ))}

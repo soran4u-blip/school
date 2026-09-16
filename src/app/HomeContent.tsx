@@ -78,12 +78,33 @@ export default function HomeContent({
     submitHeroSearch();
   };
 
+  const liveCategories = categories.map((category) => ({
+    ...category,
+    institutionsCount:
+      category.slug === 'tutors'
+        ? featuredTutors.length
+        : featuredInstitutions.filter((institution) => institution.categoryId === category.id).length,
+  }));
+  const liveGovernorates = governorates.map((governorate) => ({
+    ...governorate,
+    institutionsCount: featuredInstitutions.filter(
+      (institution) => institution.governorateId === governorate.id
+    ).length,
+  }));
+  const announcementText = `${settings.emergencyAnnouncement?.text.ar ?? ''} ${settings.emergencyAnnouncement?.text.en ?? ''}`;
+  const announcementYearRange = announcementText.match(/\b20\d{2}[-/]20\d{2}\b/);
+  const announcementEndYear = announcementYearRange ? Number(announcementYearRange[0].slice(-4)) : null;
+  const showEmergencyAnnouncement = Boolean(
+    settings.emergencyAnnouncement?.enabled &&
+      (announcementEndYear === null || announcementEndYear >= new Date().getFullYear())
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
       {/* Top Emergency Announcement Ticker (Managed from Superadmin Dashboard) */}
-      {settings.emergencyAnnouncement?.enabled && (
+      {showEmergencyAnnouncement && (
         <div className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-xs">
           <Megaphone className="w-4 h-4 shrink-0 animate-bounce" />
           <span>
@@ -95,8 +116,8 @@ export default function HomeContent({
       )}
 
       <HeroSearchSection
-        categories={categories}
-        governorates={governorates}
+        categories={liveCategories}
+        governorates={liveGovernorates}
         quickTags={quickTags}
         featuredInstitutions={featuredInstitutions}
         featuredTutors={featuredTutors}
@@ -111,17 +132,17 @@ export default function HomeContent({
         handleHeroSearch={handleHeroSearch}
       />
 
-      <CategoriesGrid categories={categories} />
+      <CategoriesGrid categories={liveCategories} />
 
       <FeaturedInstitutionsSection
         featuredInstitutions={featuredInstitutions}
-        governorates={governorates}
-        categories={categories}
+        governorates={liveGovernorates}
+        categories={liveCategories}
       />
 
       <AdBannerSection banners={banners} />
 
-      <GovernoratesExplorer governorates={governorates} />
+      <GovernoratesExplorer governorates={liveGovernorates} />
 
       <FeaturedTutorsSection featuredTutors={featuredTutors} />
 
