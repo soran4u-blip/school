@@ -44,6 +44,12 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (searchParams.get('category') === 'tutors') {
+      router.replace(localeHref('/tutors', language));
+    }
+  }, [language, router, searchParams]);
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');

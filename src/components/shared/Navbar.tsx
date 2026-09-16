@@ -15,7 +15,6 @@ import {
   Phone,
   Languages,
   PlusCircle,
-  ShieldCheck,
   Briefcase,
   CalendarDays,
   UserCheck,
@@ -167,10 +166,6 @@ export default function Navbar() {
                 <GraduationCap className="w-5 h-5" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-[#0B192C]">Eduraq</span>
-              <span className="hidden xl:flex text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 items-center gap-0.5">
-                <ShieldCheck className="w-3 h-3" />
-                {t('موثق', 'Vetted')}
-              </span>
             </Link>
 
             <div className="justify-self-center flex items-center rounded-full p-1 gap-1 bg-slate-100/80">
@@ -190,11 +185,13 @@ export default function Navbar() {
                         {categories.map((cat) => (
                           <Link
                             key={cat.id}
-                            href={`${localeHref('/explore', language)}?category=${cat.slug}`}
+                            href={cat.slug === 'tutors' ? localeHref('/tutors', language) : `${localeHref('/explore', language)}?category=${cat.slug}`}
                             onClick={() => setExploreOpen(false)}
                             className="block px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B192C] transition-colors"
                           >
-                            {language === 'en' ? cat.name.en : cat.name.ar}
+                            {cat.slug === 'tutors'
+                              ? t('أساتذة خصوصيون', 'Private tutors')
+                              : (language === 'en' ? cat.name.en : cat.name.ar)}
                           </Link>
                         ))}
                       </div>
@@ -336,11 +333,13 @@ export default function Navbar() {
               {categories.map((cat) => (
                 <Link
                   key={cat.id}
-                  href={`${localeHref('/explore', language)}?category=${cat.slug}`}
+                  href={cat.slug === 'tutors' ? localeHref('/tutors', language) : `${localeHref('/explore', language)}?category=${cat.slug}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="block text-sm text-slate-600 py-1.5"
                 >
-                  {language === 'en' ? cat.name.en : cat.name.ar}
+                  {cat.slug === 'tutors'
+                    ? t('أساتذة خصوصيون', 'Private tutors')
+                    : (language === 'en' ? cat.name.en : cat.name.ar)}
                 </Link>
               ))}
             </div>

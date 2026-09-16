@@ -54,10 +54,12 @@ export default function Footer() {
               {categories.map((cat) => (
                 <li key={cat.id}>
                   <Link
-                    href={`${localeHref('/explore', language)}?category=${cat.slug}`}
+                    href={cat.slug === 'tutors' ? localeHref('/tutors', language) : `${localeHref('/explore', language)}?category=${cat.slug}`}
                     className="hover:text-white transition-colors"
                   >
-                    {language === 'en' ? cat.name.en : cat.name.ar}
+                    {cat.slug === 'tutors'
+                      ? t('أساتذة خصوصيون', 'Private tutors')
+                      : (language === 'en' ? cat.name.en : cat.name.ar)}
                   </Link>
                 </li>
               ))}
