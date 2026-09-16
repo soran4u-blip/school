@@ -33,14 +33,14 @@ export default function Footer() {
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
               {t(
-                'المنصة الوطنية الموحدة لاكتشاف ومقارنة المدارس والجامعات والمعاهد المعتمدة في العراق. مدعومة ببيانات الاعتماد الرسمية والمراجعات الموثقة.',
-                'The unified national discovery platform for verified schools, universities, institutes, and private tutors across all Iraqi governorates.'
+                'منصة وطنية لاكتشاف ومقارنة المدارس والجامعات والمعاهد والبرامج التعليمية في العراق. تعرّف على التفاصيل وتواصل مع الجهات المدرجة مباشرةً.',
+                'A national platform for discovering and comparing schools, universities, institutes, programs, and tutors across Iraq.'
               )}
             </p>
             <div className="inline-flex max-w-sm items-center gap-2 rounded-full border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-[11px] font-bold text-emerald-400">
               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>
-                {t('متوافق مع معايير وزارة التعليم العالي ووزارة التربية العراقية', 'Aligned with Iraqi Ministry of Education & MoHESR standards')}
+                {t('مصمم للبحث والمقارنة التعليمية', 'Built for education discovery and comparison')}
               </span>
             </div>
           </div>

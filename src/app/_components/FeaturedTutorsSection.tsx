@@ -19,13 +19,13 @@ export default function FeaturedTutorsSection({ featuredTutors }: { featuredTuto
       <div className="mb-8 flex flex-col gap-4 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
-            {t('نخبة الكوادر التعليمية', 'Top certified mentors')}
+            {t('كوادر تعليمية ضمن الدليل', 'Tutors in the directory')}
           </p>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
-            {t('أساتذة خصوصيون موثوقون لخطوتك القادمة', 'Trusted tutors for your next learning step')}
+            {t('أساتذة خصوصيون لخطوتك القادمة', 'Tutors for your next learning step')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
-            {t('تواصل مباشرةً مع مدرسين معتمدين، واطّلع على خبراتهم وخيارات الحجز.', 'Connect directly with verified tutors, then review their experience and booking options.')}
+            {t('تواصل مباشرةً مع المدرسين واطّلع على خبراتهم وخيارات الحجز.', 'Connect directly with tutors, then review their experience and booking options.')}
           </p>
         </div>
 

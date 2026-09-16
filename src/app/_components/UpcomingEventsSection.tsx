@@ -26,7 +26,7 @@ export default function UpcomingEventsSection({ events }: { events: EduEvent[] }
             {t('أيام مفتوحة ومعارض وورش عمل', 'Open houses, exhibitions, and workshops')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
-            {t('فعاليات ينظمها مؤسسات ومنظمات معتمدة على المنصة.', 'Hosted by verified institutions and NGOs on the platform.')}
+            {t('فعاليات منشورة من مؤسسات ومنظمات على المنصة.', 'Events published by institutions and NGOs on the platform.')}
           </p>
         </div>
 

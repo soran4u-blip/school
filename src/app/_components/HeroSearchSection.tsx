@@ -65,7 +65,7 @@ export default function HeroSearchSection({
       <div className="relative mx-auto max-w-5xl text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[10px] font-bold tracking-wide text-slate-200 backdrop-blur-sm sm:text-[11px]">
           <ShieldCheck className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />
-          {t('دليل تعليمي موثوق للعراق', 'Iraq’s trusted education directory')}
+          {t('دليل التعليم في العراق', 'Iraq education directory')}
         </div>
 
         <h1 className="mx-auto mt-5 max-w-4xl text-3xl font-extrabold leading-[1.22] tracking-tight text-balance sm:mt-6 sm:text-5xl lg:text-6xl">
@@ -143,7 +143,7 @@ export default function HeroSearchSection({
         </form>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-slate-300 sm:mt-6 sm:text-xs">
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t('مؤسسات موثقة', 'Vetted institutions')}</span>
+          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t('مؤسسات مدرجة', 'Directory listings')}</span>
           <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t(`${governorates.length} محافظة`, `${governorates.length} governorates`)}</span>
           <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t('قرارات أوضح للأهالي', 'Clearer choices for families')}</span>
         </div>

@@ -28,13 +28,13 @@ export default function FeaturedInstitutionsSection({
         <div className="max-w-2xl">
           <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            {t('مؤسسات تعليمية معتمدة وموثقة', 'Vetted & accredited institutions')}
+            {t('مؤسسات تعليمية ضمن الدليل', 'Institutions in the directory')}
           </div>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
             {t('أبرز الصروح التعليمية في العراق', 'Featured Iraqi educational institutions')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
-            {t('اكتشف مؤسسات موثوقة، وقارن التفاصيل قبل اتخاذ الخطوة التالية.', 'Discover trusted institutions and compare the details before your next step.')}
+            {t('قارن التفاصيل وتواصل مباشرةً قبل اتخاذ الخطوة التالية.', 'Compare the details and contact institutions before your next step.')}
           </p>
         </div>
 
@@ -108,8 +108,12 @@ export default function FeaturedInstitutionsSection({
 
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <span className="inline-flex min-w-0 items-center gap-1 text-[10px] font-bold text-emerald-800">
-                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
-                    <span className="truncate">{language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar}</span>
+                    {inst.isVerified ? <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" /> : null}
+                    <span className="truncate">
+                      {inst.isVerified
+                        ? (language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar)
+                        : t('مدرج على المنصة', 'Listed on Eduraq')}
+                    </span>
                   </span>
                   <span className="shrink-0 text-[11px] font-extrabold text-slate-700">
                     {inst.tuition.min === 0 ? t('مجاني', 'Free') : `$${inst.tuition.min.toLocaleString()} / ${t('سنوياً', 'yr')}`}
