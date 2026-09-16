@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/core/context/LanguageContext';
+import Navbar from '@/components/shared/Navbar';
+import Footer from '@/components/shared/Footer';
 import { getGovernorates, getTaxonomies, getCategories } from '@/core/services/masterDataService';
 import { createApplication } from '@/core/services/applicationService';
 import { Governorate, TaxonomyItem, Category } from '@/core/types/masterData';
@@ -99,8 +101,10 @@ export default function ApplyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-4">
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-4">
           <div className="w-14 h-14 mx-auto rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
             <CheckCircle2 className="w-8 h-8" />
           </div>
@@ -119,14 +123,18 @@ export default function ApplyPage() {
           >
             {t('العودة للموقع الرئيسي', 'Back to Home')}
           </button>
-        </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-12">
-      <div className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Navbar />
+      <main className="flex-1 px-4 py-12">
+        <div className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-6">
         <div className="text-center">
           <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
             <UserPlus className="w-7 h-7" />
@@ -361,7 +369,9 @@ export default function ApplyPage() {
             {t('إرسال الطلب', 'Submit Application')}
           </button>
         </form>
-      </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

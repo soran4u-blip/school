@@ -7,6 +7,7 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
+import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { ArrowRight, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 
 // The directory's first content showcase. Cards make the institution itself the focal point and
@@ -53,6 +54,7 @@ export default function FeaturedInstitutionsSection({
           const cat = categories.find((item) => item.id === inst.categoryId);
           const profileHref = localeHref(`/institutions/${inst.slug}`, language);
           const hasReviews = inst.metrics.reviewCount > 0;
+          const publiclyVerified = inst.isVerified && isInstitutionEvidenceFresh(inst);
 
           return (
             <article
@@ -108,9 +110,9 @@ export default function FeaturedInstitutionsSection({
 
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <span className="inline-flex min-w-0 items-center gap-1 text-[10px] font-bold text-emerald-800">
-                    {inst.isVerified ? <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" /> : null}
+                    {publiclyVerified ? <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" /> : null}
                     <span className="truncate">
-                      {inst.isVerified
+                      {publiclyVerified
                         ? (language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar)
                         : t('مدرج على المنصة', 'Listed on Eduraq')}
                     </span>

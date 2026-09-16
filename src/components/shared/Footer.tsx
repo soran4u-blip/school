@@ -121,6 +121,11 @@ export default function Footer() {
                   {t('مجتمع الأهالي', 'Community')}
                 </Link>
               </li>
+              <li>
+                <Link href="/trust" className="hover:text-white transition-colors">
+                  {t('مركز الثقة والتحقق', 'Trust & Verification Center')}
+                </Link>
+              </li>
               <li className="pt-2 text-xs text-slate-400 space-y-1">
                 {systemSettings.contactEmail && (
                   <div className="flex items-center gap-2">
