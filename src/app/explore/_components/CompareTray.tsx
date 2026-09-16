@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
 import { SupportedLanguage } from '@/core/types/masterData';
+import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { Check, ChevronDown, GitCompareArrows, X } from 'lucide-react';
 
 function tuitionLabel(institution: Institution, language: SupportedLanguage, t: (ar: string, en: string) => string) {
@@ -86,7 +87,7 @@ export default function CompareTray({
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span>{t('موثق', 'Verified')}</span>
-                      <Check className={`h-3.5 w-3.5 ${institution.isVerified ? 'text-emerald-300' : 'text-slate-500'}`} aria-label={institution.isVerified ? t('نعم', 'Yes') : t('لا', 'No')} />
+                        <Check className={`h-3.5 w-3.5 ${institution.isVerified && isInstitutionEvidenceFresh(institution) ? 'text-emerald-300' : 'text-slate-500'}`} aria-label={institution.isVerified && isInstitutionEvidenceFresh(institution) ? t('نعم', 'Yes') : t('لا', 'No')} />
                     </div>
                   </div>
                 </div>

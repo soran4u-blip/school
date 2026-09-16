@@ -365,12 +365,14 @@ export default function InstitutionProfile({
                   {category ? (language === 'en' ? category.name.en : category.name.ar) : institution.categoryId}
                 </span>
 
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-md">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md ${institution.isVerified && evidenceFresh ? 'text-emerald-300 bg-emerald-950/80 border border-emerald-500/40' : 'text-amber-200 bg-amber-950/80 border border-amber-500/40'}`}>
+                  <ShieldCheck className={`w-3.5 h-3.5 ${institution.isVerified && evidenceFresh ? 'text-emerald-400' : 'text-amber-400'}`} />
                    <span>
-                     {institution.isVerified
-                       ? (language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar)
-                       : t('قيد التحقق', 'Verification pending')}
+                     {institution.isVerified && evidenceFresh
+                        ? (language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar)
+                        : institution.isVerified
+                          ? t('تحتاج مراجعة الأدلة', 'Evidence refresh needed')
+                          : t('قيد التحقق', 'Verification pending')}
                    </span>
                 </span>
               </div>
@@ -552,7 +554,7 @@ export default function InstitutionProfile({
                         {language === 'en' ? institution.accreditation.authority.en : institution.accreditation.authority.ar}
                       </p>
                     )}
-                    <p className={`text-xs leading-relaxed ${institution.isVerified ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    <p className={`text-xs leading-relaxed ${institution.isVerified && evidenceFresh ? 'text-emerald-800' : 'text-amber-800'}`}>
                       {evidenceFresh && institution.accreditation?.details?.[language === 'en' ? 'en' : 'ar'] || t(
                         'لم تتم إضافة تفاصيل اعتماد خاصة بهذه المؤسسة بعد. تواصل مع قسم القبول للتحقق من المتطلبات الرسمية.',
                         'Institution-specific accreditation details have not been supplied yet. Contact admissions to confirm official requirements.'

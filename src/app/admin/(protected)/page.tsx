@@ -22,6 +22,8 @@ export default function AdminDashboardPage() {
     governoratesCount: 0,
     categoriesCount: 0,
     institutionsCount: 0,
+    activeInstitutionsCount: 0,
+    verifiedInstitutionsCount: 0,
     tutorsCount: 0,
   });
 
@@ -38,6 +40,8 @@ export default function AdminDashboardPage() {
         governoratesCount: govs.length,
         categoriesCount: cats.length,
         institutionsCount: insts.length,
+        activeInstitutionsCount: insts.filter((inst) => inst.status === 'ACTIVE').length,
+        verifiedInstitutionsCount: insts.filter((inst) => inst.isVerified).length,
         tutorsCount: tutors.length,
       });
     }
@@ -115,7 +119,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-slate-900">{stats.institutionsCount}</span>
-            <span className="text-xs text-emerald-600 font-semibold ms-2">100% {t('معتمدة رسمياً', 'Accredited')}</span>
+            <span className="text-xs text-slate-500 font-semibold ms-2">{stats.activeInstitutionsCount} {t('نشطة', 'active')} · {stats.verifiedInstitutionsCount} {t('موثقة', 'verified')}</span>
           </div>
         </div>
 

@@ -33,6 +33,8 @@ import {
   Bug,
   MessageCircle,
   Megaphone,
+  Menu,
+  X,
 } from 'lucide-react';
 import NotificationCenter from '@/components/shared/NotificationCenter';
 
@@ -44,6 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // The role decides which sections are shown. This is presentation only — proxy.ts refuses the
   // request and firestore.rules refuses the write regardless of what the sidebar renders.
   const [role, setRole] = useState<AdminRole | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     return onIdTokenChanged(auth, async (user) => {
@@ -180,9 +183,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen flex bg-slate-100 text-slate-900">
       {/* Admin Sidebar */}
-      <aside className="w-72 bg-[#0B192C] text-white flex flex-col shrink-0 border-e border-slate-800 shadow-xl">
+      {mobileNavOpen && (
+        <button aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" />
+      )}
+      <aside className={`fixed inset-y-0 end-0 z-50 flex w-72 flex-col border-e border-slate-800 bg-[#0B192C] text-white shadow-xl transition-transform duration-200 lg:relative lg:z-auto lg:translate-x-0 lg:shadow-xl ${mobileNavOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Top Branding */}
-        <div className="p-6 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#1E3E62] flex items-center justify-center text-[#F1C40F]">
               <GraduationCap className="w-6 h-6" />
@@ -200,6 +206,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     : t('لوحة تحكم السوبر أدمن', 'Superadmin Suite')}
               </p>
             </div>
+            <button type="button" aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileNavOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 lg:hidden">
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
@@ -217,6 +226,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-[#1E3E62] text-white font-bold shadow-xs'
@@ -264,15 +274,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Admin Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Admin Bar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-xs">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2 text-sm text-slate-500">
+            <button type="button" aria-label={t('فتح القائمة', 'Open navigation')} onClick={() => setMobileNavOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
+              <Menu className="h-5 w-5" />
+            </button>
             <span className="font-semibold text-slate-800">{t('إدارة النظام', 'Administration')}</span>
             <span>/</span>
             <span className="text-slate-600 font-medium">
               {pathname === '/admin' ? t('نظرة عامة', 'Overview') : pathname.split('/').pop()}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/messages"
               className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -281,7 +294,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <MessageCircle className="w-5 h-5" />
             </Link>
             <NotificationCenter />
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               {t('قاعدة البيانات متصلة وجاهزة', 'Firebase Live Connected')}
             </span>
@@ -289,7 +302,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Dynamic Page Container */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 min-w-0 p-4 sm:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

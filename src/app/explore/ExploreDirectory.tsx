@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useSyncExternalStore, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -19,7 +19,10 @@ import ResultsHeader, { SortOption } from './_components/ResultsHeader';
 import InstitutionCard from './_components/InstitutionCard';
 import EmptyResults from './_components/EmptyResults';
 import CompareTray from './_components/CompareTray';
+import ShortlistTray from './_components/ShortlistTray';
 import DirectorySkeleton from './_components/DirectorySkeleton';
+import { readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
+import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 
 interface ExploreDirectoryProps {
   institutions: Institution[];
@@ -43,6 +46,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const [savedSearchSignature, setSavedSearchSignature] = useState<string | null>(null);
   const [savingSearch, setSavingSearch] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const shortlistIds = useSyncExternalStore(subscribeToShortlist, readShortlist, () => []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
@@ -106,7 +110,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const filtered = institutions.filter((inst) => {
     if (selectedCategory !== 'all' && inst.categoryId !== selectedCategory) return false;
     if (selectedGov !== 'all' && inst.governorateId !== selectedGov) return false;
-    if (verifiedOnly && !inst.isVerified) return false;
+    if (verifiedOnly && !(inst.isVerified && isInstitutionEvidenceFresh(inst))) return false;
     if (selectedAccreditations.length > 0 && !selectedAccreditations.some((id) => inst.taxonomyIds?.includes(id))) return false;
     if (selectedCurricula.length > 0 && !selectedCurricula.some((id) => inst.taxonomyIds?.includes(id))) return false;
     if (searchQuery.trim()) {
@@ -198,7 +202,16 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
     });
   };
 
+  const toggleShortlist = (institution: Institution) => {
+    writeShortlist(shortlistIds.includes(institution.id)
+      ? shortlistIds.filter((id) => id !== institution.id)
+      : [...shortlistIds, institution.id]);
+  };
+
   const comparedInstitutions = compareIds
+    .map((id) => institutions.find((institution) => institution.id === id))
+    .filter((institution): institution is Institution => Boolean(institution));
+  const shortlistedInstitutions = shortlistIds
     .map((id) => institutions.find((institution) => institution.id === id))
     .filter((institution): institution is Institution => Boolean(institution));
 
@@ -341,8 +354,10 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
                       governorate={gov}
                       category={cat}
                       compareSelected={isCompared}
-                      compareDisabled={compareIds.length >= 3 && !isCompared}
-                      onCompare={() => toggleCompare(inst)}
+                       compareDisabled={compareIds.length >= 3 && !isCompared}
+                       onCompare={() => toggleCompare(inst)}
+                       shortlistSelected={shortlistIds.includes(inst.id)}
+                       onShortlist={() => toggleShortlist(inst)}
                     />
                   );
                 })}
@@ -359,6 +374,11 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         institutions={comparedInstitutions}
         onRemove={(id) => setCompareIds((current) => current.filter((item) => item !== id))}
         onClear={() => setCompareIds([])}
+      />
+      <ShortlistTray
+        institutions={shortlistedInstitutions}
+        onRemove={(id) => writeShortlist(shortlistIds.filter((item) => item !== id))}
+        onClear={() => writeShortlist([])}
       />
     </div>
   );

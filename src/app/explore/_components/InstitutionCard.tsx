@@ -7,7 +7,8 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Category, Governorate } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
-import { GitCompareArrows, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { Bookmark, GitCompareArrows, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 
 export default function InstitutionCard({
   institution,
@@ -16,6 +17,8 @@ export default function InstitutionCard({
   compareSelected,
   compareDisabled,
   onCompare,
+  shortlistSelected,
+  onShortlist,
 }: {
   institution: Institution;
   governorate: Governorate | undefined;
@@ -23,9 +26,12 @@ export default function InstitutionCard({
   compareSelected: boolean;
   compareDisabled: boolean;
   onCompare: () => void;
+  shortlistSelected: boolean;
+  onShortlist: () => void;
 }) {
   const { language, t } = useLanguage();
   const hasReviews = institution.metrics.reviewCount > 0;
+  const publiclyVerified = institution.isVerified && isInstitutionEvidenceFresh(institution);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col md:flex-row group">
@@ -80,7 +86,7 @@ export default function InstitutionCard({
 
         <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {institution.isVerified && (
+            {publiclyVerified && (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>{language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar}</span>
@@ -92,6 +98,16 @@ export default function InstitutionCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onShortlist}
+              aria-pressed={shortlistSelected}
+              aria-label={shortlistSelected ? t('إزالة من القائمة المختصرة', 'Remove from shortlist') : t('إضافة إلى القائمة المختصرة', 'Add to shortlist')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border ${shortlistSelected ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800'}`}
+            >
+              <Bookmark className="w-3.5 h-3.5" fill={shortlistSelected ? 'currentColor' : 'none'} />
+              <span>{shortlistSelected ? t('محفوظ', 'Saved') : t('احفظ', 'Save')}</span>
+            </button>
             <button
               type="button"
               onClick={onCompare}
