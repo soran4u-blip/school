@@ -33,6 +33,15 @@ export const reviewSchema = z
     message: 'Exactly one of tutorId/institutionId is required',
   });
 
+export const inquirySchema = z.object({
+  institutionId: z.string().min(1),
+  fullName: z.string().trim().min(1).max(100),
+  phone: z.string().trim().min(1).max(30),
+  email: z.string().trim().email().max(200).optional(),
+  message: z.string().trim().max(3000),
+  honeypot: z.string().max(200).optional(),
+});
+
 export const bookingSchema = z.object({
   tutorId: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),

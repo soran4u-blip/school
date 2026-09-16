@@ -11,7 +11,6 @@ import ApplyModal from './ApplyModal';
 import ProgramsTab from './_components/ProgramsTab';
 import ReviewsTab from './_components/ReviewsTab';
 import { useLanguage } from '@/core/context/LanguageContext';
-import { createInquiry } from '@/core/services/reviewService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Governorate, Category } from '@/core/types/masterData';
 import { Review } from '@/core/types/review';
@@ -22,6 +21,7 @@ import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
 import { formatCurrency } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 import {
   MapPin,
   ShieldCheck,
@@ -82,11 +82,20 @@ export default function InstitutionProfile({
   const [inquiryForm, setInquiryForm] = useState({ fullName: '', phone: '', email: '', message: '', hp: '' });
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
   const [inquirySubmitted, setInquirySubmitted] = useState(false);
+  const [inquiryError, setInquiryError] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    trackEvent('institution_profile_view', {
+      institution_id: institution.id,
+      institution_slug: institution.slug,
+      institution_category: institution.categoryId,
+    });
+  }, [institution.categoryId, institution.id, institution.slug]);
 
   useEffect(() => {
     async function loadMyApplications() {
@@ -110,9 +119,19 @@ export default function InstitutionProfile({
 
   const openApply = (program: InstitutionProgram) => {
     if (!currentUser) {
+      trackEvent('institution_apply_login_required', {
+        institution_id: institution.id,
+        institution_slug: institution.slug,
+        program_id: program.id,
+      });
       router.push(`/login?redirect=${encodeURIComponent(`/institutions/${institution.slug}`)}`);
       return;
     }
+    trackEvent('institution_apply_start', {
+      institution_id: institution.id,
+      institution_slug: institution.slug,
+      program_id: program.id,
+    });
     setApplyProgram(program);
     setApplyForm({ message: '' });
     setApplyDocumentPaths([]);
@@ -174,6 +193,11 @@ export default function InstitutionProfile({
         return;
       }
       setApplyResult({ success: true, message: t('تم إرسال طلبك بنجاح! يمكنك متابعة حالته من حسابك.', 'Your application was submitted! You can track its status from your account.') });
+      trackEvent('institution_application_submitted', {
+        institution_id: institution.id,
+        institution_slug: institution.slug,
+        program_id: applyProgram.id,
+      });
       setMyApplicationStatus((prev) => ({ ...prev, [applyProgram.id]: 'SUBMITTED' }));
     } catch {
       setApplyResult({ success: false, message: t('تعذر إرسال طلبك', 'Failed to submit your application') });
@@ -236,28 +260,64 @@ export default function InstitutionProfile({
     if (!inquiryForm.fullName.trim() || !inquiryForm.phone.trim()) return;
 
     if (isCooldownActive('inquiry')) {
+      setInquiryError(t('يرجى الانتظار قليلاً قبل إرسال طلب آخر', 'Please wait a moment before submitting another request'));
       return;
     }
 
+    setInquiryError('');
     setInquirySubmitting(true);
     try {
       const email = inquiryForm.email.trim();
-      await createInquiry({
-        institutionId: institution.id,
-        institutionName: institution.name.en,
-        fullName: inquiryForm.fullName.trim(),
-        phone: inquiryForm.phone.trim(),
-        ...(email && { email }),
-        message: inquiryForm.message.trim(),
+      const res = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: institution.id,
+          fullName: inquiryForm.fullName.trim(),
+          phone: inquiryForm.phone.trim(),
+          ...(email && { email }),
+          message: inquiryForm.message.trim(),
+          honeypot: inquiryForm.hp,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setInquiryError(data.error || t('تعذر إرسال الطلب، حاول مرة أخرى', 'Could not send your request. Please try again.'));
+        return;
+      }
+
       markSubmitted('inquiry');
       setInquirySubmitted(true);
+      trackEvent('institution_inquiry_submitted', {
+        institution_id: institution.id,
+        institution_slug: institution.slug,
+        has_email: Boolean(email),
+      });
       setInquiryForm({ fullName: '', phone: '', email: '', message: '', hp: '' });
     } catch {
-      // silently keep modal open; user can retry
+      setInquiryError(t('تعذر إرسال الطلب، حاول مرة أخرى', 'Could not send your request. Please try again.'));
     } finally {
       setInquirySubmitting(false);
     }
+  };
+
+  const setProfileTab = (tab: 'overview' | 'programs' | 'facilities' | 'admissions' | 'reviews') => {
+    setActiveTab(tab);
+    trackEvent('institution_profile_tab_view', {
+      institution_id: institution.id,
+      institution_slug: institution.slug,
+      tab,
+    });
+  };
+
+  const openInquiry = () => {
+    setInquiryError('');
+    setInquirySubmitted(false);
+    setInquiryOpen(true);
+    trackEvent('institution_inquiry_open', {
+      institution_id: institution.id,
+      institution_slug: institution.slug,
+    });
   };
 
   return (
@@ -309,9 +369,13 @@ export default function InstitutionProfile({
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-                {language === 'en' ? institution.name.en : institution.name.ar}
-              </h1>
+               <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
+                 {language === 'en' ? institution.name.en : institution.name.ar}
+               </h1>
+
+               <p className="max-w-2xl text-xs sm:text-sm text-slate-200 leading-relaxed">
+                 {language === 'en' ? institution.tagline.en : institution.tagline.ar}
+               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-medium">
                 <div className="flex items-center gap-1">
@@ -398,9 +462,11 @@ export default function InstitutionProfile({
           <div className="lg:col-span-8 space-y-6">
             
             {/* Tabs Bar */}
-            <div className="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-xs flex flex-wrap gap-1">
-              <button
-                onClick={() => setActiveTab('overview')}
+             <div className="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-xs flex flex-wrap gap-1" role="tablist" aria-label={t('أقسام الملف', 'Profile sections')}>
+               <button
+                 onClick={() => setProfileTab('overview')}
+                 role="tab"
+                 aria-selected={activeTab === 'overview'}
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   activeTab === 'overview' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
@@ -408,8 +474,10 @@ export default function InstitutionProfile({
                 {t('نظرة عامة والاعتماد', 'Overview & Accreditation')}
               </button>
 
-              <button
-                onClick={() => setActiveTab('programs')}
+               <button
+                 onClick={() => setProfileTab('programs')}
+                 role="tab"
+                 aria-selected={activeTab === 'programs'}
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   activeTab === 'programs' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
@@ -417,8 +485,10 @@ export default function InstitutionProfile({
                 {t('الكليات والبرامج والأقساط', 'Programs & Tuition')}
               </button>
 
-              <button
-                onClick={() => setActiveTab('facilities')}
+               <button
+                 onClick={() => setProfileTab('facilities')}
+                 role="tab"
+                 aria-selected={activeTab === 'facilities'}
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   activeTab === 'facilities' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
@@ -426,8 +496,10 @@ export default function InstitutionProfile({
                 {t('المرافق والخدمات', 'Campus Facilities')}
               </button>
 
-              <button
-                onClick={() => setActiveTab('admissions')}
+               <button
+                 onClick={() => setProfileTab('admissions')}
+                 role="tab"
+                 aria-selected={activeTab === 'admissions'}
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   activeTab === 'admissions' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
@@ -435,8 +507,10 @@ export default function InstitutionProfile({
                 {t('شروط القبول ومعدلات الوزاري', 'Admission Requirements')}
               </button>
 
-              <button
-                onClick={() => setActiveTab('reviews')}
+               <button
+                 onClick={() => setProfileTab('reviews')}
+                 role="tab"
+                 aria-selected={activeTab === 'reviews'}
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
                   activeTab === 'reviews' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
@@ -458,7 +532,7 @@ export default function InstitutionProfile({
                 </div>
 
                 {/* Accreditation Details Card */}
-                <div className="p-5 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2">
+                 <div className="p-5 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2">
                   <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm">
                     <ShieldCheck className="w-5 h-5 text-emerald-600" />
                     <span>{t('حالة الاعتماد والترخيص الحكومي الرسمي', 'Official Accreditation Status')}</span>
@@ -468,9 +542,51 @@ export default function InstitutionProfile({
                       'هذه المؤسسة معتمدة ومرخصة رسمياً من وزارة التعليم العالي والبحث العلمي العراقية أو وزارة التربية وتخضع لإشراف لجان التقييم الأكاديمي والامتحانات الوطنية.',
                       'This institution is officially recognized and accredited by the Iraqi Ministry of Higher Education or Ministry of Education.'
                     )}
-                  </p>
-                </div>
-              </div>
+                   </p>
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                     <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                       {t('لغات التدريس', 'Languages of instruction')}
+                     </span>
+                     <span className="text-xs font-extrabold text-slate-800">
+                       {institution.languagesOfInstruction?.length
+                         ? institution.languagesOfInstruction.map((code) => ({ AR: 'العربية', EN: 'English', KU: 'Kurdish', FR: 'Français' }[code])).join('، ')
+                         : t('غير محددة', 'Not specified')}
+                     </span>
+                   </div>
+                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                     <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                       {t('آخر تحديث للملف', 'Profile updated')}
+                     </span>
+                     <span className="text-xs font-extrabold text-slate-800">
+                       {new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(institution.updatedAt))}
+                     </span>
+                   </div>
+                 </div>
+
+                 {institution.galleryUrls && institution.galleryUrls.length > 0 && (
+                   <div>
+                     <h3 className="text-sm font-extrabold text-[#0B192C] mb-3">
+                       {t('صور من الحرم والمرافق', 'Campus & facilities')}
+                     </h3>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                       {institution.galleryUrls.slice(0, 4).map((url, index) => (
+                         <div key={`${url}-${index}`} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                           <Thumbnail
+                             src={url}
+                             alt={`${institution.name.en} ${index + 1}`}
+                             fill
+                             sizes="(max-width: 640px) 50vw, 25vw"
+                             className="object-cover"
+                           />
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </div>
             )}
 
             {/* Tab 2: Programs & Tuition */}
@@ -551,8 +667,12 @@ export default function InstitutionProfile({
                   keyed by Auth uid, so institution.userId (not institution.id) is the recipient. */}
               {institution.userId && (
                 <button
-                  onClick={async () => {
-                    try {
+                 onClick={async () => {
+                   trackEvent('institution_chat_start', {
+                     institution_id: institution.id,
+                     institution_slug: institution.slug,
+                   });
+                   try {
                       const res = await fetch('/api/conversations', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -588,14 +708,18 @@ export default function InstitutionProfile({
               {/* Direct WhatsApp CTA Button — hidden when no number is set, which otherwise
                   produced a broken `wa.me/` link. */}
               {institution.contact?.whatsappNumber && (
-                <a
-                  href={`https://wa.me/${institution.contact.whatsappNumber}?text=${encodeURIComponent(
+                 <a
+                   href={`https://wa.me/${institution.contact.whatsappNumber}?text=${encodeURIComponent(
                     t(
                       `مرحباً، أود الاستفسار عن القبول والتسجيل في ${institution.name.ar}`,
                       `Hi, I'd like to ask about admissions at ${institution.name.en || institution.name.ar}`
                     )
-                  )}`}
-                  target="_blank"
+                   )}`}
+                   onClick={() => trackEvent('institution_whatsapp_click', {
+                     institution_id: institution.id,
+                     institution_slug: institution.slug,
+                   })}
+                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                 >
@@ -605,7 +729,7 @@ export default function InstitutionProfile({
               )}
 
               <button
-                onClick={() => setInquiryOpen(true)}
+                 onClick={openInquiry}
                 className="w-full py-3 border-2 border-[#0B192C] text-[#0B192C] hover:bg-[#0B192C] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
@@ -615,18 +739,31 @@ export default function InstitutionProfile({
               <div className="pt-4 border-t border-slate-100 space-y-3 text-xs">
                 <div className="flex items-center gap-3 text-slate-700" dir="ltr">
                   <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-semibold font-mono">{institution.contact.phonePrimary}</span>
+                   <a href={`tel:${institution.contact.phonePrimary}`} className="font-semibold font-mono hover:text-blue-700">
+                     {institution.contact.phonePrimary}
+                   </a>
                 </div>
 
                 <div className="flex items-center gap-3 text-slate-700">
                   <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">{institution.contact.email}</span>
+                   <a href={`mailto:${institution.contact.email}`} className="font-medium hover:text-blue-700">
+                     {institution.contact.email}
+                   </a>
                 </div>
 
                 {institution.contact.website && (
                   <div className="flex items-center gap-3 text-slate-700">
                     <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-                    <a href={institution.contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-semibold">
+                     <a
+                       href={institution.contact.website}
+                       onClick={() => trackEvent('institution_website_click', {
+                         institution_id: institution.id,
+                         institution_slug: institution.slug,
+                       })}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-blue-600 hover:underline font-semibold"
+                     >
                       {t('الموقع الإلكتروني الرسمي', 'Official Website')}
                     </a>
                   </div>
@@ -651,9 +788,10 @@ export default function InstitutionProfile({
           form={inquiryForm}
           setForm={setInquiryForm}
           onSubmit={handleSubmitInquiry}
-          submitting={inquirySubmitting}
-          submitted={inquirySubmitted}
-          onClose={() => { setInquiryOpen(false); setInquirySubmitted(false); }}
+           submitting={inquirySubmitting}
+           submitted={inquirySubmitted}
+           error={inquiryError}
+           onClose={() => { setInquiryOpen(false); setInquirySubmitted(false); setInquiryError(''); }}
         />
       )}
 
