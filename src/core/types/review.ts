@@ -29,6 +29,17 @@ export interface Inquiry {
   phone: string;
   email?: string;
   message: string;
-  status: 'NEW' | 'CONTACTED' | 'CLOSED';
+  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'APPLICATION_STARTED' | 'CLOSED';
   createdAt: string;
+  updatedAt?: string;
+  assignedTo?: string;
+  assignedToName?: string;
+  notes?: string;
+  tags?: string[];
+  nextFollowUpAt?: string;
+  reminderSentAt?: string;
+  firstResponseAt?: string;
+  lastResponseAt?: string;
+  firstResponseMinutes?: number;
+  closedAt?: string;
 }

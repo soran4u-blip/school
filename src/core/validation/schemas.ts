@@ -42,6 +42,17 @@ export const inquirySchema = z.object({
   honeypot: z.string().max(200).optional(),
 });
 
+export const inquiryAdminUpdateSchema = z
+  .object({
+    status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'APPLICATION_STARTED', 'CLOSED']).optional(),
+    assignedTo: z.string().trim().max(200).nullable().optional(),
+    assignedToName: z.string().trim().max(100).nullable().optional(),
+    notes: z.string().trim().max(5000).nullable().optional(),
+    tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+    nextFollowUpAt: z.string().regex(/^\d{4}-\d{2}-\d{2}(T.*)?$/, 'Invalid follow-up date').nullable().optional(),
+  })
+  .refine((v) => Object.values(v).some((value) => value !== undefined), { message: 'Nothing to update' });
+
 export const bookingSchema = z.object({
   tutorId: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
@@ -80,7 +91,7 @@ export const tutorVerificationRejectSchema = z.object({
 // happened.
 export const listingAdminUpdateSchema = z
   .object({
-    status: z.enum(['ACTIVE', 'PENDING', 'SUSPENDED']).optional(),
+    status: z.enum(['DRAFT', 'ACTIVE', 'PENDING', 'SUSPENDED']).optional(),
     isVerified: z.boolean().optional(),
     isFeatured: z.boolean().optional(),
   })
@@ -124,6 +135,10 @@ export const threadMessageSchema = z.object({
 // which verifies identity by phone number in the body rather than a session.
 export const guestThreadMessageSchema = threadMessageSchema.extend({
   phone: z.string().trim().min(1),
+});
+
+export const inquiryThreadMessageSchema = threadMessageSchema.extend({
+  phone: z.string().trim().min(1).optional(),
 });
 
 export const pushSubscribeSchema = z.object({

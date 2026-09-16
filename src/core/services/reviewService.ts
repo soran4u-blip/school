@@ -144,7 +144,25 @@ export async function getInquiriesPage(
 }
 
 export async function updateInquiryStatus(id: string, status: Inquiry['status']): Promise<void> {
-  await updateDoc(doc(db, 'inquiries', id), { status });
+  await updateInquiry(id, { status });
+}
+
+type InquiryUpdate = Partial<Pick<Inquiry, 'status' | 'tags'>> & {
+  assignedTo?: string | null;
+  assignedToName?: string | null;
+  notes?: string | null;
+  nextFollowUpAt?: string | null;
+};
+
+export async function updateInquiry(id: string, patch: InquiryUpdate): Promise<Inquiry> {
+  const res = await fetch(`/api/inquiries/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || 'Could not update the inquiry');
+  return body.inquiry as Inquiry;
 }
 
 // An institution's own inquiries (isOwnerInstitution rule scopes this to their own docs only).

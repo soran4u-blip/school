@@ -37,7 +37,9 @@ export interface InstitutionAdmissions {
 export interface InstitutionAccreditation {
   authority?: LocalizedString;
   details?: LocalizedString;
+  sourceUrl?: string;
   verifiedAt?: string;
+  expiresAt?: string;
 }
 
 export interface Institution {
@@ -67,7 +69,7 @@ export interface Institution {
   admissions?: InstitutionAdmissions;
   accreditation?: InstitutionAccreditation;
   
-  establishedYear: number;
+  establishedYear?: number;
   genderPolicy: 'CO_ED' | 'BOYS_ONLY' | 'GIRLS_ONLY';
   languagesOfInstruction: ('AR' | 'EN' | 'KU' | 'FR')[];
   
@@ -84,7 +86,7 @@ export interface Institution {
   isVerified: boolean;
   verificationBadgeLabel: LocalizedString; // e.g. 'Ministry of Higher Education Accredited'
   
-  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  status: 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED';
   isFeatured: boolean;
   
   metrics: {

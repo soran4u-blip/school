@@ -81,6 +81,7 @@ export function formatCurrency(amount: number, currency: 'IQD' | 'USD', language
 export interface ProfileCompleteness {
   complete: boolean;
   missingFields: LocalizedString[];
+  score?: number;
 }
 
 // Minimum bar for a profile to go public: enough that a visitor lands on something real, not an
@@ -95,7 +96,7 @@ export function getInstitutionCompleteness(inst: Institution): ProfileCompletene
     [!!inst.contact.phonePrimary, { ar: 'رقم الهاتف', en: 'Phone number' }],
   ];
   const missingFields = checks.filter(([ok]) => !ok).map(([, label]) => label);
-  return { complete: missingFields.length === 0, missingFields };
+  return { complete: missingFields.length === 0, missingFields, score: Math.round(((checks.length - missingFields.length) / checks.length) * 100) };
 }
 
 export function getTutorCompleteness(tutor: Tutor): ProfileCompleteness {
