@@ -7,6 +7,7 @@ import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { saveSearch } from '@/core/services/savedSearchService';
+import { SavedSearchFilters } from '@/core/types/savedSearch';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
@@ -243,11 +244,11 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         selectedGov !== 'all' && governorates.find((g) => g.id === selectedGov)?.name[language === 'en' ? 'en' : 'ar'],
         searchQuery.trim(),
       ].filter(Boolean).join(' • ') || t('بحث بدون فلاتر', 'Unfiltered search');
-      await saveSearch(currentUser.uid, label, {
-        q: searchQuery.trim() || undefined,
-        categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
-        governorateId: selectedGov !== 'all' ? selectedGov : undefined,
-      });
+      const filters: SavedSearchFilters = {};
+      if (searchQuery.trim()) filters.q = searchQuery.trim();
+      if (selectedCategory !== 'all') filters.categoryId = selectedCategory;
+      if (selectedGov !== 'all') filters.governorateId = selectedGov;
+      await saveSearch(currentUser.uid, label, filters);
       setSavedSearchSignature(searchSignature);
     } finally {
       setSavingSearch(false);
