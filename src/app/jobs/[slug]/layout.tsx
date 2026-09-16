@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getPublicJobBySlug } from '@/core/server/data/jobs';
-import { getInstitutionById } from '@/core/services/institutionService';
+import { getPublicInstitutionBySlug } from '@/core/server/data/institutions';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -66,7 +66,7 @@ export default async function JobLayout({
     return children;
   }
 
-  const institution = job.institutionId ? await getInstitutionById(job.institutionId) : null;
+  const institution = job.institutionId ? await getPublicInstitutionBySlug(job.institutionId) : null;
   const orgName = institution?.name.en || job.posterName || 'Eduraq';
 
   const jsonLd = {
