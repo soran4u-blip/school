@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { ImageIcon } from 'lucide-react';
 
@@ -10,9 +12,6 @@ import { ImageIcon } from 'lucide-react';
 // whole page as the resolved URL — visible as a wall of "An empty string was passed to the src
 // attribute" in the server log on any page listing a freshly-approved profile.
 //
-// Not a Client Component: it renders no interactivity, so it can be used from server and client
-// components alike.
-
 export default function Thumbnail({
   src,
   alt,
@@ -38,7 +37,11 @@ export default function Thumbnail({
   // (object-cover) thumbnail. Only meaningful alongside object-cover in `className`.
   objectPosition?: string;
 }) {
-  if (!src) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const unusableSrc = !src || /placehold\.co|via\.placeholder\.com|example\.com/i.test(src);
+  const failed = Boolean(src && failedSrc === src);
+
+  if (unusableSrc || failed) {
     return (
       <div
         className={`flex items-center justify-center bg-slate-100 text-slate-300 ${className} ${fallbackClassName}`}
@@ -50,15 +53,16 @@ export default function Thumbnail({
     );
   }
 
+  const validSrc = src as string;
   const style = objectPosition ? { objectPosition } : undefined;
 
   if (fill) {
-    return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={className} style={style} />;
+    return <Image src={validSrc} alt={alt} fill sizes={sizes} priority={priority} className={className} style={style} onError={() => setFailedSrc(validSrc)} />;
   }
 
   return (
     <Image
-      src={src}
+      src={validSrc}
       alt={alt}
       width={width ?? 40}
       height={height ?? 40}
@@ -66,6 +70,7 @@ export default function Thumbnail({
       priority={priority}
       className={className}
       style={style}
+      onError={() => setFailedSrc(validSrc)}
     />
   );
 }
