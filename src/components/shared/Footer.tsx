@@ -122,28 +122,29 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/trust" className="hover:text-white transition-colors">
+                <Link href={localeHref('/trust', language)} className="hover:text-white transition-colors">
                   {t('مركز الثقة والتحقق', 'Trust & Verification Center')}
                 </Link>
               </li>
               <li className="pt-2 text-xs text-slate-400 space-y-1">
                 {systemSettings.contactEmail && (
-                  <div className="flex items-center gap-2">
+                  <a href={`mailto:${systemSettings.contactEmail}`} className="flex items-center gap-2 hover:text-white transition-colors">
                     <Mail className="w-3.5 h-3.5" />
                     <span>{systemSettings.contactEmail}</span>
-                  </div>
+                  </a>
                 )}
                 {systemSettings.contactPhone && (
-                  <div className="flex items-center gap-2">
+                  <a href={`tel:${systemSettings.contactPhone}`} className="flex items-center gap-2 hover:text-white transition-colors">
                     <Phone className="w-3.5 h-3.5" />
                     <span dir="ltr">{systemSettings.contactPhone}</span>
-                  </div>
+                  </a>
                 )}
                 {systemSettings.contactWhatsApp && (
                   <a
                     href={`https://wa.me/${systemSettings.contactWhatsApp}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={t('التواصل عبر واتساب', 'Contact us on WhatsApp')}
                     className="flex items-center gap-2 hover:text-white transition-colors"
                   >
                     <MessageCircleMore className="w-3.5 h-3.5" />
@@ -156,9 +157,9 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-500 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-400 sm:flex-row">
           <p>© {new Date().getFullYear()} Eduraq. {t('جميع الحقوق محفوظة لجمهورية العراق.', 'All rights reserved. Republic of Iraq.')}</p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-center sm:justify-end">
             <Link href="/privacy" className="hover:text-white transition-colors">{t('سياسة الخصوصية', 'Privacy Policy')}</Link>
             <Link href="/terms" className="hover:text-white transition-colors">{t('شروط الاستخدام', 'Terms of Use')}</Link>
             <span>{t('تحديث فوري وقاعدة بيانات ديناميكية', 'Real-time & Zero Hardcoding Engine')}</span>
