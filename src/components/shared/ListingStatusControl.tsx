@@ -4,7 +4,7 @@ import React from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { CheckCircle2, PauseCircle, PlayCircle, Clock } from 'lucide-react';
 
-export type ListingStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+export type ListingStatus = 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED';
 
 // Admin-side status control for institution and tutor listings.
 //
@@ -18,12 +18,19 @@ export type ListingStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
 // pausing one.
 
 const NEXT_ACTION: Record<ListingStatus, { next: ListingStatus; ar: string; en: string }> = {
+  DRAFT: { next: 'PENDING', ar: 'إرسال للمراجعة', en: 'Submit for review' },
   PENDING: { next: 'ACTIVE', ar: 'اعتماد', en: 'Approve' },
   ACTIVE: { next: 'SUSPENDED', ar: 'إيقاف', en: 'Suspend' },
   SUSPENDED: { next: 'ACTIVE', ar: 'تفعيل', en: 'Activate' },
 };
 
 const LABEL: Record<ListingStatus, { ar: string; en: string; className: string; Icon: typeof Clock }> = {
+  DRAFT: {
+    ar: 'مسودة',
+    en: 'Draft',
+    className: 'bg-slate-50 text-slate-600 border-slate-300',
+    Icon: Clock,
+  },
   PENDING: {
     ar: 'قيد المراجعة',
     en: 'Pending review',

@@ -40,7 +40,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [searchSaved, setSearchSaved] = useState(false);
+  const [savedSearchSignature, setSavedSearchSignature] = useState<string | null>(null);
   const [savingSearch, setSavingSearch] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
@@ -70,6 +70,12 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const [priceMax, setPriceMax] = useState(searchParams.get('max') || '');
   const [minRating, setMinRating] = useState(Number(searchParams.get('rating')) || 0);
 
+  const searchSignature = JSON.stringify([
+    searchQuery, selectedCategory, selectedGov, verifiedOnly, selectedAccreditations,
+    selectedCurricula, priceCurrency, priceMin, priceMax, minRating,
+  ]);
+  const searchSaved = savedSearchSignature === searchSignature;
+
   const [nearMeCoords, setNearMeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [nearMeError, setNearMeError] = useState('');
   const [radiusKm, setRadiusKm] = useState(25);
@@ -96,10 +102,6 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
 
     return () => window.clearTimeout(timer);
   }, [language, router, searchQuery, selectedCategory, selectedGov, verifiedOnly, selectedAccreditations, selectedCurricula, priceCurrency, priceMin, priceMax, minRating, sortBy]);
-
-  useEffect(() => {
-    setSearchSaved(false);
-  }, [searchQuery, selectedCategory, selectedGov, verifiedOnly, selectedAccreditations, selectedCurricula, priceCurrency, priceMin, priceMax, minRating]);
 
   const filtered = institutions.filter((inst) => {
     if (selectedCategory !== 'all' && inst.categoryId !== selectedCategory) return false;
@@ -233,7 +235,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
         governorateId: selectedGov !== 'all' ? selectedGov : undefined,
       });
-      setSearchSaved(true);
+      setSavedSearchSignature(searchSignature);
     } finally {
       setSavingSearch(false);
     }

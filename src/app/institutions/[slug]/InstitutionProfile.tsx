@@ -21,6 +21,7 @@ import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
 import { formatCurrency } from '@/lib/utils';
+import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { trackEvent } from '@/lib/analytics';
 import {
   MapPin,
@@ -57,6 +58,7 @@ export default function InstitutionProfile({
 }) {
   const router = useRouter();
   const { language, t } = useLanguage();
+  const evidenceFresh = isInstitutionEvidenceFresh(institution);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'facilities' | 'admissions' | 'reviews'>('overview');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -409,7 +411,7 @@ export default function InstitutionProfile({
             </div>
             <div>
               <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('سنة التأسيس', 'Established')}</span>
-              <span className="font-extrabold text-xs text-slate-800">{institution.establishedYear}</span>
+               <span className="font-extrabold text-xs text-slate-800">{institution.establishedYear || t('غير محدد', 'Not provided')}</span>
             </div>
           </div>
 
@@ -536,27 +538,27 @@ export default function InstitutionProfile({
                 </div>
 
                  {/* Accreditation Details Card */}
-                 <div className={`p-5 rounded-2xl border space-y-2 ${institution.isVerified ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'}`}>
-                   <div className={`flex items-center gap-2 font-extrabold text-sm ${institution.isVerified ? 'text-emerald-900' : 'text-amber-900'}`}>
-                     <ShieldCheck className={`w-5 h-5 ${institution.isVerified ? 'text-emerald-600' : 'text-amber-600'}`} />
+                 <div className={`p-5 rounded-2xl border space-y-2 ${evidenceFresh ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'}`}>
+                   <div className={`flex items-center gap-2 font-extrabold text-sm ${evidenceFresh ? 'text-emerald-900' : 'text-amber-900'}`}>
+                     <ShieldCheck className={`w-5 h-5 ${evidenceFresh ? 'text-emerald-600' : 'text-amber-600'}`} />
                      <span>
-                       {institution.isVerified
-                         ? t('حالة الاعتماد والترخيص', 'Accreditation & licensing')
-                         : t('الاعتماد قيد التحقق', 'Accreditation pending verification')}
+                       {evidenceFresh
+                          ? t('حالة الاعتماد والترخيص', 'Accreditation & licensing')
+                          : t('بيانات الاعتماد غير متاحة للتحقق', 'Accreditation details not verified')}
                      </span>
                    </div>
-                   {institution.accreditation?.authority && (
-                     <p className="text-xs font-bold text-slate-700">
-                       {language === 'en' ? institution.accreditation.authority.en : institution.accreditation.authority.ar}
-                     </p>
-                   )}
-                   <p className={`text-xs leading-relaxed ${institution.isVerified ? 'text-emerald-800' : 'text-amber-800'}`}>
-                     {institution.accreditation?.details?.[language === 'en' ? 'en' : 'ar'] || t(
-                       'لم تتم إضافة تفاصيل اعتماد خاصة بهذه المؤسسة بعد. تواصل مع قسم القبول للتحقق من المتطلبات الرسمية.',
-                       'Institution-specific accreditation details have not been supplied yet. Contact admissions to confirm official requirements.'
-                     )}
-                   </p>
-                   {institution.accreditation?.verifiedAt && (
+                    {evidenceFresh && institution.accreditation?.authority && (
+                      <p className="text-xs font-bold text-slate-700">
+                        {language === 'en' ? institution.accreditation.authority.en : institution.accreditation.authority.ar}
+                      </p>
+                    )}
+                    <p className={`text-xs leading-relaxed ${institution.isVerified ? 'text-emerald-800' : 'text-amber-800'}`}>
+                      {evidenceFresh && institution.accreditation?.details?.[language === 'en' ? 'en' : 'ar'] || t(
+                        'لم تتم إضافة تفاصيل اعتماد خاصة بهذه المؤسسة بعد. تواصل مع قسم القبول للتحقق من المتطلبات الرسمية.',
+                        'Institution-specific accreditation details have not been supplied yet. Contact admissions to confirm official requirements.'
+                      )}
+                    </p>
+                    {evidenceFresh && institution.accreditation?.verifiedAt && (
                      <p className="text-[11px] text-slate-500">
                        {t('آخر تحقق:', 'Last verified:')} {institution.accreditation.verifiedAt}
                      </p>

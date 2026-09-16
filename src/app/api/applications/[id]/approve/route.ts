@@ -118,7 +118,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           whatsappNumber: application.whatsappNumber || application.phone,
           email: application.email,
         },
-        establishedYear: new Date().getFullYear(),
         genderPolicy: 'CO_ED',
         languagesOfInstruction: ['AR'],
         tuition: { min: 0, max: 0, currency: 'USD', period: 'YEAR' },

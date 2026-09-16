@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reviewSchema, bookingSchema, communityPostSchema } from './schemas';
+import { reviewSchema, bookingSchema, communityPostSchema, inquiryAdminUpdateSchema } from './schemas';
 
 describe('reviewSchema', () => {
   it('accepts exactly one of tutorId/institutionId', () => {
@@ -59,5 +59,22 @@ describe('communityPostSchema', () => {
       body: 'Some text',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('inquiryAdminUpdateSchema', () => {
+  it('accepts the admissions pipeline fields', () => {
+    expect(inquiryAdminUpdateSchema.safeParse({
+      status: 'QUALIFIED',
+      assignedTo: 'admin-1',
+      notes: 'Needs a call tomorrow',
+      tags: ['urgent', 'school-tour'],
+      nextFollowUpAt: '2026-09-20',
+    }).success).toBe(true);
+  });
+
+  it('rejects an empty update and overlong notes', () => {
+    expect(inquiryAdminUpdateSchema.safeParse({}).success).toBe(false);
+    expect(inquiryAdminUpdateSchema.safeParse({ notes: 'x'.repeat(5001) }).success).toBe(false);
   });
 });
