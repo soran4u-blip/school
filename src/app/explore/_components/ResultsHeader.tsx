@@ -34,7 +34,7 @@ export default function ResultsHeader({
         <div className="text-xs font-bold text-slate-700">
           {t('تم العثور على', 'Found')}{' '}
           <span className="text-blue-700 font-black text-sm">{resultCount}</span>{' '}
-          {t('مؤسسة تعليمية معتمدة', 'accredited educational listings')}
+          {t('مؤسسة تعليمية مدرجة', 'education listings')}
         </div>
         <button
           onClick={onSaveSearch}

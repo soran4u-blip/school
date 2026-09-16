@@ -66,6 +66,11 @@ export default function HomeContent({
   const [searchGovernorate, setSearchGovernorate] = useState('');
 
   const submitHeroSearch = () => {
+    if (searchCategory === 'tutors') {
+      router.push(localeHref('/tutors', language));
+      return;
+    }
+
     const params = new URLSearchParams();
     if (searchKeyword.trim()) params.append('q', searchKeyword.trim());
     if (searchCategory) params.append('category', searchCategory);

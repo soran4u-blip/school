@@ -218,12 +218,12 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
             <span>{t('استكشاف وتصفية المؤسسات', 'Explore & Facets')}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black">
-            {t('دليل المدارس والجامعات والمعاهد في العراق', 'Accredited Iraq Education Directory')}
+            {t('دليل المدارس والجامعات والمعاهد في العراق', 'Iraq education directory')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal">
             {t(
-              'تصفح وقارن بين أكثر المؤسسات التعليمية المعتمدة في كافة المحافظات، مع تفاصيل الأقساط ومعايير القبول.',
-              'Filter and compare verified universities, international schools, and vocational centers.'
+              'تصفح وقارن بين المؤسسات التعليمية المدرجة في كافة المحافظات، مع تفاصيل الأقساط ومعايير القبول.',
+              'Filter and compare education listings across Iraq, with tuition and admissions details.'
             )}
           </p>
         </div>

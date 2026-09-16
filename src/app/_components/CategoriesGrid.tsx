@@ -58,14 +58,16 @@ export default function CategoriesGrid({ categories }: { categories: Category[] 
           {categories.map((cat, index) => (
             <Link
               key={cat.id}
-              href={`${localeHref('/explore', language)}?category=${cat.slug}`}
+              href={cat.slug === 'tutors' ? localeHref('/tutors', language) : `${localeHref('/explore', language)}?category=${cat.slug}`}
               className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-[0_14px_28px_-20px_rgba(15,23,42,0.6)] sm:p-[1.125rem]"
             >
               <div className={`mb-5 flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 group-hover:text-white ${ACCENT_STYLES[index % ACCENT_STYLES.length]}`}>
                 {getCategoryIcon(cat.iconName)}
               </div>
               <h3 className="min-h-10 text-xs font-extrabold leading-5 text-slate-900 transition-colors group-hover:text-blue-700 sm:text-sm">
-                {language === 'en' ? cat.name.en : cat.name.ar}
+                {cat.slug === 'tutors'
+                  ? t('أساتذة خصوصيون', 'Private tutors')
+                  : (language === 'en' ? cat.name.en : cat.name.ar)}
               </h3>
               <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-300 group-hover:bg-[#F1C40F]" />

@@ -21,6 +21,7 @@ export default function InstitutionCard({
   category: Category | undefined;
 }) {
   const { language, t } = useLanguage();
+  const hasReviews = institution.metrics.reviewCount > 0;
 
   return (
     <div
@@ -74,9 +75,9 @@ export default function InstitutionCard({
             </div>
 
             <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-md text-xs font-bold text-amber-900 border border-amber-200">
-              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span>{institution.metrics.ratingAvg}</span>
-              <span className="text-slate-400 font-normal text-[11px]">({institution.metrics.reviewCount})</span>
+              <Star className={`w-3.5 h-3.5 ${hasReviews ? 'text-amber-500 fill-amber-500' : 'text-amber-300'}`} />
+              <span>{hasReviews ? institution.metrics.ratingAvg.toFixed(1) : t('لا توجد تقييمات', 'No reviews')}</span>
+              {hasReviews && <span className="text-slate-400 font-normal text-[11px]">({institution.metrics.reviewCount})</span>}
             </div>
           </div>
 
@@ -88,10 +89,12 @@ export default function InstitutionCard({
         {/* Badges & Actions */}
         <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar}</span>
-            </span>
+            {institution.isVerified && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar}</span>
+              </span>
+            )}
 
             <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full">
               {institution.tuition.min === 0 ? t('مجاني 100%', '100% Free') : `$${institution.tuition.min.toLocaleString()} / ${t('سنوياً', 'yr')}`}

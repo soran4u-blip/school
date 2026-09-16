@@ -269,7 +269,7 @@ export default function FilterSidebar({
               <span className="text-[10px] text-slate-400 font-mono">{institutions.length}</span>
             </label>
 
-            {categories.map((cat) => {
+            {categories.filter((cat) => cat.slug !== 'tutors').map((cat) => {
               const count = institutions.filter(i => i.categoryId === cat.slug).length;
               const isSelected = selectedCategory === cat.slug;
 
