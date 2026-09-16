@@ -83,14 +83,19 @@ export default function Navbar() {
   }, []);
 
   const toggleLanguage = () => {
-    setLanguage(language === 'ar' ? 'en' : 'ar');
+    const nextLanguage = language === 'ar' ? 'en' : 'ar';
+    setLanguage(nextLanguage);
+    const nextPath = nextLanguage === 'en' ? localeHref(publicPath, 'en') : publicPath;
+    router.push(`${nextPath}${window.location.search}`);
+    router.refresh();
   };
 
-  const isExploreActive = pathname === '/explore';
-  const isJobsActive = pathname === '/jobs';
-  const isEventsActive = pathname === '/events';
-  const isTutorsActive = pathname === '/tutors';
-  const isCommunityActive = pathname === '/community';
+  const publicPath = pathname === '/en' ? '/' : pathname.startsWith('/en/') ? pathname.slice(3) : pathname;
+  const isExploreActive = publicPath === '/explore';
+  const isJobsActive = publicPath === '/jobs';
+  const isEventsActive = publicPath === '/events';
+  const isTutorsActive = publicPath === '/tutors';
+  const isCommunityActive = publicPath === '/community';
 
   const navPill = (active: boolean) =>
     `flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors ${
