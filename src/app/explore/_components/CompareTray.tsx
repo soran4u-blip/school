@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
+import { SupportedLanguage } from '@/core/types/masterData';
 import { Check, ChevronDown, GitCompareArrows, X } from 'lucide-react';
 
-function tuitionLabel(institution: Institution, language: 'ar' | 'en', t: (ar: string, en: string) => string) {
+function tuitionLabel(institution: Institution, language: SupportedLanguage, t: (ar: string, en: string) => string) {
   if (institution.tuition.min === 0) return t('مجاني', 'Free');
   const symbol = institution.tuition.currency === 'USD' ? '$' : 'د.ع';
   const min = institution.tuition.min.toLocaleString(language === 'ar' ? 'ar-IQ' : 'en-US');
