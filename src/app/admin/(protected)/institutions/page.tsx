@@ -153,8 +153,8 @@ export default function AdminInstitutionsPage() {
       </div>
 
       {/* Institutions Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <table className="w-full text-xs text-start">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+        <table className="w-full min-w-[900px] text-xs text-start">
           <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
             <tr>
               <th className="p-3 text-start">{t('المؤسسة', 'Institution')}</th>
