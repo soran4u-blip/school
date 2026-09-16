@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -24,13 +23,13 @@ import {
 interface EventsListProps {
   events: EduEvent[];
   governorates: Governorate[];
+  initialGovernorate?: string;
 }
 
-function EventsContent({ events, governorates }: EventsListProps) {
+function EventsContent({ events, governorates, initialGovernorate }: EventsListProps) {
   const { language, t } = useLanguage();
-  const searchParams = useSearchParams();
 
-  const [selectedGov, setSelectedGov] = useState(searchParams.get('governorate') || 'all');
+  const [selectedGov, setSelectedGov] = useState(initialGovernorate || 'all');
   const [selectedType, setSelectedType] = useState<EduEvent['eventType'] | 'all'>('all');
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -252,12 +251,6 @@ function EventsContent({ events, governorates }: EventsListProps) {
   );
 }
 
-// The Suspense boundary is for useSearchParams (the ?governorate= deep link), not for data — the
-// listing itself is server-rendered and arrives as props. See ./page.tsx.
 export default function EventsList(props: EventsListProps) {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading Events...</div>}>
-      <EventsContent {...props} />
-    </Suspense>
-  );
+  return <EventsContent {...props} />;
 }

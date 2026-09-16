@@ -353,6 +353,7 @@ export function useInbox() {
   );
 
   return {
+    identity,
     isOwnMessage,
     items,
     activeKey,

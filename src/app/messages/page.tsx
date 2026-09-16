@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Send,
@@ -45,6 +46,7 @@ export default function MessagesPage() {
     sending,
     isOwnMessage,
     send,
+    identity,
   } = useInbox();
 
   const [draft, setDraft] = useState('');
@@ -83,6 +85,26 @@ export default function MessagesPage() {
     setDraft('');
     await send(textToSend);
   };
+
+  if (!loading && !identity) {
+    const redirect = `${window.location.pathname}${window.location.search}`;
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <MessageCircle className="mx-auto mb-4 h-12 w-12 text-blue-600" />
+            <h1 className="text-xl font-extrabold text-slate-900">{t('سجّل الدخول لعرض رسائلك', 'Sign in to view your messages')}</h1>
+            <p className="mt-2 text-sm text-slate-500">{t('ستجد هنا محادثات الحجوزات والاستفسارات والتواصل المباشر.', 'Your bookings, inquiries, and direct conversations will appear here.')}</p>
+            <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-xl bg-[#0B192C] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1E3E62]">
+              {t('تسجيل الدخول', 'Sign in')}
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const getSourceBadge = (item: InboxItem) => {
     if (item.source === 'booking') {

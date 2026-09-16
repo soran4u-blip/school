@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -24,6 +23,7 @@ interface JobsListProps {
   jobs: Job[];
   governorates: Governorate[];
   subjects: TaxonomyItem[];
+  initialGovernorate?: string;
 }
 
 const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
@@ -33,11 +33,10 @@ const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string 
   INTERNSHIP: { ar: 'تدريب', en: 'Internship' },
 };
 
-function JobsContent({ jobs, governorates, subjects }: JobsListProps) {
+function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsListProps) {
   const { language, t } = useLanguage();
-  const searchParams = useSearchParams();
 
-  const [selectedGov, setSelectedGov] = useState(searchParams.get('governorate') || 'all');
+  const [selectedGov, setSelectedGov] = useState(initialGovernorate || 'all');
   const [selectedType, setSelectedType] = useState<Job['employmentType'] | 'all'>('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('all');
@@ -303,12 +302,6 @@ function JobsContent({ jobs, governorates, subjects }: JobsListProps) {
   );
 }
 
-// The Suspense boundary is for useSearchParams (the ?governorate= deep link), not for data —
-// the listing itself is server-rendered and arrives as props. See ./page.tsx.
 export default function JobsList(props: JobsListProps) {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading Jobs...</div>}>
-      <JobsContent {...props} />
-    </Suspense>
-  );
+  return <JobsContent {...props} />;
 }
