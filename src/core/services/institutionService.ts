@@ -100,6 +100,17 @@ export async function saveInstitution(inst: Institution): Promise<Institution> {
   return toSave;
 }
 
+export async function saveAdminInstitution(inst: Institution): Promise<Institution> {
+  const res = await fetch('/api/admin/institutions', {
+    method: inst.createdAt ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(inst),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || 'Could not save the institution');
+  return body.institution as Institution;
+}
+
 export async function deleteInstitution(id: string): Promise<void> {
   // Firestore doesn't cascade-delete subcollections when their parent doc goes.
   await deleteDoc(doc(db, COLLECTION, id, 'private', 'verification')).catch(() => {});

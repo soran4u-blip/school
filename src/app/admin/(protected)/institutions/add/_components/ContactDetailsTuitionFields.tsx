@@ -72,8 +72,8 @@ export default function ContactDetailsTuitionFields({
           <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنة التأسيس', 'Established Year')}</label>
           <input
             type="number"
-            value={form.establishedYear || ''}
-            onChange={(e) => setForm({ ...form, establishedYear: parseInt(e.target.value) })}
+            value={form.establishedYear ?? ''}
+            onChange={(e) => setForm({ ...form, establishedYear: e.target.value ? parseInt(e.target.value, 10) : undefined })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
           />
         </div>
@@ -92,10 +92,11 @@ export default function ContactDetailsTuitionFields({
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">{t('حالة النشر', 'Status')}</label>
           <select
-            value={form.status || 'ACTIVE'}
+            value={form.status || 'DRAFT'}
             onChange={(e) => setForm({ ...form, status: e.target.value as Institution['status'] })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
           >
+            <option value="DRAFT">{t('مسودة', 'Draft')}</option>
             <option value="ACTIVE">{t('نشط', 'Active')}</option>
             <option value="PENDING">{t('قيد المراجعة', 'Pending')}</option>
             <option value="SUSPENDED">{t('موقوف', 'Suspended')}</option>

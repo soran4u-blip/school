@@ -15,6 +15,7 @@ export type AuditAction =
   | 'listing.verify'
   | 'listing.feature'
   | 'listing.delete'
+  | 'inquiry.update'
   | 'tutor.verification.approve'
   | 'tutor.verification.reject'
   | 'settings.update'

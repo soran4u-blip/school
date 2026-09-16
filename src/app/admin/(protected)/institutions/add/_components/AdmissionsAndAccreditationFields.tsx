@@ -203,6 +203,31 @@ export default function AdmissionsAndAccreditationFields({
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
           />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              {t('رابط مصدر الدليل', 'Evidence source URL')}
+            </label>
+            <input
+              type="url"
+              value={accreditation.sourceUrl || ''}
+              onChange={(e) => updateAccreditation({ sourceUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              {t('تاريخ انتهاء الدليل (اختياري)', 'Evidence expiry (optional)')}
+            </label>
+            <input
+              type="date"
+              value={accreditation.expiresAt || ''}
+              onChange={(e) => updateAccreditation({ expiresAt: e.target.value })}
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

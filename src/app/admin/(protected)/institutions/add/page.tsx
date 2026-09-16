@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
-import { getInstitutionById, getInstitutionVerificationDocuments, saveInstitution } from '@/core/services/institutionService';
+import { getInstitutionById, getInstitutionVerificationDocuments, saveAdminInstitution } from '@/core/services/institutionService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { Building2, Save, AlertCircle, ArrowRight } from 'lucide-react';
@@ -51,16 +51,18 @@ const emptyForm: Partial<Institution> = {
   accreditation: {
     authority: { ar: '', en: '' },
     details: { ar: '', en: '' },
+    sourceUrl: '',
     verifiedAt: '',
+    expiresAt: '',
   },
-  establishedYear: new Date().getFullYear(),
+  establishedYear: undefined,
   genderPolicy: 'CO_ED',
   languagesOfInstruction: ['AR'],
   tuition: { min: 0, max: 0, currency: 'USD', period: 'YEAR' },
   taxonomyIds: [],
   isVerified: false,
   verificationBadgeLabel: { ar: '', en: '' },
-  status: 'ACTIVE',
+  status: 'DRAFT',
   isFeatured: false,
   facilities: [],
   metrics: { ratingAvg: 0, reviewCount: 0 },
@@ -131,8 +133,8 @@ function InstitutionForm() {
       name: { ar: form.name.ar, en: form.name.en, ku: form.name.ku || '' },
       categoryId: form.categoryId,
       governorateId: form.governorateId,
-      logoUrl: form.logoUrl || 'https://placehold.co/200x200?text=Logo',
-      coverImageUrl: form.coverImageUrl || 'https://placehold.co/1200x400?text=Cover',
+      logoUrl: form.logoUrl || '',
+      coverImageUrl: form.coverImageUrl || '',
       tagline: { ar: form.tagline?.ar || '', en: form.tagline?.en || '' },
       description: { ar: form.description?.ar || '', en: form.description?.en || '' },
       address: { ar: form.address?.ar || '', en: form.address?.en || '' },
@@ -162,9 +164,11 @@ function InstitutionForm() {
           ar: form.accreditation?.details?.ar || '',
           en: form.accreditation?.details?.en || '',
         },
+        ...(form.accreditation?.sourceUrl && { sourceUrl: form.accreditation.sourceUrl }),
         verifiedAt: form.accreditation?.verifiedAt || '',
+        ...(form.accreditation?.expiresAt && { expiresAt: form.accreditation.expiresAt }),
       },
-      establishedYear: Number(form.establishedYear) || new Date().getFullYear(),
+      ...(form.establishedYear ? { establishedYear: Number(form.establishedYear) } : {}),
       genderPolicy: form.genderPolicy || 'CO_ED',
       languagesOfInstruction: form.languagesOfInstruction?.length ? form.languagesOfInstruction : ['AR'],
       tuition: {
@@ -179,7 +183,7 @@ function InstitutionForm() {
         ar: form.verificationBadgeLabel?.ar || 'قيد المراجعة',
         en: form.verificationBadgeLabel?.en || 'Under Review',
       },
-      status: form.status || 'ACTIVE',
+      status: form.status || 'DRAFT',
       isFeatured: form.isFeatured ?? false,
       metrics: form.metrics || { ratingAvg: 0, reviewCount: 0 },
       facilities: facilitiesText.split(',').map(f => f.trim()).filter(Boolean),
@@ -189,7 +193,7 @@ function InstitutionForm() {
     };
 
     try {
-      await saveInstitution(institution);
+      await saveAdminInstitution(institution);
       setMessage({ text: t('تم حفظ المؤسسة بنجاح', 'Institution saved successfully'), type: 'success' });
       setTimeout(() => router.push('/admin/institutions'), 900);
     } catch {

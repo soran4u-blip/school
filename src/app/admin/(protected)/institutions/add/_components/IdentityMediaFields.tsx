@@ -64,6 +64,15 @@ export default function IdentityMediaFields({
         required
       />
 
+      <BilingualTextField
+        labelAr={t('الشعار المختصر بالعربية', 'Tagline (Arabic)')}
+        labelEn={t('الشعار المختصر بالإنجليزية', 'Tagline (English)')}
+        valueAr={form.tagline?.ar || ''}
+        valueEn={form.tagline?.en || ''}
+        onChangeAr={(v) => setForm({ ...form, tagline: { ...form.tagline!, ar: v } })}
+        onChangeEn={(v) => setForm({ ...form, tagline: { ...form.tagline!, en: v } })}
+      />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">{t('الفئة', 'Category')} *</label>
