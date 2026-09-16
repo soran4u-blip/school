@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useState, useSyncExternalStore, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -20,6 +20,7 @@ import InstitutionCard from './_components/InstitutionCard';
 import EmptyResults from './_components/EmptyResults';
 import CompareTray from './_components/CompareTray';
 import ShortlistTray from './_components/ShortlistTray';
+import DirectorySkeleton from './_components/DirectorySkeleton';
 import { readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 
@@ -384,5 +385,9 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
 }
 
 export default function ExploreDirectory(props: ExploreDirectoryProps) {
-  return <ExploreContent {...props} />;
+  return (
+    <Suspense fallback={<DirectorySkeleton />}>
+      <ExploreContent {...props} />
+    </Suspense>
+  );
 }
