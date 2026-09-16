@@ -4,6 +4,7 @@ import { repairRatings } from '@/core/server/ratings';
 import { repairApplicantCounts } from '@/core/server/counters';
 import { writeAnalyticsSnapshot } from '@/core/server/analytics';
 import { runSavedSearchAlerts } from '@/core/server/savedSearchAlerts';
+import { dispatchNotification } from '@/core/server/notifications';
 
 // Periodic background work, and the one place that says what it is.
 //
@@ -45,6 +46,55 @@ export const SCHEDULED_TASKS: Record<string, ScheduledTask> = {
   'saved-search-alerts': {
     description: 'Notify students when a new listing matches one of their saved searches.',
     run: (db) => runSavedSearchAlerts(db),
+  },
+
+  'inquiry-reminders': {
+    description: 'Notify inquiry owners about due follow-ups once per scheduled date.',
+    run: async (db) => {
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const snap = await db.collection('inquiries').get();
+      let sent = 0;
+
+      for (const doc of snap.docs) {
+        const inquiry = doc.data() as {
+          status?: string;
+          nextFollowUpAt?: string;
+          reminderSentAt?: string;
+          assignedTo?: string;
+          institutionId?: string;
+          fullName?: string;
+        };
+        if (!inquiry.nextFollowUpAt || inquiry.status === 'CLOSED') continue;
+        if (new Date(inquiry.nextFollowUpAt).getTime() > now.getTime()) continue;
+        if (inquiry.reminderSentAt && inquiry.reminderSentAt >= inquiry.nextFollowUpAt) continue;
+
+        let recipientId = inquiry.assignedTo;
+        let recipientRole: 'admin' | 'institution' = 'admin';
+        let pushOwnerId: string | undefined;
+        if (!recipientId && inquiry.institutionId) {
+          const institution = await db.collection('institutions').doc(inquiry.institutionId).get();
+          recipientId = institution.data()?.userId as string | undefined;
+          recipientRole = 'institution';
+          pushOwnerId = inquiry.institutionId;
+        }
+        if (!recipientId) continue;
+
+        await dispatchNotification(db, {
+          recipientId,
+          recipientRole,
+          pushOwnerId,
+          type: 'INQUIRY',
+          title: { ar: 'تذكير بمتابعة استفسار', en: 'Inquiry follow-up reminder' },
+          body: { ar: `حان وقت متابعة استفسار ${inquiry.fullName || 'جديد'}.`, en: `Follow up on the inquiry from ${inquiry.fullName || 'a prospective student'}.` },
+          linkUrl: recipientRole === 'institution' ? '/institution/dashboard' : '/admin/reviews',
+          metadata: { inquiryId: doc.id, nextFollowUpAt: inquiry.nextFollowUpAt },
+        });
+        await doc.ref.update({ reminderSentAt: nowIso, updatedAt: nowIso });
+        sent += 1;
+      }
+      return { checked: snap.size, sent };
+    },
   },
 };
 

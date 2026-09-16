@@ -165,15 +165,16 @@ service cloud.firestore {
     // Institutions Directory
     match /institutions/{instId} {
       allow read: if resource.data.status == 'ACTIVE' || isAdmin() || isOwnerInstitution(instId);
-      // Profiles are provisioned by /api/applications/[id]/approve (Admin SDK), never client-side.
-      allow create: if canEditDirectory();
-      allow update: if canEditDirectory() || (
+      // Profiles are provisioned by Admin SDK routes. Keeping admin writes off the client rules is
+      // what prevents a browser from bypassing the publishing gate in /api/admin/institutions.
+      allow create: if false;
+      allow update: if (
         ownsInstitutionDoc(instId)
         && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'isFeatured', 'metrics', 'createdAt'])
         && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
       );
       // Self-service account deletion (re-authenticated in the dashboard) stays available.
-      allow delete: if canEditDirectory() || ownsInstitutionDoc(instId);
+      allow delete: if ownsInstitutionDoc(instId);
       match /programs/{progId} {
         allow read: if true;
         allow write: if canEditDirectory() || isOwnerInstitution(instId);
@@ -289,13 +290,17 @@ service cloud.firestore {
     // doc, so the only field an institution ever legitimately changes here is `status`).
     function isInstitutionUpdatingOwnInquiry() {
       return isOwnerInstitution(resource.data.institutionId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['NEW', 'CONTACTED', 'QUALIFIED', 'APPLICATION_STARTED', 'CLOSED'];
     }
 
     match /inquiries/{inquiryId} {
       allow create: if isValidInquiry();
       allow read: if canModerate() || isOwnerInstitution(resource.data.institutionId);
-      allow update: if canModerate() || isInstitutionUpdatingOwnInquiry();
+      // Moderation metadata and response timing are written by the Admin SDK route. Keeping the
+      // browser limited to an institution's own status transition prevents a moderator from
+      // bypassing validation, audit logging, or reminder bookkeeping with a raw client write.
+      allow update: if isInstitutionUpdatingOwnInquiry();
       allow delete: if canModerate();
     }
 

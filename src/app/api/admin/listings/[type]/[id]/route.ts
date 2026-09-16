@@ -9,6 +9,8 @@ import { errorMessage, errorStack } from '@/lib/errors';
 import { deriveVerificationBadge } from '@/lib/utils';
 import { LocalizedString } from '@/core/types/masterData';
 import { AuditTargetType } from '@/core/types/auditLog';
+import { Institution } from '@/core/types/institution';
+import { canPublishInstitution } from '@/lib/publishingGuardrails';
 
 // Admin mutations to a directory listing's trust and visibility fields.
 //
@@ -82,6 +84,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (isFeatured !== undefined && !target.featurable) {
     return NextResponse.json({ success: false, error: `${type} listings don't support featuring` }, { status: 400 });
   }
+  if (type !== 'institutions' && status === 'DRAFT') {
+    return NextResponse.json({ success: false, error: 'Draft status is only supported for institutions' }, { status: 400 });
+  }
 
   try {
     const ref = db.collection(target.collection).doc(id);
@@ -89,6 +94,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!snap.exists) return NextResponse.json({ success: false, error: 'Listing not found' }, { status: 404 });
     const before = snap.data()!;
     const name = nameOf(before);
+
+    if (type === 'institutions' && (status === 'ACTIVE' || isVerified === true)) {
+      const candidate = {
+        ...before,
+        id,
+        ...(status !== undefined ? { status } : {}),
+        ...(isVerified !== undefined ? { isVerified } : {}),
+      } as Institution;
+      const assessment = canPublishInstitution(candidate);
+      if (!assessment.publishable) {
+        return NextResponse.json(
+          { success: false, error: 'Institution is not ready to publish', missingFields: assessment.missingFields, score: assessment.score },
+          { status: 422 }
+        );
+      }
+    }
 
     const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (status !== undefined) patch.status = status;

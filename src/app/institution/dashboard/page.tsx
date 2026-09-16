@@ -353,7 +353,7 @@ export default function InstitutionDashboardPage() {
   // directory. firestore.rules now allows an owner to move only between ACTIVE and SUSPENDED, so
   // this mirrors that: approval is requested here and granted from /admin/institutions.
   const handleTogglePause = async () => {
-    if (!institution || institution.status === 'PENDING') return;
+    if (!institution || !['ACTIVE', 'SUSPENDED'].includes(institution.status)) return;
     const status = institution.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     if (status === 'SUSPENDED' && !confirm(t('سيتم إخفاء ملف مؤسستك من الدليل العام. هل تريد المتابعة؟', "Your institution's profile will be hidden from the public directory. Continue?"))) {
       return;

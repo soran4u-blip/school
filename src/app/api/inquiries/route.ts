@@ -4,6 +4,7 @@ import { Inquiry } from '@/core/types/review';
 import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { inquirySchema } from '@/core/validation/schemas';
+import { dispatchNotification, resolveOwnerRecipient } from '@/core/server/notifications';
 
 // Public admissions inquiries are written server-side so validation, rate limiting, and the
 // institution lookup cannot be bypassed by a client-side Firestore write.
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
 
   const institution = institutionSnap.data() as { name?: { en?: string; ar?: string } };
   const ref = adminDb.collection('inquiries').doc();
+  const now = new Date().toISOString();
   const inquiry: Inquiry = {
     id: ref.id,
     institutionId,
@@ -41,9 +43,22 @@ export async function POST(request: NextRequest) {
     ...(email ? { email } : {}),
     message,
     status: 'NEW',
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
 
   await ref.set(inquiry);
+  const owner = await resolveOwnerRecipient(adminDb, 'institutions', institutionId).catch(() => null);
+  if (owner) {
+    await dispatchNotification(adminDb, {
+      ...owner,
+      recipientRole: 'institution',
+      type: 'INQUIRY',
+      title: { ar: 'استفسار قبول جديد', en: 'New admissions inquiry' },
+      body: { ar: `استفسار جديد من ${fullName}.`, en: `New inquiry from ${fullName}.` },
+      linkUrl: '/institution/dashboard',
+      metadata: { inquiryId: ref.id },
+    }).catch(() => {});
+  }
   return NextResponse.json({ success: true, inquiry }, { status: 201 });
 }
