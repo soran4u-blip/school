@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Thumbnail from '@/components/shared/Thumbnail';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
@@ -15,6 +15,7 @@ import { auth } from '@/core/firebase/config';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { formatDate as formatDateUtil } from '@/lib/utils';
+import { localeHref } from '@/lib/locale';
 import {
   MapPin,
   Star,
@@ -100,6 +101,7 @@ export default function TutorProfile({
   initialReviews: Review[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { language, t } = useLanguage();
   const [slotStatuses, setSlotStatuses] = useState<SlotStatus[]>([]);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -138,6 +140,29 @@ export default function TutorProfile({
     const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.isAnonymous || selectedSlot || bookingMode) return;
+
+    const date = searchParams.get('bookDate');
+    const startTime = searchParams.get('bookStart');
+    const endTime = searchParams.get('bookEnd');
+    const mode = searchParams.get('bookMode');
+    if (!date || !startTime || !endTime || (mode !== 'INDIVIDUAL' && mode !== 'GROUP')) return;
+
+    const day = nextNDays(14).find((item) => item.date === date);
+    if (!day) return;
+
+    const restore = window.setTimeout(() => {
+      setSelectedSlot({ ...day, startTime, endTime });
+      setBookingMode(mode);
+      setJoinBookingId(searchParams.get('bookGroup') || undefined);
+      setForm({ subjectId: subjects[0]?.id || '', recurring: false, weeks: 4 });
+      setResult(null);
+      router.replace(localeHref(`/tutors/${tutor.slug || tutor.id}`, language), { scroll: false });
+    }, 0);
+    return () => window.clearTimeout(restore);
+  }, [bookingMode, currentUser, language, router, searchParams, selectedSlot, subjects, tutor.id, tutor.slug]);
 
   // Slot availability is the one piece that must stay live rather than server-rendered — it
   // changes as other students book.
@@ -201,8 +226,16 @@ export default function TutorProfile({
     slotStatuses.find((s) => s.date === date && s.startTime === startTime);
 
   const openBooking = (daySlot: DaySlot, mode: 'INDIVIDUAL' | 'GROUP', existingGroupId?: string) => {
-    if (!currentUser) {
-      router.push(`/login?redirect=${encodeURIComponent(`/tutors/${tutor.slug || tutor.id}`)}`);
+    if (!currentUser || currentUser.isAnonymous) {
+      const returnParams = new URLSearchParams({
+        bookDate: daySlot.date,
+        bookStart: daySlot.startTime,
+        bookEnd: daySlot.endTime,
+        bookMode: mode,
+      });
+      if (existingGroupId) returnParams.set('bookGroup', existingGroupId);
+      const returnPath = `${localeHref(`/tutors/${tutor.slug || tutor.id}`, language)}?${returnParams.toString()}`;
+      router.push(`/login?redirect=${encodeURIComponent(returnPath)}&reason=booking`);
       return;
     }
     setSelectedSlot(daySlot);

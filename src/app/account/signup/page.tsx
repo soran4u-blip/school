@@ -20,6 +20,8 @@ function SignupForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const redirectTarget = searchParams.get('redirect');
+  const loginHref = redirectTarget ? `/login?redirect=${encodeURIComponent(redirectTarget)}&reason=booking` : '/login';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ function SignupForm() {
       });
       if (!sessionRes.ok) throw new Error('Session creation failed');
 
-      const redirect = searchParams.get('redirect') || '/account';
+       const redirect = redirectTarget || '/account';
       router.push(redirect);
       router.refresh();
     } catch (err: unknown) {
@@ -154,7 +156,7 @@ function SignupForm() {
 
           <p className="text-center text-xs text-slate-500">
             {t('لديك حساب بالفعل؟', 'Already have an account?')}{' '}
-            <Link href="/login" className="font-bold text-emerald-700 hover:underline">
+             <Link href={loginHref} className="font-bold text-emerald-700 hover:underline">
               {t('تسجيل الدخول', 'Sign in')}
             </Link>
           </p>

@@ -26,6 +26,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
   const [resetting, setResetting] = useState(false);
+  const redirectTarget = searchParams.get('redirect');
+  const bookingSignIn = searchParams.get('reason') === 'booking';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ function LoginForm() {
         return;
       }
 
-      const redirect = searchParams.get('redirect') || DASHBOARD_BY_ROLE[data.role];
+       const redirect = redirectTarget || DASHBOARD_BY_ROLE[data.role];
       router.push(redirect);
       router.refresh();
     } catch {
@@ -90,6 +92,11 @@ function LoginForm() {
           <p className="text-xs text-emerald-700 font-semibold mt-1">
             {t('تسجيل دخول الحساب', 'Account Sign In')}
           </p>
+          {bookingSignIn && (
+            <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold leading-5 text-blue-800">
+              {t('سجّل الدخول للمتابعة من الموعد الذي اخترته.', 'Sign in to continue with the time you selected.')}
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -152,7 +159,10 @@ function LoginForm() {
 
           <p className="text-center text-xs text-slate-500">
             {t('طالب جديد؟', 'New student?')}{' '}
-            <Link href="/account/signup" className="font-bold text-emerald-700 hover:underline">
+            <Link
+              href={redirectTarget ? `/account/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/account/signup'}
+              className="font-bold text-emerald-700 hover:underline"
+            >
               {t('أنشئ حساباً مجانياً', 'Create a free account')}
             </Link>
           </p>
