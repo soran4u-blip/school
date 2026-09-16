@@ -41,6 +41,7 @@ export default function HomeContent({
   governorates,
   quickTags,
   featuredInstitutions,
+  directoryInstitutions,
   featuredTutors,
   subjects,
   settings,
@@ -51,6 +52,7 @@ export default function HomeContent({
   governorates: Governorate[];
   quickTags: QuickSearchTag[];
   featuredInstitutions: Institution[];
+  directoryInstitutions: Institution[];
   featuredTutors: Tutor[];
   subjects: TaxonomyItem[];
   settings: SystemSettings;
@@ -88,11 +90,11 @@ export default function HomeContent({
     institutionsCount:
       category.slug === 'tutors'
         ? featuredTutors.length
-        : featuredInstitutions.filter((institution) => institution.categoryId === category.id).length,
+        : directoryInstitutions.filter((institution) => institution.categoryId === category.id).length,
   }));
   const liveGovernorates = governorates.map((governorate) => ({
     ...governorate,
-    institutionsCount: featuredInstitutions.filter(
+    institutionsCount: directoryInstitutions.filter(
       (institution) => institution.governorateId === governorate.id
     ).length,
   }));
@@ -125,7 +127,7 @@ export default function HomeContent({
         categories={liveCategories}
         governorates={liveGovernorates}
         quickTags={quickTags}
-        featuredInstitutions={featuredInstitutions}
+         featuredInstitutions={directoryInstitutions}
         featuredTutors={featuredTutors}
         subjects={subjects}
         searchKeyword={searchKeyword}

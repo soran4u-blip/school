@@ -74,6 +74,9 @@ export default function GovernoratesExplorer({ governorates }: { governorates: G
                   <span>{t(`محافظات أخرى (${otherGovernorates.length})`, `Other governorates (${otherGovernorates.length})`)}</span>
                   <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
                 </summary>
+                <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                  {t('هذه المحافظات جاهزة لاستقبال مؤسسات جديدة في الدليل.', 'These locations are ready for new institutions to join the directory.')}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">{otherGovernorates.map((gov) => renderGovernorate(gov, true))}</div>
               </details>
             )}

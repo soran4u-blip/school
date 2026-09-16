@@ -31,6 +31,10 @@ export default async function HomePage() {
   ]);
 
   const today = todayLocalDate();
+  // Keep the homepage showcase curated and bounded without hiding active listings from search,
+  // counts, or the full directory when no records have been featured yet.
+  const curatedInstitutions = institutions.filter((institution) => institution.isFeatured).slice(0, 6);
+  const homepageInstitutions = (curatedInstitutions.length > 0 ? curatedInstitutions : institutions).slice(0, 6);
   const upcomingEvents = events
     .filter((ev) => ev.startDate >= today)
     .slice(0, 3);
@@ -40,7 +44,8 @@ export default async function HomePage() {
       categories={categories}
       governorates={governorates}
       quickTags={quickTags}
-      featuredInstitutions={institutions}
+      featuredInstitutions={homepageInstitutions}
+      directoryInstitutions={institutions}
       featuredTutors={tutors}
       subjects={taxonomies.filter((tx) => tx.type === 'SUBJECT')}
       settings={settings}
