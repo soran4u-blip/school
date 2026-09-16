@@ -23,13 +23,21 @@ export default function CommunityContent({ initialGovernorate }: { initialGovern
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+    let timeoutId: number | undefined;
     try {
-      const [govs, list] = await Promise.all([getGovernorates(), getApprovedCommunityPosts()]);
+      const result = await Promise.race([
+        Promise.all([getGovernorates(), getApprovedCommunityPosts()]),
+        new Promise<never>((_, reject) => {
+          timeoutId = window.setTimeout(() => reject(new Error('Community load timed out')), 10000);
+        }),
+      ]);
+      const [govs, list] = result;
       setGovernorates(govs);
       setPosts(list);
     } catch {
       setError(t('تعذر تحميل المجتمع. حاول مرة أخرى.', 'The community could not be loaded. Please try again.'));
     } finally {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
       setLoading(false);
     }
   }, [t]);
