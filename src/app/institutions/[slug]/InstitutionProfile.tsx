@@ -790,19 +790,23 @@ export default function InstitutionProfile({
               </button>
 
               <div className="pt-4 border-t border-slate-100 space-y-3 text-xs">
-                <div className="flex items-center gap-3 text-slate-700" dir="ltr">
-                  <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                   <a href={`tel:${institution.contact.phonePrimary}`} className="font-semibold font-mono hover:text-blue-700">
-                     {institution.contact.phonePrimary}
-                   </a>
-                </div>
+                {institution.contact?.phonePrimary && (
+                  <div className="flex items-center gap-3 text-slate-700" dir="ltr">
+                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                    <a href={`tel:${institution.contact.phonePrimary.replace(/\s+/g, '')}`} className="font-semibold font-mono hover:text-blue-700">
+                      {institution.contact.phonePrimary}
+                    </a>
+                  </div>
+                )}
 
-                <div className="flex items-center gap-3 text-slate-700">
-                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                   <a href={`mailto:${institution.contact.email}`} className="font-medium hover:text-blue-700">
-                     {institution.contact.email}
-                   </a>
-                </div>
+                {institution.contact?.email && (
+                  <div className="flex items-center gap-3 text-slate-700">
+                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                    <a href={`mailto:${institution.contact.email}`} className="font-medium hover:text-blue-700">
+                      {institution.contact.email}
+                    </a>
+                  </div>
+                )}
 
                 {institution.contact.website && (
                   <div className="flex items-center gap-3 text-slate-700">
