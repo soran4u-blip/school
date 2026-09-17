@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -36,6 +37,7 @@ export default function ApplyPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedId, setSubmittedId] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -77,7 +79,7 @@ export default function ApplyPage() {
 
     setSubmitting(true);
     try {
-      await createApplication({
+      const created = await createApplication({
         type,
         fullName: fullName.trim(),
         email: email.trim(),
@@ -91,6 +93,7 @@ export default function ApplyPage() {
         yearsOfExperience: type === 'TUTOR' && yearsOfExperience ? Number(yearsOfExperience) : undefined,
         message: message.trim(),
       });
+      setSubmittedId(created.id);
       setSubmitted(true);
     } catch {
       setError(t('حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.', 'Something went wrong submitting your application. Please try again.'));
@@ -116,6 +119,17 @@ export default function ApplyPage() {
               'سيراجع فريقنا طلبك وسنتواصل معك عبر البريد الإلكتروني أو الواتساب بمجرد الموافقة.',
               "Our team will review your application and reach out by email or WhatsApp once it's approved."
             )}
+          </p>
+          <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <div className="font-bold text-slate-600">{t('رقم المرجع', 'Reference number')}</div>
+            <div className="font-mono text-slate-700 break-all">{submittedId}</div>
+          </div>
+          <p className="text-xs text-slate-500">
+            {t('يمكنك متابعة حالة طلبك في أي وقت من صفحة', 'You can check your application status anytime on the')}{' '}
+            <Link href="/apply/status" className="font-bold text-emerald-700 hover:underline">
+              {t('صفحة حالة الطلب', 'application status page')}
+            </Link>
+            {t(' باستخدام بريدك الإلكتروني.', ' using your email address.')}
           </p>
           <button
             onClick={() => router.push('/')}
