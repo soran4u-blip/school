@@ -126,6 +126,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/apply/status" className="hover:text-white transition-colors">
+                  {t('حالة طلب الانضمام', 'Join Application Status')}
+                </Link>
+              </li>
+              <li>
                 <Link href="/community" className="hover:text-white transition-colors">
                   {t('مجتمع الأهالي', 'Community')}
                 </Link>
