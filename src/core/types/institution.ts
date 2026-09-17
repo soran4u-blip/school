@@ -45,6 +45,9 @@ export interface InstitutionAccreditation {
 export interface Institution {
   id: string;
   userId?: string; // linked Firebase Auth uid, once the institution has an owner account
+  // Marks a listing seeded by QA/E2E runs so it can be kept out of the public directory even
+  // though it's ACTIVE — see getActiveInstitutions in core/server/data/institutions.ts.
+  isTestData?: boolean;
   slug: string;
   name: LocalizedString;
   categoryId: string; // References Category.id (e.g. 'universities', 'schools')

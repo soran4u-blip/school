@@ -10,7 +10,11 @@ import { CACHE_TAGS, REVALIDATE_SECONDS, requireAdminDb, withId } from './cache'
 export const getActiveInstitutions = unstable_cache(
   async (): Promise<Institution[]> => {
     const snap = await requireAdminDb().collection('institutions').where('status', '==', 'ACTIVE').get();
-    return snap.docs.map((d) => withId<Institution>(d.id, d.data()));
+    // Filtered in-memory rather than with a second `where` — see the matching note in
+    // core/server/data/tutors.ts.
+    return snap.docs
+      .map((d) => withId<Institution>(d.id, d.data()))
+      .filter((i) => !i.isTestData);
   },
   ['active-institutions'],
   { tags: [CACHE_TAGS.institutions], revalidate: REVALIDATE_SECONDS }

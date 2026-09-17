@@ -37,6 +37,10 @@ export interface JobApplication {
   institutionId?: string;
   employerId?: string;
   jobTitle?: LocalizedString; // denormalized, avoids a Job fetch for every list row
+  // Set only when the applicant was signed in as a student at submit time — lets
+  // /api/account/job-applications list an authenticated applicant's own submissions the same way
+  // admissionApplications.studentId does. Guest applicants (the common case) leave this unset.
+  studentId?: string;
   fullName: string;
   phone: string;
   email?: string;

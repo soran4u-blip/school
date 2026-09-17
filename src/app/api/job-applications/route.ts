@@ -6,14 +6,21 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { jobApplicationSchema } from '@/core/validation/schemas';
 import { dispatchNotification, resolveOwnerRecipient } from '@/core/server/notifications';
+import { getSessionUser } from '@/core/server/session';
 
 // POST /api/job-applications — Admin SDK only now (firestore.rules denies client creates), so an
 // applicant is rate-limited by IP rather than relying on freely-mintable anonymous Firebase Auth
-// sessions, which had no real abuse protection.
+// sessions, which had no real abuse protection. Applying stays guest-friendly (no auth required),
+// but when the applicant does have a student session we record studentId on the application so it
+// shows up in /api/account/job-applications — the response's application.id doubles as their
+// confirmation reference either way.
 export async function POST(request: NextRequest) {
   if (!adminDb) {
     return NextResponse.json({ success: false, error: 'Server not configured' }, { status: 500 });
   }
+
+  const sessionUser = await getSessionUser(request);
+  const studentId = sessionUser?.role === 'student' ? sessionUser.uid : undefined;
 
   const ip = getClientIp(request);
   const rateLimit = await checkRateLimit(adminDb, `job-application:ip:${ip}`, { max: 5, windowMinutes: 60 });
@@ -42,6 +49,7 @@ export async function POST(request: NextRequest) {
     ...(job.institutionId && { institutionId: job.institutionId }),
     ...(job.employerId && { employerId: job.employerId }),
     jobTitle: job.title,
+    ...(studentId && { studentId }),
     fullName,
     phone,
     ...(email && { email }),

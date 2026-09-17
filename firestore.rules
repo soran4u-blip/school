@@ -345,7 +345,7 @@ service cloud.firestore {
       // Admin SDK only (/api/job-applications) — rate-limited by IP rather than trusting
       // freely-mintable anonymous Firebase Auth sessions.
       allow create: if false;
-      allow read: if isAdmin() || isOwnerOfJob(resource.data);
+      allow read: if isAdmin() || isOwnerOfJob(resource.data) || isOwner(resource.data.get('studentId', null));
       allow update: if canEditDirectory() || isOwnerUpdatingOwnJobApplication();
       allow delete: if canEditDirectory();
     }
