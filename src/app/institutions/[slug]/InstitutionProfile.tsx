@@ -119,6 +119,20 @@ export default function InstitutionProfile({
     loadMyApplications();
   }, [currentUser, institution]);
 
+  useEffect(() => {
+    if (!currentUser || !institution) return;
+    const programId = new URLSearchParams(window.location.search).get('programId');
+    const program = institution.programs?.find((item) => item.id === programId);
+    if (!program) return;
+
+    setActiveTab('programs');
+    setApplyProgram(program);
+    setApplyForm({ message: '' });
+    setApplyDocumentPaths([]);
+    setApplyDocumentNames([]);
+    setApplyResult(null);
+  }, [currentUser, institution]);
+
   const openApply = (program: InstitutionProgram) => {
     if (!currentUser) {
       trackEvent('institution_apply_login_required', {
@@ -126,7 +140,9 @@ export default function InstitutionProfile({
         institution_slug: institution.slug,
         program_id: program.id,
       });
-      router.push(`/login?redirect=${encodeURIComponent(`/institutions/${institution.slug}`)}`);
+      const profilePath = localeHref(`/institutions/${institution.slug}`, language);
+      const returnPath = `${profilePath}?programId=${encodeURIComponent(program.id)}`;
+      router.push(`/login?redirect=${encodeURIComponent(returnPath)}`);
       return;
     }
     trackEvent('institution_apply_start', {
