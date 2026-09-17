@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
+import { useAccountPath } from '@/lib/useAccountPath';
 import { GraduationCap, ShieldCheck, Mail, Phone, MessageCircleMore } from 'lucide-react';
 
 export default function Footer() {
@@ -12,6 +13,8 @@ export default function Footer() {
   // Provided by the root layout from one server-side read — see MasterDataContext.
   const { categories, governorates: allGovernorates, systemSettings } = useMasterData();
   const governorates = allGovernorates.slice(0, 8); // Top governorates for footer links
+  // Same auth state the Navbar's login/account link reflects — see lib/useAccountPath.
+  const accountPath = useAccountPath();
 
   return (
     <footer className="relative isolate mt-auto overflow-hidden border-t border-slate-800 bg-[#0B192C] pt-16 pb-12 text-slate-300">
@@ -92,9 +95,15 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/login" className="hover:text-white transition-colors">
-                  {t('تسجيل الدخول', 'Login')}
-                </Link>
+                {accountPath ? (
+                  <Link href={accountPath} className="hover:text-white transition-colors">
+                    {t('حسابي', 'My Account')}
+                  </Link>
+                ) : (
+                  <Link href={localeHref('/login', language)} className="hover:text-white transition-colors">
+                    {t('تسجيل الدخول', 'Login')}
+                  </Link>
+                )}
               </li>
               <li>
                 <Link href="/account" className="hover:text-white transition-colors">
@@ -112,7 +121,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/my-applications" className="hover:text-white transition-colors">
+                <Link href={localeHref('/my-applications', language)} className="hover:text-white transition-colors">
                   {t('طلبات التوظيف الخاصة بي', 'My Job Applications')}
                 </Link>
               </li>

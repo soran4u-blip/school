@@ -234,7 +234,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
 
   const handleSaveSearch = async () => {
     if (!currentUser) {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      router.push(`${localeHref('/login', language)}?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       return;
     }
     setSavingSearch(true);

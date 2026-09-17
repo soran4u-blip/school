@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { useMasterData } from '@/core/context/MasterDataContext';
@@ -28,13 +28,7 @@ import {
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import { useTotalUnreadMessages } from '@/lib/useTotalUnreadMessages';
-
-const DASHBOARD_BY_ROLE: Record<string, string> = {
-  tutor: '/tutor/dashboard',
-  student: '/account',
-  institution: '/institution/dashboard',
-  employer: '/employer/dashboard',
-};
+import { useAccountPath } from '@/lib/useAccountPath';
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
@@ -47,26 +41,12 @@ export default function Navbar() {
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const exploreRef = useRef<HTMLDivElement>(null);
-  const [accountPath, setAccountPath] = useState<string | null>(null);
+  const accountPath = useAccountPath();
   const unreadMessages = useTotalUnreadMessages();
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setAccountPath(null);
-        return;
-      }
-      const tokenResult = await user.getIdTokenResult();
-      const role = tokenResult.claims.role as string | undefined;
-      setAccountPath((role && DASHBOARD_BY_ROLE[role]) || null);
-    });
-    return () => unsub();
-  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
     await signOut(auth);
-    setAccountPath(null);
     router.push('/');
     router.refresh();
   };
@@ -148,7 +128,7 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <Link href="/login" className="flex items-center gap-1 hover:text-white transition-colors">
+              <Link href={localeHref('/login', language)} className="flex items-center gap-1 hover:text-white transition-colors">
                 <UserCheck className="w-3 h-3" />
                 {t('تسجيل الدخول', 'Login')}
               </Link>
@@ -396,7 +376,7 @@ export default function Navbar() {
               </>
             ) : (
               <Link
-                href="/login"
+                href={localeHref('/login', language)}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
               >
