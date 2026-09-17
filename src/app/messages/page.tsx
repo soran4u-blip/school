@@ -17,6 +17,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { localeHref } from '@/lib/locale';
 import { useInbox, InboxItem } from '@/lib/useInbox';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -96,7 +97,7 @@ export default function MessagesPage() {
             <MessageCircle className="mx-auto mb-4 h-12 w-12 text-blue-600" />
             <h1 className="text-xl font-extrabold text-slate-900">{t('سجّل الدخول لعرض رسائلك', 'Sign in to view your messages')}</h1>
             <p className="mt-2 text-sm text-slate-500">{t('ستجد هنا محادثات الحجوزات والاستفسارات والتواصل المباشر.', 'Your bookings, inquiries, and direct conversations will appear here.')}</p>
-            <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-xl bg-[#0B192C] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1E3E62]">
+            <Link href={`${localeHref('/login', language)}?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-xl bg-[#0B192C] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1E3E62]">
               {t('تسجيل الدخول', 'Sign in')}
             </Link>
           </div>

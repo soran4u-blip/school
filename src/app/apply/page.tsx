@@ -9,7 +9,7 @@ import { getGovernorates, getTaxonomies, getCategories } from '@/core/services/m
 import { createApplication } from '@/core/services/applicationService';
 import { Governorate, TaxonomyItem, Category } from '@/core/types/masterData';
 import { ApplicationType } from '@/core/types/application';
-import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
+import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2, Users } from 'lucide-react';
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -147,11 +147,11 @@ export default function ApplyPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 bg-slate-100 rounded-xl p-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 rounded-xl p-1.5">
           <button
             type="button"
             onClick={() => setType('TUTOR')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'TUTOR' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'TUTOR' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <GraduationCap className="w-4 h-4" />
             {t('أستاذ خصوصي', 'Private Tutor')}
@@ -159,7 +159,7 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={() => setType('INSTITUTION')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'INSTITUTION' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'INSTITUTION' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <Building2 className="w-4 h-4" />
             {t('مؤسسة تعليمية', 'Institution')}
@@ -167,10 +167,21 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={() => setType('EMPLOYER')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'EMPLOYER' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'EMPLOYER' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <Briefcase className="w-4 h-4" />
             {t('شركة / منظمة', 'Company / NGO')}
+          </button>
+          {/* Not a real ApplicationType — students/parents don't get reviewed like the roles
+              above, they just create an account directly (the flow /login's "New student?"
+              link already points to). Routes there instead of changing `type`. */}
+          <button
+            type="button"
+            onClick={() => router.push('/account/signup')}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all text-slate-500 hover:text-[#0B192C]"
+          >
+            <Users className="w-4 h-4" />
+            {t('طالب / ولي أمر', 'Student / Parent')}
           </button>
         </div>
 

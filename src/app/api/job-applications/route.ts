@@ -6,6 +6,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { jobApplicationSchema } from '@/core/validation/schemas';
 import { dispatchNotification, resolveOwnerRecipient } from '@/core/server/notifications';
+import { getSessionUser } from '@/core/server/session';
 
 // POST /api/job-applications — Admin SDK only now (firestore.rules denies client creates), so an
 // applicant is rate-limited by IP rather than relying on freely-mintable anonymous Firebase Auth
@@ -34,6 +35,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'This job is no longer accepting applications' }, { status: 400 });
   }
 
+  // Attach the applicant's uid when they're signed in, so /api/account/job-applications can find
+  // this application reliably even if the phone typed into the form doesn't match the account's
+  // phone claim.
+  const sessionUser = await getSessionUser(request);
+  const studentId = sessionUser?.role === 'student' ? sessionUser.uid : undefined;
+
   const ref = adminDb.collection('jobApplications').doc();
   const now = new Date().toISOString();
   const application: JobApplication = {
@@ -44,6 +51,7 @@ export async function POST(request: NextRequest) {
     jobTitle: job.title,
     fullName,
     phone,
+    ...(studentId && { studentId }),
     ...(email && { email }),
     ...(coverLetter && { coverLetter }),
     resumeUrl,

@@ -235,7 +235,7 @@ export default function TutorProfile({
       });
       if (existingGroupId) returnParams.set('bookGroup', existingGroupId);
       const returnPath = `${localeHref(`/tutors/${tutor.slug || tutor.id}`, language)}?${returnParams.toString()}`;
-      router.push(`/login?redirect=${encodeURIComponent(returnPath)}&reason=booking`);
+      router.push(`${localeHref('/login', language)}?redirect=${encodeURIComponent(returnPath)}&reason=booking`);
       return;
     }
     setSelectedSlot(daySlot);
@@ -358,10 +358,10 @@ export default function TutorProfile({
                     if (data.success && data.conversation) {
                       router.push(`/messages?conversationId=${data.conversation.id}`);
                     } else {
-                      router.push('/login');
+                      router.push(localeHref('/login', language));
                     }
                   } catch {
-                    router.push('/login');
+                    router.push(localeHref('/login', language));
                   }
                 }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold shadow-xs transition-colors"

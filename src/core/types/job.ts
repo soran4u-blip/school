@@ -40,6 +40,10 @@ export interface JobApplication {
   fullName: string;
   phone: string;
   email?: string;
+  // Set when the applicant was signed in at submission time, so /api/account/job-applications
+  // can find it reliably even if the phone typed into the form doesn't match the account's phone
+  // claim — same reasoning as Inquiry.studentId.
+  studentId?: string;
   // Storage path (not a resolved download URL) — the applicant who uploads it has no read access
   // under storage.rules, only write. Resolve via resolveDownloadURL() from a session that does
   // (the owning institution/employer), never store a pre-resolved URL here.

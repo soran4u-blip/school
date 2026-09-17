@@ -22,6 +22,7 @@ import SavedSearchesSection from './_components/SavedSearchesSection';
 import BookingsSection from './_components/BookingsSection';
 import AdmissionApplicationsSection from './_components/AdmissionApplicationsSection';
 import InquiriesSection from './_components/InquiriesSection';
+import JobApplicationsSection from './_components/JobApplicationsSection';
 
 export interface AccountBooking {
   id: string;
@@ -66,6 +67,17 @@ export interface AccountInquiry {
   createdAt: string;
 }
 
+export interface AccountJobApplication {
+  id: string;
+  jobId: string;
+  jobTitle: { ar: string; en: string } | null;
+  institutionId: string | null;
+  institutionName: { ar: string; en: string } | null;
+  institutionWhatsapp: string | null;
+  status: 'SUBMITTED' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'HIRED';
+  createdAt: string;
+}
+
 export interface AccountAdmissionApplication {
   id: string;
   institutionId: string;
@@ -103,6 +115,7 @@ export default function AccountPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
 
+  const [jobApplications, setJobApplications] = useState<AccountJobApplication[] | null>(null);
   const [inquiries, setInquiries] = useState<AccountInquiry[] | null>(null);
   const [expandedInquiryThreadId, setExpandedInquiryThreadId] = useState<string | null>(null);
   const [inquiryThreadMessages, setInquiryThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
@@ -124,9 +137,10 @@ export default function AccountPage() {
       }
       setUid(user.uid);
       try {
-        const [inquiriesRes, admissionApplicationsRes, studentDoc, subs, levels, searches] = await Promise.all([
+        const [inquiriesRes, admissionApplicationsRes, jobApplicationsRes, studentDoc, subs, levels, searches] = await Promise.all([
           fetch('/api/account/inquiries'),
           fetch('/api/account/admission-applications'),
+          fetch('/api/account/job-applications'),
           getStudent(user.uid),
           getTaxonomies('SUBJECT'),
           getTaxonomies('STUDENT_LEVEL'),
@@ -140,6 +154,10 @@ export default function AccountPage() {
         const admissionApplicationsData = await admissionApplicationsRes.json();
         if (admissionApplicationsRes.ok && admissionApplicationsData.success) {
           setAdmissionApplications(admissionApplicationsData.applications);
+        }
+        const jobApplicationsData = await jobApplicationsRes.json();
+        if (jobApplicationsRes.ok && jobApplicationsData.success) {
+          setJobApplications(jobApplicationsData.applications);
         }
         setStudent(studentDoc);
         setProfileSchool(studentDoc?.school || '');
@@ -407,6 +425,15 @@ export default function AccountPage() {
           withdrawingId={withdrawingId}
           onWithdraw={handleWithdrawApplication}
         />
+      )}
+
+      <div className="pt-4">
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('طلبات التوظيف الخاصة بي', 'My Job Applications')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('طلبات التوظيف التي قدّمتها وحالتها.', 'Job applications you submitted and their status.')}</p>
+      </div>
+
+      {jobApplications && (
+        <JobApplicationsSection applications={jobApplications} />
       )}
 
       <div className="pt-4">

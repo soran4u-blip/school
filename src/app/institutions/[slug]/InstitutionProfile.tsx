@@ -17,6 +17,7 @@ import { Review } from '@/core/types/review';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
 import { auth } from '@/core/firebase/config';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getStudent } from '@/core/services/studentService';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
@@ -142,7 +143,7 @@ export default function InstitutionProfile({
       });
       const profilePath = localeHref(`/institutions/${institution.slug}`, language);
       const returnPath = `${profilePath}?programId=${encodeURIComponent(program.id)}`;
-      router.push(`/login?redirect=${encodeURIComponent(returnPath)}`);
+      router.push(`${localeHref('/login', language)}?redirect=${encodeURIComponent(returnPath)}`);
       return;
     }
     trackEvent('institution_apply_start', {
@@ -336,6 +337,20 @@ export default function InstitutionProfile({
       institution_id: institution.id,
       institution_slug: institution.slug,
     });
+
+    // Prefill from the signed-in student's own profile so they don't retype what's already on
+    // their account. Only fills fields still blank, so it never clobbers something they typed.
+    if (currentUser) {
+      getStudent(currentUser.uid).then((student) => {
+        if (!student) return;
+        setInquiryForm((prev) => ({
+          ...prev,
+          fullName: prev.fullName || student.fullName || '',
+          phone: prev.phone || student.phone || '',
+          email: prev.email || student.email || '',
+        }));
+      }).catch(() => {});
+    }
   };
 
   return (
@@ -381,14 +396,14 @@ export default function InstitutionProfile({
                   {category ? (language === 'en' ? category.name.en : category.name.ar) : institution.categoryId}
                 </span>
 
-                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md ${institution.isVerified && evidenceFresh ? 'text-emerald-300 bg-emerald-950/80 border border-emerald-500/40' : 'text-amber-200 bg-amber-950/80 border border-amber-500/40'}`}>
-                  <ShieldCheck className={`w-3.5 h-3.5 ${institution.isVerified && evidenceFresh ? 'text-emerald-400' : 'text-amber-400'}`} />
+                {/* Public badge reflects verification status only — the evidence-freshness flag is an
+                    internal data-quality signal surfaced to the institution owner/admin, not visitors. */}
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md ${institution.isVerified ? 'text-emerald-300 bg-emerald-950/80 border border-emerald-500/40' : 'text-amber-200 bg-amber-950/80 border border-amber-500/40'}`}>
+                  <ShieldCheck className={`w-3.5 h-3.5 ${institution.isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
                    <span>
-                     {institution.isVerified && evidenceFresh
+                     {institution.isVerified
                         ? (language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar)
-                        : institution.isVerified
-                          ? t('تحتاج مراجعة الأدلة', 'Evidence refresh needed')
-                          : t('قيد التحقق', 'Verification pending')}
+                        : t('قيد التحقق', 'Verification pending')}
                    </span>
                 </span>
               </div>
@@ -406,7 +421,11 @@ export default function InstitutionProfile({
                   <MapPin className="w-3.5 h-3.5 text-amber-400" />
                   <span>{governorate ? (language === 'en' ? governorate.name.en : governorate.name.ar) : institution.governorateId}</span>
                   <span>-</span>
-                  <span>{language === 'en' ? institution.address.en : institution.address.ar}</span>
+                  {/* <bdi> isolates this run from the surrounding Arabic sentence's bidi context —
+                      needed because the address may still be in English only (an institution that
+                      hasn't supplied an Arabic translation yet) and mixed-direction text next to
+                      the "-" separator otherwise gets visually reordered. */}
+                  <bdi>{(language === 'en' ? institution.address.en : institution.address.ar) || institution.address.en || institution.address.ar}</bdi>
                 </div>
 
                 <div className="flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md text-amber-300 font-bold">
@@ -452,9 +471,16 @@ export default function InstitutionProfile({
             <div>
               <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('متوسط القسط السنوي', 'Tuition Tier')}</span>
               <span className="font-extrabold text-xs text-slate-800">
-                {institution.tuition.min === 0
-                  ? t('مجاني بالكامل', '100% Free')
-                  : `${formatCurrency(institution.tuition.min, institution.tuition.currency, language)} - ${formatCurrency(institution.tuition.max, institution.tuition.currency, language)}`}
+                {institution.tuition.min === 0 ? (
+                  t('مجاني بالكامل', '100% Free')
+                ) : (
+                  // The range is always low-then-high; without an explicit direction, the "-"
+                  // between two number runs gets reordered by the surrounding RTL context in
+                  // Arabic (rendering high-then-low instead).
+                  <span dir="ltr">
+                    {formatCurrency(institution.tuition.min, institution.tuition.currency, language)} - {formatCurrency(institution.tuition.max, institution.tuition.currency, language)}
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -761,10 +787,10 @@ export default function InstitutionProfile({
                       if (data.success && data.conversation) {
                         router.push(`/messages?conversationId=${data.conversation.id}`);
                       } else {
-                        router.push('/login');
+                        router.push(localeHref('/login', language));
                       }
                     } catch {
-                      router.push('/login');
+                      router.push(localeHref('/login', language));
                     }
                   }}
                   className="w-full py-3.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
