@@ -338,7 +338,9 @@ export default function CommunityContent({
   const handleShare = async (e: React.MouseEvent, post: CommunityPost) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/community/${post.slug || post.id}`;
+    // Mock sample posts don't have real pages — share the community listing instead
+    const path = post.id.startsWith('mock-') ? '/community' : `/community/${post.slug || post.id}`;
+    const url = `${window.location.origin}${path}`;
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
@@ -697,6 +699,8 @@ export default function CommunityContent({
                 {filteredAndSortedPosts.map((post) => {
                   const gov = activeGovernorates.find((g) => g.id === post.governorateId);
                   const govName = gov ? (language === 'en' ? gov.name.en : gov.name.ar) : post.governorateId;
+                  const isMock = post.id.startsWith('mock-');
+                  const postHref = isMock ? '/community/new' : `/community/${post.slug || post.id}`;
                   const avatar = getAvatarStyles(post.authorName);
                   const helpfulCount = helpfulMap[post.id] || 0;
                   const isLiked = likedPosts[post.id];
@@ -755,9 +759,14 @@ export default function CommunityContent({
                       </div>
 
                       {/* Question Title */}
-                      <Link href={`/community/${post.slug || post.id}`} className="block mt-3.5">
+                      <Link href={postHref} className="block mt-3.5">
                         <h2 className="font-black text-base sm:text-lg text-slate-900 leading-snug group-hover:text-blue-700 transition-colors">
                           {post.title}
+                          {isMock && (
+                            <span className="ms-2 text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full align-middle">
+                              {t('مثال', 'Sample')}
+                            </span>
+                          )}
                         </h2>
                       </Link>
 
@@ -771,14 +780,16 @@ export default function CommunityContent({
                         <div className="flex items-center gap-2 sm:gap-4 text-xs font-bold text-slate-500">
                           {/* Reply Link */}
                           <Link
-                            href={`/community/${post.slug || post.id}`}
+                            href={isMock ? '/community/new' : `/community/${post.slug || post.id}`}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                           >
                             <MessageCircle className="w-3.5 h-3.5 text-slate-400" />
                             <span>
-                              {post.replyCount === 0
-                                ? t('كن أول من يرد', 'Be the first to reply')
-                                : `${post.replyCount} ${t('ردود ومشاركات', 'replies')}`}
+                              {isMock
+                                ? t('طرح سؤال مماثل', 'Ask a similar question')
+                                : post.replyCount === 0
+                                  ? t('كن أول من يرد', 'Be the first to reply')
+                                  : `${post.replyCount} ${t('ردود ومشاركات', 'replies')}`}
                             </span>
                           </Link>
 
@@ -814,10 +825,14 @@ export default function CommunityContent({
 
                         {/* Direct View Thread Action */}
                         <Link
-                          href={`/community/${post.slug || post.id}`}
+                          href={postHref}
                           className="inline-flex items-center gap-1 text-xs font-extrabold text-[#0B192C] group-hover:text-blue-700 transition-colors"
                         >
-                          <span>{t('قراءة التفاصيل والردود', 'Read full discussion')}</span>
+                          <span>
+                            {isMock
+                              ? t('ابدأ نقاشاً مشابهاً', 'Start a similar discussion')
+                              : t('قراءة التفاصيل والردود', 'Read full discussion')}
+                          </span>
                           {isRtl ? <ChevronRight className="w-3.5 h-3.5 rotate-180" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </Link>
                       </div>
