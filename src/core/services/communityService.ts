@@ -1,6 +1,6 @@
 import { CommunityPost, CommunityReply } from '../types/community';
 import { db } from '../firebase/config';
-import { collection, getDocs, getCountFromServer, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, getCountFromServer, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 
 /* =========================================================
    COMMUNITY DISCUSSION BOARDS (governorate-scoped Q&A)
@@ -81,4 +81,34 @@ export async function createCommunityReply(postId: string, currentReplyCount: nu
 
 export async function deleteCommunityReply(postId: string, replyId: string): Promise<void> {
   await deleteDoc(doc(db, 'communityPosts', postId, 'replies', replyId));
+}
+
+// "Helpful" like tracking. One like per Firebase Auth identity (anonymous sessions included),
+// recorded as communityPosts/{postId}/likes/{uid} so a page reload can tell whether the current
+// visitor already liked a post, mirroring isGuestAddingReplyCount's guest-write pattern in
+// firestore.rules but for the post's denormalized helpfulCount instead of replyCount.
+export async function hasLikedCommunityPost(postId: string, uid: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, 'communityPosts', postId, 'likes', uid));
+  return snap.exists();
+}
+
+export async function toggleCommunityPostLike(postId: string, uid: string): Promise<{ liked: boolean; helpfulCount: number }> {
+  const postRef = doc(db, 'communityPosts', postId);
+  const likeRef = doc(db, 'communityPosts', postId, 'likes', uid);
+
+  return runTransaction(db, async (tx) => {
+    const [postSnap, likeSnap] = await Promise.all([tx.get(postRef), tx.get(likeRef)]);
+    const currentCount = (postSnap.data()?.helpfulCount as number | undefined) || 0;
+    const alreadyLiked = likeSnap.exists();
+
+    if (alreadyLiked) {
+      tx.delete(likeRef);
+      tx.update(postRef, { helpfulCount: increment(-1) });
+      return { liked: false, helpfulCount: Math.max(0, currentCount - 1) };
+    }
+
+    tx.set(likeRef, { createdAt: serverTimestamp() });
+    tx.update(postRef, { helpfulCount: increment(1) });
+    return { liked: true, helpfulCount: currentCount + 1 };
+  });
 }

@@ -43,6 +43,7 @@ export default function HomeContent({
   featuredInstitutions,
   directoryInstitutions,
   featuredTutors,
+  directoryTutors,
   subjects,
   settings,
   banners,
@@ -54,6 +55,7 @@ export default function HomeContent({
   featuredInstitutions: Institution[];
   directoryInstitutions: Institution[];
   featuredTutors: Tutor[];
+  directoryTutors?: Tutor[];
   subjects: TaxonomyItem[];
   settings: SystemSettings;
   banners: CMSBanner[];
@@ -85,11 +87,12 @@ export default function HomeContent({
     submitHeroSearch();
   };
 
+  const allTutors = directoryTutors ?? featuredTutors;
   const liveCategories = categories.map((category) => ({
     ...category,
     institutionsCount:
       category.slug === 'tutors'
-        ? featuredTutors.length
+        ? allTutors.length
         : directoryInstitutions.filter((institution) => institution.categoryId === category.id).length,
   }));
   const liveGovernorates = governorates.map((governorate) => ({
@@ -127,8 +130,8 @@ export default function HomeContent({
         categories={liveCategories}
         governorates={liveGovernorates}
         quickTags={quickTags}
-         featuredInstitutions={directoryInstitutions}
-        featuredTutors={featuredTutors}
+        featuredInstitutions={directoryInstitutions}
+        featuredTutors={allTutors}
         subjects={subjects}
         searchKeyword={searchKeyword}
         setSearchKeyword={setSearchKeyword}
@@ -152,7 +155,11 @@ export default function HomeContent({
 
       <GovernoratesExplorer governorates={liveGovernorates} />
 
-      <FeaturedTutorsSection featuredTutors={featuredTutors} />
+      <FeaturedTutorsSection
+        featuredTutors={featuredTutors}
+        subjects={subjects}
+        governorates={liveGovernorates}
+      />
 
       <UpcomingEventsSection events={upcomingEvents} />
 

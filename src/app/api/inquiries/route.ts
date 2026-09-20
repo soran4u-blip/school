@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from '@/core/server/rateLimit';
 import { parseJsonBody } from '@/core/validation/apiValidation';
 import { inquirySchema } from '@/core/validation/schemas';
 import { dispatchNotification, resolveOwnerRecipient } from '@/core/server/notifications';
+import { getSessionUser } from '@/core/server/session';
 
 // Public admissions inquiries are written server-side so validation, rate limiting, and the
 // institution lookup cannot be bypassed by a client-side Firestore write.
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
   }
 
   const institution = institutionSnap.data() as { name?: { en?: string; ar?: string } };
+  // Attach the submitter's uid when they're signed in, so /api/account/inquiries can find this
+  // inquiry reliably even if the phone typed into the form doesn't match the account's phone claim.
+  const sessionUser = await getSessionUser(request);
+  const studentId = sessionUser?.role === 'student' ? sessionUser.uid : undefined;
   const ref = adminDb.collection('inquiries').doc();
   const now = new Date().toISOString();
   const inquiry: Inquiry = {
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest) {
     institutionName: institution.name?.en || institution.name?.ar || 'Institution',
     fullName,
     phone,
+    ...(studentId ? { studentId } : {}),
     ...(email ? { email } : {}),
     message,
     status: 'NEW',

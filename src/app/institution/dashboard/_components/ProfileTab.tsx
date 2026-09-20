@@ -10,7 +10,7 @@ import BilingualTextField from '@/components/shared/BilingualTextField';
 import BilingualTextarea from '@/components/shared/BilingualTextarea';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
 import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
-import { getInstitutionCompleteness } from '@/lib/utils';
+import { getInstitutionCompletenessFromGuardrails } from '@/lib/publishingGuardrails';
 import { Building2, Save, ShieldCheck } from 'lucide-react';
 
 // The institution dashboard's Profile tab: basic details form, accreditation documents, and the
@@ -335,7 +335,7 @@ export default function ProfileTab({
 
       <AccountSettingsSection
         status={institution.status}
-        completeness={getInstitutionCompleteness(institution)}
+        completeness={getInstitutionCompletenessFromGuardrails(institution)}
         publishHeading={t('نشر الملف في الدليل العام', 'Publish to the Directory')}
         publishDescription={t(
           'ملفك غير منشور بعد ولا يظهر لزوار الموقع. أكمل المعلومات التالية ليراجعها فريقنا.',

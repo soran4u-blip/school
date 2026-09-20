@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -9,7 +10,7 @@ import { getGovernorates, getTaxonomies, getCategories } from '@/core/services/m
 import { createApplication } from '@/core/services/applicationService';
 import { Governorate, TaxonomyItem, Category } from '@/core/types/masterData';
 import { ApplicationType } from '@/core/types/application';
-import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
+import { UserPlus, Building2, GraduationCap, Briefcase, CheckCircle2, Loader2, Users } from 'lucide-react';
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function ApplyPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedId, setSubmittedId] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -77,7 +79,7 @@ export default function ApplyPage() {
 
     setSubmitting(true);
     try {
-      await createApplication({
+      const created = await createApplication({
         type,
         fullName: fullName.trim(),
         email: email.trim(),
@@ -91,6 +93,7 @@ export default function ApplyPage() {
         yearsOfExperience: type === 'TUTOR' && yearsOfExperience ? Number(yearsOfExperience) : undefined,
         message: message.trim(),
       });
+      setSubmittedId(created.id);
       setSubmitted(true);
     } catch {
       setError(t('حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.', 'Something went wrong submitting your application. Please try again.'));
@@ -116,6 +119,17 @@ export default function ApplyPage() {
               'سيراجع فريقنا طلبك وسنتواصل معك عبر البريد الإلكتروني أو الواتساب بمجرد الموافقة.',
               "Our team will review your application and reach out by email or WhatsApp once it's approved."
             )}
+          </p>
+          <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <div className="font-bold text-slate-600">{t('رقم المرجع', 'Reference number')}</div>
+            <div className="font-mono text-slate-700 break-all">{submittedId}</div>
+          </div>
+          <p className="text-xs text-slate-500">
+            {t('يمكنك متابعة حالة طلبك في أي وقت من صفحة', 'You can check your application status anytime on the')}{' '}
+            <Link href="/apply/status" className="font-bold text-emerald-700 hover:underline">
+              {t('صفحة حالة الطلب', 'application status page')}
+            </Link>
+            {t(' باستخدام بريدك الإلكتروني.', ' using your email address.')}
           </p>
           <button
             onClick={() => router.push('/')}
@@ -147,11 +161,11 @@ export default function ApplyPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 bg-slate-100 rounded-xl p-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 rounded-xl p-1.5">
           <button
             type="button"
             onClick={() => setType('TUTOR')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'TUTOR' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'TUTOR' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <GraduationCap className="w-4 h-4" />
             {t('أستاذ خصوصي', 'Private Tutor')}
@@ -159,7 +173,7 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={() => setType('INSTITUTION')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'INSTITUTION' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'INSTITUTION' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <Building2 className="w-4 h-4" />
             {t('مؤسسة تعليمية', 'Institution')}
@@ -167,10 +181,21 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={() => setType('EMPLOYER')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'EMPLOYER' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all ${type === 'EMPLOYER' ? 'bg-white shadow-xs text-[#0B192C]' : 'text-slate-500'}`}
           >
             <Briefcase className="w-4 h-4" />
             {t('شركة / منظمة', 'Company / NGO')}
+          </button>
+          {/* Not a real ApplicationType — students/parents don't get reviewed like the roles
+              above, they just create an account directly (the flow /login's "New student?"
+              link already points to). Routes there instead of changing `type`. */}
+          <button
+            type="button"
+            onClick={() => router.push('/account/signup')}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all text-slate-500 hover:text-[#0B192C]"
+          >
+            <Users className="w-4 h-4" />
+            {t('طالب / ولي أمر', 'Student / Parent')}
           </button>
         </div>
 

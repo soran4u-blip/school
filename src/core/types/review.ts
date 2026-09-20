@@ -27,6 +27,9 @@ export interface Inquiry {
   institutionName?: string;
   fullName: string;
   phone: string;
+  // Set when the submitter was signed in at submission time, so /api/account/inquiries can find
+  // it reliably even if the phone typed into the form doesn't match the account's phone claim.
+  studentId?: string;
   email?: string;
   message: string;
   status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'APPLICATION_STARTED' | 'CLOSED';

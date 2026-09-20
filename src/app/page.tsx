@@ -35,6 +35,8 @@ export default async function HomePage() {
   // counts, or the full directory when no records have been featured yet.
   const curatedInstitutions = institutions.filter((institution) => institution.isFeatured).slice(0, 6);
   const homepageInstitutions = (curatedInstitutions.length > 0 ? curatedInstitutions : institutions).slice(0, 6);
+  const curatedTutors = tutors.filter((tutor) => tutor.isVerified).sort((a, b) => b.ratingAvg - a.ratingAvg);
+  const homepageTutors = (curatedTutors.length > 0 ? curatedTutors : tutors).slice(0, 6);
   const upcomingEvents = events
     .filter((ev) => ev.startDate >= today)
     .slice(0, 3);
@@ -46,7 +48,8 @@ export default async function HomePage() {
       quickTags={quickTags}
       featuredInstitutions={homepageInstitutions}
       directoryInstitutions={institutions}
-      featuredTutors={tutors}
+      featuredTutors={homepageTutors}
+      directoryTutors={tutors}
       subjects={taxonomies.filter((tx) => tx.type === 'SUBJECT')}
       settings={settings}
       banners={banners}
