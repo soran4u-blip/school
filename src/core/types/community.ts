@@ -7,6 +7,7 @@ export interface CommunityPost {
   body: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   replyCount: number; // denormalized, bumped when a reply is added
+  helpfulCount?: number; // denormalized "helpful" like count, bumped/unbumped via communityPosts/{id}/likes/{uid}
   createdAt: string;
 }
 

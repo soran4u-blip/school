@@ -392,12 +392,22 @@ service cloud.firestore {
         && request.resource.data.replyCount == resource.data.replyCount + 1;
     }
 
+    // A guest toggling the "helpful" like bumps helpfulCount by exactly +-1, paired client-side
+    // with creating/deleting their own communityPosts/{postId}/likes/{uid} doc (below) so the
+    // same identity can't like a post more than once.
+    function isGuestTogglingHelpfulCount() {
+      return resource.data.status == 'APPROVED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount'])
+        && (request.resource.data.helpfulCount == resource.data.get('helpfulCount', 0) + 1
+          || request.resource.data.helpfulCount == resource.data.get('helpfulCount', 0) - 1);
+    }
+
     match /communityPosts/{postId} {
       // Admin SDK only (/api/community-posts) — rate-limited by IP rather than trusting
       // freely-mintable anonymous Firebase Auth sessions.
       allow create: if false;
       allow read: if resource.data.status == 'APPROVED' || canModerate();
-      allow update: if canModerate() || (isAuthenticated() && isGuestAddingReplyCount());
+      allow update: if canModerate() || (isAuthenticated() && (isGuestAddingReplyCount() || isGuestTogglingHelpfulCount()));
       allow delete: if canModerate();
 
       function isValidCommunityReply() {
@@ -411,6 +421,15 @@ service cloud.firestore {
         allow read: if canModerate() || get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
         allow create: if isAuthenticated() && isValidCommunityReply();
         allow delete: if canModerate();
+      }
+
+      // One "helpful" like per identity — the doc's existence IS the like, so its id is the
+      // liker's own uid (own-doc-only, same reasoning as isOwner elsewhere in this file).
+      match /likes/{uid} {
+        allow read: if isAuthenticated() && request.auth.uid == uid;
+        allow create: if isAuthenticated() && request.auth.uid == uid
+          && get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'APPROVED';
+        allow delete: if isAuthenticated() && request.auth.uid == uid;
       }
     }
 

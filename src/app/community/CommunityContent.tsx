@@ -6,9 +6,11 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates } from '@/core/services/masterDataService';
-import { getApprovedCommunityPosts } from '@/core/services/communityService';
+import { getApprovedCommunityPosts, hasLikedCommunityPost, toggleCommunityPostLike } from '@/core/services/communityService';
 import { Governorate } from '@/core/types/masterData';
 import { CommunityPost } from '@/core/types/community';
+import { auth } from '@/core/firebase/config';
+import { signInAnonymously } from 'firebase/auth';
 import {
   MessageCircle,
   MapPin,
@@ -191,8 +193,9 @@ export default function CommunityContent({
   const [activeTab, setActiveTab] = useState<'all' | 'hot' | 'latest' | 'unanswered'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Interactive helpful / like state (stored in local component state for instant feedback)
-  const [helpfulMap, setHelpfulMap] = useState<Record<string, number>>({
+  // Sample posts aren't real Firestore docs, so their "helpful" counts stay local-only —
+  // real posts persist theirs via communityPosts/{id}.helpfulCount (see handleToggleHelpful).
+  const [mockHelpfulMap, setMockHelpfulMap] = useState<Record<string, number>>({
     'mock-post-1': 16,
     'mock-post-2': 8,
     'mock-post-3': 22,
@@ -200,8 +203,17 @@ export default function CommunityContent({
     'mock-post-5': 6,
     'mock-post-6': 11,
   });
-  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const [mockLikedPosts, setMockLikedPosts] = useState<Record<string, boolean>>({});
+  const [likedRealPostIds, setLikedRealPostIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Real posts need a stable identity to record a "helpful" like against — an anonymous
+  // Firebase Auth session, same identity model createCommunityReply already relies on.
+  const ensureAnonUid = useCallback(async (): Promise<string> => {
+    if (auth.currentUser) return auth.currentUser.uid;
+    const cred = await signInAnonymously(auth);
+    return cred.user.uid;
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -256,6 +268,33 @@ export default function CommunityContent({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [initialPosts, initialGovernorates, load]);
+
+  // Once real posts are known, check which of them the current visitor already liked, so a
+  // reload doesn't just show every "helpful" button as unliked (the bug this was added to fix).
+  // Keyed on the id set (not the `posts` array itself) so an optimistic helpfulCount bump from
+  // handleToggleHelpful doesn't re-trigger this and re-fetch every like doc again.
+  const realPostIdsKey = useMemo(
+    () => posts.filter((p) => !p.id.startsWith('mock-')).map((p) => p.id).join(','),
+    [posts]
+  );
+  useEffect(() => {
+    const realPostIds = realPostIdsKey ? realPostIdsKey.split(',') : [];
+    if (realPostIds.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const uid = await ensureAnonUid();
+        const results = await Promise.all(realPostIds.map((id) => hasLikedCommunityPost(id, uid)));
+        if (cancelled) return;
+        setLikedRealPostIds(new Set(realPostIds.filter((_, i) => results[i])));
+      } catch {
+        // Not liked-state is a soft failure — the like button just falls back to "not liked".
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [realPostIdsKey, ensureAnonUid]);
 
   // Combine governorates list
   const activeGovernorates = useMemo(() => {
@@ -327,12 +366,51 @@ export default function CommunityContent({
   const handleToggleHelpful = (e: React.MouseEvent, postId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const isLiked = likedPosts[postId];
-    setLikedPosts((prev) => ({ ...prev, [postId]: !isLiked }));
-    setHelpfulMap((prev) => ({
-      ...prev,
-      [postId]: (prev[postId] || 0) + (isLiked ? -1 : 1),
-    }));
+
+    if (postId.startsWith('mock-')) {
+      // Sample post — not a real Firestore doc, so there's nothing to persist against.
+      const isLiked = mockLikedPosts[postId];
+      setMockLikedPosts((prev) => ({ ...prev, [postId]: !isLiked }));
+      setMockHelpfulMap((prev) => ({
+        ...prev,
+        [postId]: (prev[postId] || 0) + (isLiked ? -1 : 1),
+      }));
+      return;
+    }
+
+    const wasLiked = likedRealPostIds.has(postId);
+    const delta = wasLiked ? -1 : 1;
+
+    // Optimistic update: flip the like state and bump the post's own helpfulCount immediately.
+    setLikedRealPostIds((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, helpfulCount: Math.max(0, (p.helpfulCount || 0) + delta) } : p))
+    );
+
+    (async () => {
+      try {
+        const uid = await ensureAnonUid();
+        const result = await toggleCommunityPostLike(postId, uid);
+        // Reconcile with the server's actual resulting count in case of a race.
+        setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, helpfulCount: result.helpfulCount } : p)));
+      } catch {
+        // Revert the optimistic update on failure (e.g. offline, or the post got unapproved).
+        setLikedRealPostIds((prev) => {
+          const next = new Set(prev);
+          if (wasLiked) next.add(postId);
+          else next.delete(postId);
+          return next;
+        });
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, helpfulCount: Math.max(0, (p.helpfulCount || 0) - delta) } : p))
+        );
+      }
+    })();
   };
 
   const handleShare = async (e: React.MouseEvent, post: CommunityPost) => {
@@ -702,8 +780,8 @@ export default function CommunityContent({
                   const isMock = post.id.startsWith('mock-');
                   const postHref = isMock ? '/community/new' : `/community/${post.slug || post.id}`;
                   const avatar = getAvatarStyles(post.authorName);
-                  const helpfulCount = helpfulMap[post.id] || 0;
-                  const isLiked = likedPosts[post.id];
+                  const helpfulCount = isMock ? mockHelpfulMap[post.id] || 0 : post.helpfulCount || 0;
+                  const isLiked = isMock ? mockLikedPosts[post.id] : likedRealPostIds.has(post.id);
                   const hasReplies = post.replyCount > 0;
 
                   return (
