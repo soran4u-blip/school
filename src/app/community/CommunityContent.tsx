@@ -6,7 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates } from '@/core/services/masterDataService';
-import { getApprovedCommunityPosts, hasLikedCommunityPost, toggleCommunityPostLike } from '@/core/services/communityService';
+import { getApprovedCommunityPosts, getCommunityPostById, hasLikedCommunityPost, toggleCommunityPostLike } from '@/core/services/communityService';
 import { Governorate } from '@/core/types/masterData';
 import { CommunityPost } from '@/core/types/community';
 import { auth } from '@/core/firebase/config';
@@ -271,8 +271,13 @@ export default function CommunityContent({
 
   // Once real posts are known, check which of them the current visitor already liked, so a
   // reload doesn't just show every "helpful" button as unliked (the bug this was added to fix).
+  // Also re-fetch each post's live helpfulCount directly (uncached getCommunityPostById) rather
+  // than trusting `posts`, since the server-rendered initialPosts comes from
+  // getPublicCommunityPosts() which is unstable_cache'd for 5 minutes — a like toggle has no
+  // server route to call revalidateTag from, so a fresh full-page load would otherwise show a
+  // stale (often zero) count for up to that long.
   // Keyed on the id set (not the `posts` array itself) so an optimistic helpfulCount bump from
-  // handleToggleHelpful doesn't re-trigger this and re-fetch every like doc again.
+  // handleToggleHelpful doesn't re-trigger this and re-fetch everything again.
   const realPostIdsKey = useMemo(
     () => posts.filter((p) => !p.id.startsWith('mock-')).map((p) => p.id).join(','),
     [posts]
@@ -284,11 +289,17 @@ export default function CommunityContent({
     (async () => {
       try {
         const uid = await ensureAnonUid();
-        const results = await Promise.all(realPostIds.map((id) => hasLikedCommunityPost(id, uid)));
+        const [likedResults, freshPosts] = await Promise.all([
+          Promise.all(realPostIds.map((id) => hasLikedCommunityPost(id, uid))),
+          Promise.all(realPostIds.map((id) => getCommunityPostById(id))),
+        ]);
         if (cancelled) return;
-        setLikedRealPostIds(new Set(realPostIds.filter((_, i) => results[i])));
+        setLikedRealPostIds(new Set(realPostIds.filter((_, i) => likedResults[i])));
+        const freshCounts = new Map(freshPosts.filter(Boolean).map((p) => [p!.id, p!.helpfulCount || 0]));
+        setPosts((prev) => prev.map((p) => (freshCounts.has(p.id) ? { ...p, helpfulCount: freshCounts.get(p.id) } : p)));
       } catch {
-        // Not liked-state is a soft failure — the like button just falls back to "not liked".
+        // A stale count / not-liked-state here is a soft failure — the UI just falls back to
+        // whatever the server-rendered snapshot had.
       }
     })();
     return () => {
