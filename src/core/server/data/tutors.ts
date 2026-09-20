@@ -7,7 +7,12 @@ import { CACHE_TAGS, REVALIDATE_SECONDS, requireAdminDb, withId } from './cache'
 export const getActiveTutors = unstable_cache(
   async (): Promise<Tutor[]> => {
     const snap = await requireAdminDb().collection('tutors').where('status', '==', 'ACTIVE').get();
-    return snap.docs.map((d) => withId<Tutor>(d.id, d.data()));
+    // Filtered in-memory rather than with a second `where` — this snapshot is small enough to keep
+    // one composite index off `status`, and isTestData is unset (not `false`) on nearly every real
+    // document, which a Firestore `!=` query can't match cheaply anyway.
+    return snap.docs
+      .map((d) => withId<Tutor>(d.id, d.data()))
+      .filter((t) => !t.isTestData);
   },
   ['active-tutors'],
   { tags: [CACHE_TAGS.tutors], revalidate: REVALIDATE_SECONDS }

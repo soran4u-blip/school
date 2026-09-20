@@ -24,6 +24,9 @@ export interface Tutor {
   id: string;
   userId?: string;
   slug?: string; // human-readable URL slug; optional since tutors created before this field lack one — /tutors/[slug] falls back to id
+  // Marks a listing seeded by QA/E2E runs so it can be kept out of the public directory even
+  // though it's ACTIVE — see getActiveTutors in core/server/data/tutors.ts.
+  isTestData?: boolean;
   fullName: LocalizedString;
   title: LocalizedString; // e.g. 'Senior Baccalaureate Physics Instructor / أستاذ الفيزياء للفرع العلمي'
   bio: LocalizedString;
