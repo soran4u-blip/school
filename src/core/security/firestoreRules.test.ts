@@ -192,6 +192,37 @@ describe.skipIf(!available)('firestore.rules', () => {
     it('may not reassign ownership', async () => {
       await assertFails(updateDoc(doc(institutionOwner(), 'institutions', INSTITUTION_ID), { userId: 'someone-else' }));
     });
+
+    describe('once an admin has deleted the listing', () => {
+      beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (ctx) => {
+          await setDoc(doc(ctx.firestore(), 'institutions', INSTITUTION_ID), {
+            ...institutionDoc,
+            status: 'DELETED',
+            statusBeforeDelete: 'ACTIVE',
+            deletedAt: new Date().toISOString(),
+          });
+        });
+      });
+
+      it('can still read it, so the dashboard can explain what happened', async () => {
+        await assertSucceeds(getDoc(doc(institutionOwner(), 'institutions', INSTITUTION_ID)));
+      });
+
+      it('is hidden from an anonymous visitor', async () => {
+        await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'institutions', INSTITUTION_ID)));
+      });
+
+      it('may not edit it', async () => {
+        await assertFails(
+          updateDoc(doc(institutionOwner(), 'institutions', INSTITUTION_ID), { tagline: { ar: 'x', en: 'x' } })
+        );
+      });
+
+      it('may not undelete it', async () => {
+        await assertFails(updateDoc(doc(institutionOwner(), 'institutions', INSTITUTION_ID), { status: 'ACTIVE' }));
+      });
+    });
   });
 
   describe('tutor owner', () => {
@@ -218,6 +249,15 @@ describe.skipIf(!available)('firestore.rules', () => {
 
     it('may not grant themselves a verification request status', async () => {
       await assertFails(updateDoc(doc(tutorOwner(), 'tutors', TUTOR_ID), { verificationRequestStatus: 'APPROVED' }));
+    });
+
+    it('may not edit or undelete a profile an admin has deleted', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'tutors', TUTOR_ID), { ...tutorDoc, status: 'DELETED', statusBeforeDelete: 'ACTIVE' });
+      });
+      await assertSucceeds(getDoc(doc(tutorOwner(), 'tutors', TUTOR_ID)));
+      await assertFails(updateDoc(doc(tutorOwner(), 'tutors', TUTOR_ID), { bio: { ar: 'س', en: 'Bio' } }));
+      await assertFails(updateDoc(doc(tutorOwner(), 'tutors', TUTOR_ID), { status: 'SUSPENDED' }));
     });
   });
 

@@ -11,6 +11,7 @@ The task list lives in [`src/core/server/scheduledTasks.ts`](../src/core/server/
 | `analytics` | `POST /api/cron/analytics` | Recomputes the `/admin/analytics` snapshot. | Hourly |
 | `counters` | `POST /api/cron/counters` | Rebuilds rating aggregates and job applicant counts from source. | Nightly |
 | `saved-search-alerts` | `POST /api/cron/saved-search-alerts` | Pushes a notification when a new listing matches a student's saved search. | Every 15–30 min |
+| `purge-deleted-listings` | `POST /api/cron/purge-deleted-listings` | Permanently erases institutions, tutors and employers deleted more than 30 days ago (see `src/lib/listingLifecycle.ts`). Until it runs, deleted listings simply stay restorable. | Nightly |
 
 ## Authentication
 
@@ -60,6 +61,17 @@ gcloud scheduler jobs create http eduraq-saved-search-alerts \
   --schedule "*/20 * * * *" \
   --time-zone "Asia/Baghdad" \
   --uri "https://<HOST>/api/cron/saved-search-alerts" \
+  --http-method POST \
+  --headers "x-cron-secret=<SECRET>" \
+  --attempt-deadline 300s
+```
+
+```bash
+gcloud scheduler jobs create http eduraq-purge-deleted-listings \
+  --project school-4bcd6 \
+  --schedule "15 3 * * *" \
+  --time-zone "Asia/Baghdad" \
+  --uri "https://<HOST>/api/cron/purge-deleted-listings" \
   --http-method POST \
   --headers "x-cron-secret=<SECRET>" \
   --attempt-deadline 300s

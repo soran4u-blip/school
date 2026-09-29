@@ -1,4 +1,5 @@
 import { LocalizedString } from './masterData';
+import { SoftDeleteFields } from './softDelete';
 
 // Weekly recurring availability, e.g. { dayOfWeek: 1, startTime: '16:00', endTime: '18:00' } = every Monday 4-6pm
 export interface AvailabilitySlot {
@@ -20,7 +21,7 @@ export interface TutorVerificationRequest {
   rejectionReason?: string;
 }
 
-export interface Tutor {
+export interface Tutor extends SoftDeleteFields {
   id: string;
   userId?: string;
   slug?: string; // human-readable URL slug; optional since tutors created before this field lack one — /tutors/[slug] falls back to id
@@ -71,7 +72,7 @@ export interface Tutor {
   // themselves from their dashboard. Keeping these distinct is what lets firestore.rules allow
   // an owner to pause/unpause (ACTIVE<->SUSPENDED) without also letting an unapproved tutor
   // walk themselves from PENDING to ACTIVE.
-  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DELETED';
 
   // Mirrors the private verification doc's `status`, kept in sync by /api/tutor/verification/submit
   // and /api/admin/tutors/[id]/verification/{approve,reject} — a non-sensitive enum (no document

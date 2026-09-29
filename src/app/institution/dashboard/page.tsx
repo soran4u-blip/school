@@ -28,6 +28,8 @@ import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import { formatDate, todayLocalDate } from '@/lib/utils';
+import ListingRemovedNotice from '@/components/shared/ListingRemovedNotice';
+import { isDeleted } from '@/lib/listingLifecycle';
 
 function emptyJob(institutionId: string): Omit<Job, 'id' | 'createdAt' | 'updatedAt'> {
   return {
@@ -403,6 +405,12 @@ export default function InstitutionDashboardPage() {
 
   if (loading) {
     return <div className="text-sm text-slate-500">{t('جاري التحميل...', 'Loading...')}</div>;
+  }
+
+  // Loaded fine but the profile is gone (admin-deleted, or erased outright): say so, rather than
+  // the "try refreshing" error below, which only fits a load that actually failed.
+  if (institutionId && message?.type !== 'error' && (!institution || isDeleted(institution))) {
+    return <ListingRemovedNotice kind="institution" />;
   }
 
   if (!institutionId || !institution) {

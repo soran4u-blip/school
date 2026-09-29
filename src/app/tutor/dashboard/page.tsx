@@ -24,6 +24,8 @@ import { Review } from '@/core/types/review';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import { AlertCircle } from 'lucide-react';
 import { formatDate as formatDateUtil } from '@/lib/utils';
+import ListingRemovedNotice from '@/components/shared/ListingRemovedNotice';
+import { isDeleted } from '@/lib/listingLifecycle';
 
 export default function TutorDashboardPage() {
   const router = useRouter();
@@ -319,6 +321,12 @@ export default function TutorDashboardPage() {
 
   if (loading) {
     return <div className="text-sm text-slate-500">{t('جاري التحميل...', 'Loading...')}</div>;
+  }
+
+  // Loaded fine but the profile is gone (admin-deleted, or erased outright): say so, rather than
+  // the "try refreshing" error below, which only fits a load that actually failed.
+  if (tutorId && message?.type !== 'error' && (!tutor || isDeleted(tutor))) {
+    return <ListingRemovedNotice kind="tutor" />;
   }
 
   if (!tutorId || !tutor) {

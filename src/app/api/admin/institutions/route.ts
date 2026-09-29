@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/core/server/session';
 import { Institution } from '@/core/types/institution';
 import { canPublishInstitution } from '@/lib/publishingGuardrails';
+import { isDeleted } from '@/lib/listingLifecycle';
 import { recordAuditEvent } from '@/core/server/auditLog';
 import { revalidatePublicData } from '@/core/server/data/cache';
 
@@ -39,6 +40,11 @@ async function save(request: NextRequest, mode: 'create' | 'update') {
   const existing = await ref.get();
   if (mode === 'create' && existing.exists) return NextResponse.json({ success: false, error: 'Institution already exists' }, { status: 409 });
   if (mode === 'update' && !existing.exists) return NextResponse.json({ success: false, error: 'Institution not found' }, { status: 404 });
+  // Saving the edit form over a soft-deleted institution would overwrite status and quietly undelete
+  // it without a restore entry in the audit log — see /api/admin/listings/[type]/[id]/restore.
+  if (mode === 'update' && isDeleted(existing.data()!)) {
+    return NextResponse.json({ success: false, error: 'This institution is deleted — restore it first' }, { status: 409 });
+  }
 
   if (institution.status === 'ACTIVE') {
     const assessment = canPublishInstitution(institution);
