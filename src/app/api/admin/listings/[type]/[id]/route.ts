@@ -8,9 +8,10 @@ import { logServerError } from '@/core/server/errorLog';
 import { errorMessage, errorStack } from '@/lib/errors';
 import { deriveVerificationBadge } from '@/lib/utils';
 import { LocalizedString } from '@/core/types/masterData';
-import { AuditTargetType } from '@/core/types/auditLog';
 import { Institution } from '@/core/types/institution';
 import { canPublishInstitution } from '@/lib/publishingGuardrails';
+import { isDeleted, softDeletePatch, DELETED_LISTING_RETENTION_DAYS } from '@/lib/listingLifecycle';
+import { resolveListing, listingName, eraseListingDocument } from '@/core/server/listingDeletion';
 
 // Admin mutations to a directory listing's trust and visibility fields.
 //
@@ -21,57 +22,13 @@ import { canPublishInstitution } from '@/lib/publishingGuardrails';
 // write these fields directly; that is deliberate, since locking them to this route would also
 // block the legitimate full-profile edit form at /admin/institutions/add.
 
-// `verifiable`/`featurable` say which listing types actually carry that field on their document —
-// see Institution (isVerified + isFeatured) and Tutor (isVerified only) in core/types. Employers
-// have neither; nothing renders either field for them, so writing them would just be dead data
-// with a misleading audit-log entry.
-const COLLECTIONS = {
-  institutions: {
-    collection: 'institutions',
-    target: 'institution' as AuditTargetType,
-    tag: 'institutions' as const,
-    verifiable: true,
-    featurable: true,
-  },
-  tutors: {
-    collection: 'tutors',
-    target: 'tutor' as AuditTargetType,
-    tag: 'tutors' as const,
-    verifiable: true,
-    featurable: false,
-  },
-  employers: {
-    collection: 'employers',
-    target: 'employer' as AuditTargetType,
-    tag: 'jobs' as const,
-    verifiable: false,
-    featurable: false,
-  },
-};
-
-type ListingType = keyof typeof COLLECTIONS;
-
-function resolve(type: string): (typeof COLLECTIONS)[ListingType] | null {
-  return Object.prototype.hasOwnProperty.call(COLLECTIONS, type) ? COLLECTIONS[type as ListingType] : null;
-}
-
-// Institutions and tutors both carry a `verificationBadgeLabel` that tracks isVerified unless an
-// admin has written a custom one; employers have no badge at all.
-function nameOf(data: FirebaseFirestore.DocumentData): string {
-  const name = data.name as LocalizedString | string | undefined;
-  if (typeof name === 'string') return name;
-  if (name?.en || name?.ar) return name.en || name.ar;
-  const fullName = data.fullName as LocalizedString | undefined;
-  return fullName?.en || fullName?.ar || 'unknown';
-}
-
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ type: string; id: string }> }) {
   const auth = await requirePermission(request, 'directory:write');
   if (auth.error) return auth.error;
   const { db, user } = auth.context;
 
   const { type, id } = await params;
-  const target = resolve(type);
+  const target = resolveListing(type);
   if (!target) return NextResponse.json({ success: false, error: 'Unknown listing type' }, { status: 404 });
 
   const parsed = await parseJsonBody(request, listingAdminUpdateSchema);
@@ -93,7 +50,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const snap = await ref.get();
     if (!snap.exists) return NextResponse.json({ success: false, error: 'Listing not found' }, { status: 404 });
     const before = snap.data()!;
-    const name = nameOf(before);
+    const name = listingName(before);
+
+    // Setting a status here would silently undelete the listing without its restore audit entry,
+    // and verify/feature on a deleted listing is meaningless. Restore it first.
+    if (isDeleted(before)) {
+      return NextResponse.json({ success: false, error: 'This listing is deleted — restore it first' }, { status: 409 });
+    }
 
     if (type === 'institutions' && (status === 'ACTIVE' || isVerified === true)) {
       const candidate = {
@@ -172,30 +135,54 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { db, user } = auth.context;
 
   const { type, id } = await params;
-  const target = resolve(type);
+  const target = resolveListing(type);
   if (!target) return NextResponse.json({ success: false, error: 'Unknown listing type' }, { status: 404 });
+
+  // DELETE soft-deletes: the listing leaves the directory at once but stays restorable for
+  // DELETED_LISTING_RETENTION_DAYS, after which the 'purge-deleted-listings' task erases it.
+  // `?erase=1` erases immediately instead — for a listing that legally or for privacy reasons can't
+  // wait out the window. It's superadmin-only (an editor can delete, never destroy) and only
+  // accepted on an already-deleted listing, so erasing always takes two deliberate steps.
+  const erase = request.nextUrl.searchParams.get('erase') === '1';
+  if (erase && user.role !== 'superadmin') {
+    return NextResponse.json({ success: false, error: 'Only a superadmin can permanently erase a listing' }, { status: 403 });
+  }
 
   try {
     const ref = db.collection(target.collection).doc(id);
     const snap = await ref.get();
     if (!snap.exists) return NextResponse.json({ success: false, error: 'Listing not found' }, { status: 404 });
-    const name = nameOf(snap.data()!);
+    const before = snap.data()!;
+    const name = listingName(before);
 
-    // Firestore doesn't cascade-delete subcollections; the private verification documents would
-    // otherwise outlive the profile they belong to, which for identity documents is the worst
-    // kind of leftover.
-    const privateDocs = await ref.collection('private').get();
-    await Promise.all(privateDocs.docs.map((d) => d.ref.delete()));
-    await ref.delete();
-
-    await recordAuditEvent(db, {
-      actor: user,
-      action: 'listing.delete',
-      targetType: target.target,
-      targetId: id,
-      summary: `Deleted ${type} "${name}"`,
-      request,
-    });
+    if (erase) {
+      if (!isDeleted(before)) {
+        return NextResponse.json({ success: false, error: 'Delete the listing before erasing it' }, { status: 409 });
+      }
+      await eraseListingDocument(ref);
+      await recordAuditEvent(db, {
+        actor: user,
+        action: 'listing.purge',
+        targetType: target.target,
+        targetId: id,
+        summary: `Permanently erased ${type} "${name}"`,
+        request,
+      });
+    } else {
+      if (isDeleted(before)) {
+        return NextResponse.json({ success: false, error: 'Listing is already deleted' }, { status: 409 });
+      }
+      await ref.update(softDeletePatch(before, user.uid, new Date()));
+      await recordAuditEvent(db, {
+        actor: user,
+        action: 'listing.delete',
+        targetType: target.target,
+        targetId: id,
+        summary: `Deleted ${type} "${name}" (restorable for ${DELETED_LISTING_RETENTION_DAYS} days)`,
+        metadata: { from: String(before.status ?? '') },
+        request,
+      });
+    }
 
     revalidatePublicData(target.tag);
     return NextResponse.json({ success: true });

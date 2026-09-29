@@ -9,6 +9,8 @@ import { getGovernorates } from '@/core/services/masterDataService';
 import { Employer } from '@/core/types/employer';
 import { Governorate } from '@/core/types/masterData';
 import { Briefcase, MapPin, Mail, Phone, Trash2 } from 'lucide-react';
+import DeletedListingsPanel from '@/components/shared/DeletedListingsPanel';
+import { DELETED_LISTING_RETENTION_DAYS, isDeleted, isNotDeleted } from '@/lib/listingLifecycle';
 
 export default function AdminEmployersPage() {
   const { language, t } = useLanguage();
@@ -57,8 +59,18 @@ export default function AdminEmployersPage() {
     }
   };
 
+  const liveEmployers = employers.filter(isNotDeleted);
+  const deletedEmployers = employers.filter(isDeleted).map((employer) => ({
+    id: employer.id,
+    name: employer.name,
+    deletedAt: employer.deletedAt,
+  }));
+
   const handleDelete = async (employer: Employer) => {
-    if (!confirm(t(`هل تريد حذف "${employer.name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${employer.name}"? This cannot be undone.`))) return;
+    if (!confirm(t(
+      `حذف "${employer.name}"؟ سيختفي فوراً، ويمكن استعادته من قسم المحذوفات خلال ${DELETED_LISTING_RETENTION_DAYS} يوماً.`,
+      `Delete "${employer.name}"? It's hidden immediately and can be restored from "Deleted" for ${DELETED_LISTING_RETENTION_DAYS} days.`
+    ))) return;
     await run(() => deleteListing('employers', employer.id));
   };
 
@@ -96,10 +108,10 @@ export default function AdminEmployersPage() {
           <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr><td colSpan={5} className="p-8 text-center text-slate-400">{t('جاري التحميل...', 'Loading...')}</td></tr>
-            ) : employers.length === 0 ? (
+            ) : liveEmployers.length === 0 ? (
               <tr><td colSpan={5} className="p-8 text-center text-slate-400">{t('لا توجد حسابات بعد', 'No employer accounts yet')}</td></tr>
             ) : (
-              employers.map((employer) => (
+              liveEmployers.map((employer) => (
                 <tr key={employer.id} className="hover:bg-slate-50/50">
                   <td className="p-3 font-bold text-slate-900">{employer.name}</td>
                   <td className="p-3">
@@ -150,6 +162,8 @@ export default function AdminEmployersPage() {
           </tbody>
         </table>
       </div>
+
+      <DeletedListingsPanel type="employers" items={deletedEmployers} onChanged={loadData} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { LocalizedString } from './masterData';
+import { SoftDeleteFields } from './softDelete';
 
 export interface InstitutionProgram {
   id: string;
@@ -42,7 +43,7 @@ export interface InstitutionAccreditation {
   expiresAt?: string;
 }
 
-export interface Institution {
+export interface Institution extends SoftDeleteFields {
   id: string;
   userId?: string; // linked Firebase Auth uid, once the institution has an owner account
   // Marks a listing seeded by QA/E2E runs so it can be kept out of the public directory even
@@ -89,7 +90,7 @@ export interface Institution {
   isVerified: boolean;
   verificationBadgeLabel: LocalizedString; // e.g. 'Ministry of Higher Education Accredited'
   
-  status: 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  status: 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'DELETED';
   isFeatured: boolean;
   
   metrics: {

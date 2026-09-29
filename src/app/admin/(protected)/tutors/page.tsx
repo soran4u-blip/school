@@ -14,6 +14,8 @@ import { UserCheck, ShieldCheck, ShieldQuestion, Star, MessageSquare, Plus, Edit
 import Link from 'next/link';
 import { formatCurrencyIQD } from '@/lib/utils';
 import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
+import DeletedListingsPanel from '@/components/shared/DeletedListingsPanel';
+import { DELETED_LISTING_RETENTION_DAYS, isDeleted, isNotDeleted } from '@/lib/listingLifecycle';
 
 // One row of the verification queue below: the tutor plus their submitted documents, fetched
 // lazily since the documents live in a private subcollection the main tutor list doesn't read.
@@ -117,7 +119,13 @@ export default function AdminTutorsPage() {
 
   useLoadOnMount(loadData);
 
-  const pendingVerification = tutors.filter((tutor) => tutor.verificationRequestStatus === 'PENDING');
+  const liveTutors = tutors.filter(isNotDeleted);
+  const deletedTutors = tutors.filter(isDeleted).map((tutor) => ({
+    id: tutor.id,
+    name: language === 'en' ? tutor.fullName.en : tutor.fullName.ar,
+    deletedAt: tutor.deletedAt,
+  }));
+  const pendingVerification = liveTutors.filter((tutor) => tutor.verificationRequestStatus === 'PENDING');
 
   // These go through /api/admin/listings so they land in the audit trail.
   const run = async (action: () => Promise<void>) => {
@@ -132,7 +140,10 @@ export default function AdminTutorsPage() {
 
   const handleDelete = async (tutor: Tutor) => {
     const name = language === 'en' ? tutor.fullName.en : tutor.fullName.ar;
-    if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
+    if (!confirm(t(
+      `حذف "${name}"؟ سيختفي من الدليل فوراً، ويمكن استعادته من قسم المحذوفات خلال ${DELETED_LISTING_RETENTION_DAYS} يوماً.`,
+      `Delete "${name}"? It leaves the directory immediately and can be restored from "Deleted" for ${DELETED_LISTING_RETENTION_DAYS} days.`
+    ))) {
       return;
     }
     await run(() => deleteListing('tutors', tutor.id));
@@ -204,7 +215,7 @@ export default function AdminTutorsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {tutors.map((tutor) => {
+            {liveTutors.map((tutor) => {
               const gov = governorates.find(g => g.id === tutor.governorateId);
 
               return (
@@ -291,6 +302,8 @@ export default function AdminTutorsPage() {
           </tbody>
         </table>
       </div>
+
+      <DeletedListingsPanel type="tutors" items={deletedTutors} onChanged={loadData} />
     </div>
   );
 }

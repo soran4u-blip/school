@@ -19,6 +19,8 @@ import {
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import ProfileTab from './_components/ProfileTab';
 import EventsManager, { DraftEvent } from '@/components/shared/EventsManager';
+import ListingRemovedNotice from '@/components/shared/ListingRemovedNotice';
+import { isDeleted } from '@/lib/listingLifecycle';
 
 const EMPLOYMENT_LABELS: Record<Job['employmentType'], { ar: string; en: string }> = {
   FULL_TIME: { ar: 'دوام كامل', en: 'Full-time' },
@@ -56,6 +58,8 @@ function emptyEvent(employerId: string): Omit<EduEvent, 'id' | 'createdAt' | 'up
 export default function EmployerDashboardPage() {
   const { language, t } = useLanguage();
   const [employer, setEmployer] = useState<Employer | null>(null);
+  // The id from the auth claim — set even when the employer doc it points at no longer exists.
+  const [loadedEmployerId, setLoadedEmployerId] = useState<string | null>(null);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobApplicationCounts, setJobApplicationCounts] = useState<Record<string, number>>({});
@@ -79,6 +83,7 @@ export default function EmployerDashboardPage() {
         const tokenResult = await user.getIdTokenResult();
         const id = tokenResult.claims.employerId as string | undefined;
         if (!id) return;
+        setLoadedEmployerId(id);
 
         const [emp, govs, empJobs, empApplications, empEvents] = await Promise.all([
           getEmployerById(id),
@@ -178,6 +183,12 @@ export default function EmployerDashboardPage() {
 
   if (loading) {
     return <div className="text-sm text-slate-400 font-bold py-12 text-center">{t('جاري التحميل...', 'Loading...')}</div>;
+  }
+
+  // A load that failed keeps its own error; a profile that loaded as deleted (or is gone) gets an
+  // explanation instead of "could not find your account".
+  if (message?.type !== 'error' && (employer ? isDeleted(employer) : loadedEmployerId)) {
+    return <ListingRemovedNotice kind="employer" />;
   }
 
   if (!employer) {

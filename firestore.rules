@@ -68,6 +68,13 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(reserved);
     }
 
+    // A listing an admin has deleted (see src/core/types/softDelete.ts) is frozen for its owner:
+    // they can still read it, so their dashboard can say it was removed, but not edit it — an
+    // edit would otherwise be a way to keep working on, or even resurrect, a removed profile.
+    function isNotDeletedListing() {
+      return resource.data.get('status', '') != 'DELETED';
+    }
+
     // An owner may pause and resume their own listing, but may never walk a PENDING profile to
     // ACTIVE — that approval is the admin's call. Institutions and tutors both use
     // ACTIVE<->SUSPENDED for the owner-controlled pause, keeping PENDING to mean "not yet
@@ -170,6 +177,7 @@ service cloud.firestore {
       allow create: if false;
       allow update: if (
         ownsInstitutionDoc(instId)
+        && isNotDeletedListing()
         && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'isFeatured', 'metrics', 'createdAt'])
         && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
       );
@@ -194,6 +202,7 @@ service cloud.firestore {
       allow create: if canEditDirectory();
       allow update: if canEditDirectory() || (
         ownsTutorDoc(tutorId)
+        && isNotDeletedListing()
         && keepsReservedFields(['id', 'userId', 'isVerified', 'verificationBadgeLabel', 'verificationRequestStatus', 'ratingAvg', 'reviewCount', 'createdAt'])
         && statusStaysWithin(['ACTIVE', 'SUSPENDED'])
       );
@@ -233,6 +242,7 @@ service cloud.firestore {
       // covered by statusStaysWithin().
       allow update: if canEditDirectory() || (
         ownsEmployerDoc(employerId)
+        && isNotDeletedListing()
         && keepsReservedFields(['id', 'userId', 'status', 'createdAt'])
       );
       allow delete: if canEditDirectory() || ownsEmployerDoc(employerId);

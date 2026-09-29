@@ -5,6 +5,7 @@ import { repairApplicantCounts } from '@/core/server/counters';
 import { writeAnalyticsSnapshot } from '@/core/server/analytics';
 import { runSavedSearchAlerts } from '@/core/server/savedSearchAlerts';
 import { dispatchNotification } from '@/core/server/notifications';
+import { purgeExpiredListings } from '@/core/server/listingDeletion';
 
 // Periodic background work, and the one place that says what it is.
 //
@@ -41,6 +42,11 @@ export const SCHEDULED_TASKS: Record<string, ScheduledTask> = {
         applicantCounts: { checked: applicants.checked, repaired: applicants.repaired.length },
       };
     },
+  },
+
+  'purge-deleted-listings': {
+    description: 'Permanently erase listings that were deleted more than the retention period ago.',
+    run: (db) => purgeExpiredListings(db),
   },
 
   'saved-search-alerts': {

@@ -21,6 +21,8 @@ import {
   Trash2
 } from 'lucide-react';
 import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
+import DeletedListingsPanel from '@/components/shared/DeletedListingsPanel';
+import { DELETED_LISTING_RETENTION_DAYS, isDeleted, isNotDeleted } from '@/lib/listingLifecycle';
 
 export default function AdminInstitutionsPage() {
   const { language, t } = useLanguage();
@@ -70,13 +72,22 @@ export default function AdminInstitutionsPage() {
 
   const handleDelete = async (inst: Institution) => {
     const name = language === 'en' ? inst.name.en : inst.name.ar;
-    if (!confirm(t(`هل أنت متأكد من حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Delete "${name}"? This cannot be undone.`))) {
+    if (!confirm(t(
+      `حذف "${name}"؟ سيختفي من الدليل فوراً، ويمكن استعادته من قسم المحذوفات خلال ${DELETED_LISTING_RETENTION_DAYS} يوماً.`,
+      `Delete "${name}"? It leaves the directory immediately and can be restored from "Deleted" for ${DELETED_LISTING_RETENTION_DAYS} days.`
+    ))) {
       return;
     }
     await run(() => deleteListing('institutions', inst.id));
   };
 
-  const filtered = institutions.filter(inst => {
+  const deleted = institutions.filter(isDeleted).map((inst) => ({
+    id: inst.id,
+    name: language === 'en' ? inst.name.en : inst.name.ar,
+    deletedAt: inst.deletedAt,
+  }));
+
+  const filtered = institutions.filter(isNotDeleted).filter(inst => {
     if (filterCat !== 'all' && inst.categoryId !== filterCat) return false;
     if (filterGov !== 'all' && inst.governorateId !== filterGov) return false;
     return true;
@@ -264,6 +275,8 @@ export default function AdminInstitutionsPage() {
           </tbody>
         </table>
       </div>
+
+      <DeletedListingsPanel type="institutions" items={deleted} onChanged={loadData} />
     </div>
   );
 }
