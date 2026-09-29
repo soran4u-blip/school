@@ -38,13 +38,13 @@ jobs:
 
       # The build needs the public Firebase config to be present but never reaches Firestore:
       # every route that reads data is force-dynamic, because the Admin SDK service account is a
-      # runtime-only secret. These are the same public values as apphosting.yaml.
+      # runtime-only secret. These are the same public values as in docs/deployment.md.
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: school-4bcd6
           NEXT_PUBLIC_FIREBASE_DATABASE_NAME: schooldb
-          NEXT_PUBLIC_SITE_URL: https://school--school-4bcd6.us-east4.hosted.app
+          NEXT_PUBLIC_SITE_URL: https://school-alpha-henna.vercel.app
 
   rules:
     name: Firestore security rules

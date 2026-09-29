@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
+import { siteUrl } from '@/lib/siteUrl';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = "Iraq's Education Discovery Platform";
 const description = 'Discover and compare schools, universities, institutes, and private tutors across Iraq. Read reviews, ask your community — before you decide.';
 

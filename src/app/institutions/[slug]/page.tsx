@@ -10,7 +10,7 @@ import { getPublicGovernorates, getPublicCategories } from '@/core/server/data/m
 // client island this renders.
 //
 // force-dynamic because FIREBASE_SERVICE_ACCOUNT_KEY is a runtime-only secret (see
-// apphosting.yaml), so the Admin SDK isn't available during the build and these pages can't be
+// docs/deployment.md), so the Admin SDK isn't available during the build and these pages can't be
 // prerendered then. Cost is still bounded: the reads below are cached snapshots shared by every
 // visitor, so request-time rendering doesn't mean request-time Firestore reads.
 export const dynamic = 'force-dynamic';

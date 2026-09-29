@@ -31,7 +31,7 @@ export async function checkRateLimit(
   });
 }
 
-// Best-effort client IP extraction behind Cloud Run/App Hosting's proxy layer. Not
+// Best-effort client IP extraction behind the hosting platform's proxy (Vercel sets both headers). Not
 // spoof-proof against a determined attacker (nothing at this layer of the stack is), but
 // sufficient to stop naive repeated-submission abuse from a single source.
 export function getClientIp(request: NextRequest): string {

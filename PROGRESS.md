@@ -2,9 +2,9 @@
 ## Session Continuity Progress Ledger
 **Last Updated:** 2026-09-07 (Session 4 — Jobs Board: Institution Postings + Guest ATS Applications) | **Stack:** Next.js 16.3.4 + Firebase + Tailwind CSS v4 + TypeScript  
 **Build Status:** ✅ `npm run build` PASSED — 0 TypeScript errors | ✅ `npm test` — 7/7 passing  
-**Live Site:** ✅ **https://school--school-4bcd6.us-east4.hosted.app** — deployed via Firebase App Hosting, auto-deploys on push to `main`/`master` (kept in sync, see Phase 9)  
+**Live Site:** ✅ **https://school-alpha-henna.vercel.app** — Vercel only since 2026-09-29, auto-deploys on push to `master` (see `docs/deployment.md`). Firebase App Hosting (and the old `hosted.app` URL below) is retired; history below is kept as it happened.  
 **Live Firebase:** `firestore.rules` (covers tutor reviews too) + `storage.rules` + `bookings` composite index deployed to project `school-4bcd6`. Anonymous Auth confirmed enabled and working.  
-**GitHub:** https://github.com/soran4u-blip/school (branches `main` and `master` — kept identical; App Hosting backend "school" in `us-east4` watches this repo)
+**GitHub:** https://github.com/soran4u-blip/school (deploys from `master` via Vercel)
 
 ---
 

@@ -6,8 +6,8 @@ import { MasterDataProvider } from '@/core/context/MasterDataContext';
 import { getPublicCategories, getPublicGovernorates, getPublicSystemSettings } from '@/core/server/data/masterData';
 import ErrorReporter from '@/components/shared/ErrorReporter';
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar';
+import { siteUrl } from '@/lib/siteUrl';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = 'Eduraq | دليل العراق التعليمي - المدارس، الجامعات، والأساتذة';
 const description = 'منصة العراق لاكتشاف التعليم واتخاذ القرار: قارن المدارس والجامعات، اقرأ التقييمات، واسأل مجتمعك — قبل أن تقرر.';
 
@@ -57,7 +57,7 @@ const websiteJsonLd = {
   },
 };
 
-// The Admin SDK's service account is a runtime-only secret (see apphosting.yaml), so nothing
+// The Admin SDK's service account is a runtime-only secret (see docs/deployment.md), so nothing
 // under this layout can be prerendered at build time. The reads below are cached snapshots shared
 // across visitors, so request-time rendering doesn't mean a Firestore read per request.
 export const dynamic = 'force-dynamic';

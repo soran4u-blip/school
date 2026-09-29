@@ -75,6 +75,12 @@ service cloud.firestore {
       return resource.data.get('status', '') != 'DELETED';
     }
 
+    // Same freeze for a job/event that was closed because the institution or employer behind it
+    // was deleted (see src/core/server/listingPostings.ts) — otherwise the owner could reopen it.
+    function isNotClosedByListingDelete() {
+      return resource.data.get('closedByListingDelete', false) != true;
+    }
+
     // An owner may pause and resume their own listing, but may never walk a PENDING profile to
     // ACTIVE — that approval is the admin's call. Institutions and tutors both use
     // ACTIVE<->SUSPENDED for the owner-controlled pause, keeping PENDING to mean "not yet
@@ -336,7 +342,8 @@ service cloud.firestore {
       // it is off-limits here; the ownership fields are frozen so a job can't be reassigned.
       allow update: if canEditDirectory() || (
         isOwnerOfJob(resource.data)
-        && keepsReservedFields(['id', 'institutionId', 'employerId', 'applicantCount', 'createdAt'])
+        && isNotClosedByListingDelete()
+        && keepsReservedFields(['id', 'institutionId', 'employerId', 'applicantCount', 'createdAt', 'closedByListingDelete'])
       );
       allow delete: if canEditDirectory() || isOwnerOfJob(resource.data);
     }
@@ -368,7 +375,8 @@ service cloud.firestore {
       allow create: if canEditDirectory() || isOwnerOfEvent(request.resource.data);
       allow update: if canEditDirectory() || (
         isOwnerOfEvent(resource.data)
-        && keepsReservedFields(['id', 'institutionId', 'employerId', 'createdAt'])
+        && isNotClosedByListingDelete()
+        && keepsReservedFields(['id', 'institutionId', 'employerId', 'createdAt', 'closedByListingDelete'])
       );
       allow delete: if canEditDirectory() || isOwnerOfEvent(resource.data);
     }

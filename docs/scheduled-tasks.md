@@ -20,13 +20,10 @@ shared secret in the `x-cron-secret` header, compared in constant time. **If `CR
 unset every call is rejected** — an unset variable must never be the thing that leaves an endpoint
 open.
 
-Create the secret before the first deploy:
-
-```bash
-firebase apphosting:secrets:set cron-secret
-```
-
-`apphosting.yaml` already references it as a runtime-only secret.
+Before scheduling anything, add `CRON_SECRET` in Vercel (Project → Settings → Environment
+Variables, Production) with a long random value, then redeploy. See
+[deployment.md](deployment.md). `<HOST>` below is the Vercel production domain,
+`school-alpha-henna.vercel.app`.
 
 ## Wiring up Cloud Scheduler
 

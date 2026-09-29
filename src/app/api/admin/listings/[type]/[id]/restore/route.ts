@@ -4,7 +4,8 @@ import { requirePermission } from '@/core/server/session';
 import { recordAuditEvent } from '@/core/server/auditLog';
 import { revalidatePublicData } from '@/core/server/data/cache';
 import { logServerError } from '@/core/server/errorLog';
-import { resolveListing, listingName } from '@/core/server/listingDeletion';
+import { resolveListing, listingName, ListingType } from '@/core/server/listingDeletion';
+import { reopenListingPostings } from '@/core/server/listingPostings';
 import { errorMessage, errorStack } from '@/lib/errors';
 import { isDeleted, restoredStatus } from '@/lib/listingLifecycle';
 import { canPublishInstitution } from '@/lib/publishingGuardrails';
@@ -47,13 +48,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       statusBeforeDelete: FieldValue.delete(),
     });
 
+    // Only an ACTIVE listing gets its postings back — reopening a job for an organization that
+    // comes back PENDING (hidden) would put the vacancy online before the organization itself.
+    // Those reopen when an admin approves the listing, in the PATCH handler next door.
+    const reopenedPostings = status === 'ACTIVE' ? await reopenListingPostings(db, type as ListingType, id) : 0;
+    if (reopenedPostings > 0) revalidatePublicData('jobs', 'events');
+
     await recordAuditEvent(db, {
       actor: user,
       action: 'listing.restore',
       targetType: target.target,
       targetId: id,
       summary: `Restored ${type} "${listingName(before)}" as ${status}`,
-      metadata: { to: status, deletedAt: String(before.deletedAt ?? '') },
+      metadata: { to: status, deletedAt: String(before.deletedAt ?? ''), reopenedPostings },
       request,
     });
 
