@@ -11,7 +11,8 @@ import { LocalizedString } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { canPublishInstitution } from '@/lib/publishingGuardrails';
 import { isDeleted, softDeletePatch, DELETED_LISTING_RETENTION_DAYS } from '@/lib/listingLifecycle';
-import { resolveListing, listingName, eraseListingDocument } from '@/core/server/listingDeletion';
+import { resolveListing, listingName, eraseListingDocument, ListingType } from '@/core/server/listingDeletion';
+import { closeListingPostings, reopenListingPostings } from '@/core/server/listingPostings';
 
 // Admin mutations to a directory listing's trust and visibility fields.
 //
@@ -85,6 +86,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
     await ref.update(patch);
+
+    // A listing restored as PENDING keeps the postings its delete closed until it's approved;
+    // this is where they come back. A no-op for any listing that was never deleted.
+    if (status === 'ACTIVE' && (await reopenListingPostings(db, type as ListingType, id)) > 0) {
+      revalidatePublicData('jobs', 'events');
+    }
 
     if (status !== undefined) {
       await recordAuditEvent(db, {
@@ -173,15 +180,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         return NextResponse.json({ success: false, error: 'Listing is already deleted' }, { status: 409 });
       }
       await ref.update(softDeletePatch(before, user.uid, new Date()));
+      const closedPostings = await closeListingPostings(db, type as ListingType, id);
       await recordAuditEvent(db, {
         actor: user,
         action: 'listing.delete',
         targetType: target.target,
         targetId: id,
         summary: `Deleted ${type} "${name}" (restorable for ${DELETED_LISTING_RETENTION_DAYS} days)`,
-        metadata: { from: String(before.status ?? '') },
+        metadata: { from: String(before.status ?? ''), closedPostings },
         request,
       });
+      if (closedPostings > 0) revalidatePublicData('jobs', 'events');
     }
 
     revalidatePublicData(target.tag);

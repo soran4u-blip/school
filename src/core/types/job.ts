@@ -24,6 +24,8 @@ export interface Job {
   salaryCurrency?: 'USD' | 'IQD';
   applicationDeadline?: string; // 'YYYY-MM-DD'
   status: 'DRAFT' | 'ACTIVE' | 'CLOSED';
+  // Set when the institution/employer that posted this was deleted — see core/server/listingPostings.ts.
+  closedByListingDelete?: boolean;
   applicantCount?: number; // denormalized, incremented atomically by /api/job-applications — avoids scanning the whole jobApplications collection just to show a per-job count
   createdAt: string;
   updatedAt: string;

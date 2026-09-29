@@ -22,6 +22,8 @@ export interface EduEvent {
   registrationLink?: string;
   whatsappNumber?: string;
   status: 'DRAFT' | 'ACTIVE' | 'CLOSED';
+  // Set when the institution/employer that posted this was deleted — see core/server/listingPostings.ts.
+  closedByListingDelete?: boolean;
   createdAt: string;
   updatedAt: string;
 }

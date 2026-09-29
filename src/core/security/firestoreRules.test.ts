@@ -295,6 +295,17 @@ describe.skipIf(!available)('firestore.rules', () => {
         setDoc(doc(tutorOwner(), 'jobs', 'job-2'), { ...jobDoc, id: 'job-2', institutionId: INSTITUTION_ID })
       );
     });
+
+    it('may not be reopened by their owner once closed because the listing was deleted', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'jobs', JOB_ID), { ...jobDoc, status: 'CLOSED', closedByListingDelete: true });
+      });
+      await assertFails(updateDoc(doc(institutionOwner(), 'jobs', JOB_ID), { status: 'ACTIVE' }));
+    });
+
+    it('do not let their owner set the deleted-listing marker themselves', async () => {
+      await assertFails(updateDoc(doc(institutionOwner(), 'jobs', JOB_ID), { closedByListingDelete: true }));
+    });
   });
 
   describe('reviews', () => {
