@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { getPublicTutorBySlug } from '@/core/server/data/tutors';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { siteUrl } from '@/lib/siteUrl';
 
 export async function generateMetadata({
   params,

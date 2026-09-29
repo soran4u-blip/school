@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { siteUrl } from '@/lib/siteUrl';
 
 // Filter query params (?category=&governorate=&q=) shouldn't each be treated as a distinct page —
 // point every variant back at the bare listing URL so Google doesn't dilute ranking across them.

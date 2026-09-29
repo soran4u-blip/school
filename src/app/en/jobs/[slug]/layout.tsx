@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { getPublicJobBySlug } from '@/core/server/data/jobs';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { siteUrl } from '@/lib/siteUrl';
 
 const EMPLOYMENT_TYPE_SCHEMA: Record<string, string> = {
   FULL_TIME: 'FULL_TIME',

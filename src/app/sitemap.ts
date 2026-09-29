@@ -3,6 +3,7 @@ import { getActiveInstitutions } from '@/core/server/data/institutions';
 import { getActiveTutors } from '@/core/server/data/tutors';
 import { getActiveJobs } from '@/core/server/data/jobs';
 import { getPublicCommunityPosts } from '@/core/server/data/community';
+import { siteUrl } from '@/lib/siteUrl';
 
 // Built from the cached server-side snapshots rather than the browser SDK. It also can't be
 // prerendered: the Admin SDK's service account is a runtime-only secret, and a sitemap that
@@ -10,8 +11,6 @@ import { getPublicCommunityPosts } from '@/core/server/data/community';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: siteUrl, changeFrequency: 'daily', priority: 1 },
     { url: `${siteUrl}/en`, changeFrequency: 'daily', priority: 1 },
