@@ -36,7 +36,7 @@ export default function FeaturedInstitutionsSection({
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
             {t('مؤسسات تعليمية ضمن الدليل', 'Institutions in the directory')}
           </div>
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
+          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#103B34] sm:text-3xl">
             {t('أبرز الصروح التعليمية في العراق', 'Featured Iraqi educational institutions')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
@@ -46,7 +46,7 @@ export default function FeaturedInstitutionsSection({
 
         <Link
           href={localeHref('/explore', language)}
-          className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-blue-700 transition-colors hover:text-blue-900 sm:self-auto"
+          className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-[#17695A] transition-colors hover:text-[#0B594D] sm:self-auto"
         >
           <span>{t('عرض جميع المؤسسات', 'View all institutions')}</span>
           <ArrowRight className="h-4 w-4 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
@@ -77,10 +77,10 @@ export default function FeaturedInstitutionsSection({
                     fallbackClassName="absolute inset-0"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-[#071220]/70 via-[#071220]/5 to-transparent" />
-                  <div className="absolute top-3 start-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-extrabold text-[#0B192C] shadow-sm backdrop-blur-sm">
+                  <div className="absolute top-3 start-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-extrabold text-[#103B34] shadow-sm backdrop-blur-sm">
                     {cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}
                   </div>
-                  <div className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full bg-[#0B192C]/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+                  <div className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full bg-[#103B34]/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
                     <Star
                       className={`h-3.5 w-3.5 ${hasReviews ? 'fill-[#F1C40F] text-[#F1C40F]' : 'text-white/70'}`}
                       aria-hidden="true"
@@ -106,7 +106,7 @@ export default function FeaturedInstitutionsSection({
 
                 <div className="p-5">
                   <Link href={profileHref} className="block">
-                    <h3 className="line-clamp-1 text-base font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
+                    <h3 className="line-clamp-1 text-base font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-[#17695A]">
                       {language === 'en' ? inst.name.en : inst.name.ar}
                     </h3>
                   </Link>
@@ -131,7 +131,7 @@ export default function FeaturedInstitutionsSection({
                   <div className="mt-4 flex items-center gap-2">
                     <Link
                       href={profileHref}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#0B192C] py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1E3E62]"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#103B34] py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1E3E62]"
                     >
                       {t('عرض التفاصيل', 'View profile')}
                       <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
@@ -155,7 +155,7 @@ export default function FeaturedInstitutionsSection({
         <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <h3 className="text-base font-extrabold text-slate-900">{t('لا توجد مؤسسات منشورة بعد', 'No published institutions yet')}</h3>
           <p className="mt-2 text-xs leading-6 text-slate-500">{t('استكشف المحافظات أو تصفح الدليل الكامل عند إضافة مؤسسات جديدة.', 'Explore governorates or browse the full directory as new institutions are added.')}</p>
-          <Link href={localeHref('/explore', language)} className="mt-4 inline-flex rounded-xl bg-[#0B192C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]">
+          <Link href={localeHref('/explore', language)} className="mt-4 inline-flex rounded-xl bg-[#103B34] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]">
             {t('فتح الدليل الكامل', 'Open full directory')}
           </Link>
         </div>
