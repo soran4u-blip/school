@@ -78,13 +78,13 @@ export default function Navbar() {
 
   const navPill = (active: boolean) =>
     `flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-      active ? 'bg-[#0B192C] text-white' : 'text-slate-600 hover:bg-white hover:text-[#0B192C]'
+      active ? 'bg-[#123D35] text-white' : 'text-slate-600 hover:bg-white hover:text-[#123D35]'
     }`;
 
   return (
     <header className="sticky top-0 z-50 shadow-xs">
       {/* Utility strip — contact info + quiet account/language actions, off the main bar */}
-      <div className="hidden lg:block bg-[#0B192C] text-white/80 text-[11px]">
+      <div className="hidden lg:block bg-[#123D35] text-white/80 text-[11px]">
         <div className="max-w-6xl mx-auto px-6 h-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {systemSettings.contactEmail && (
@@ -142,10 +142,10 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-6">
           <div className="hidden lg:grid grid-cols-3 items-center h-[76px]">
             <Link href={localeHref('/', language)} className="justify-self-start flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-lg bg-[#0B192C] flex items-center justify-center text-[#F1C40F] shadow-sm group-hover:bg-[#1E3E62] transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-[#123D35] flex items-center justify-center text-[#D9F27C] shadow-sm group-hover:bg-[#28675A] transition-colors">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="font-extrabold text-xl tracking-tight text-[#0B192C]">Eduraq</span>
+              <span className="font-extrabold text-xl tracking-tight text-[#123D35]">Eduraq</span>
             </Link>
 
             <div className="justify-self-center flex items-center rounded-full p-1 gap-1 bg-slate-100/80">
@@ -167,7 +167,7 @@ export default function Navbar() {
                             key={cat.id}
                             href={cat.slug === 'tutors' ? localeHref('/tutors', language) : `${localeHref('/explore', language)}?category=${cat.slug}`}
                             onClick={() => setExploreOpen(false)}
-                            className="block px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B192C] transition-colors"
+                            className="block px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123D35] transition-colors"
                           >
                             {cat.slug === 'tutors'
                               ? t('أساتذة خصوصيون', 'Private tutors')
@@ -186,7 +186,7 @@ export default function Navbar() {
                             key={gov.id}
                             href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
                             onClick={() => setExploreOpen(false)}
-                            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B192C] transition-colors"
+                            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123D35] transition-colors"
                           >
                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
                             {language === 'en' ? gov.name.en : gov.name.ar}
@@ -246,9 +246,9 @@ export default function Navbar() {
               )}
               <Link
                 href="/apply"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B192C] hover:bg-[#1E3E62] text-white text-sm font-bold shadow-xs transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#123D35] hover:bg-[#28675A] text-white text-sm font-bold shadow-xs transition-all active:scale-95"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-[#F1C40F]" />
+                <PlusCircle className="w-3.5 h-3.5 text-[#D9F27C]" />
                 <span>{t('انضم إلينا', 'Join Eduraq')}</span>
               </Link>
             </div>
@@ -257,10 +257,10 @@ export default function Navbar() {
           {/* Mobile bar */}
           <div className="flex lg:hidden items-center justify-between h-16">
             <Link href={localeHref('/', language)} className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-9 h-9 rounded-lg bg-[#0B192C] flex items-center justify-center text-[#F1C40F] shadow-sm group-hover:bg-[#1E3E62] transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-[#123D35] flex items-center justify-center text-[#D9F27C] shadow-sm group-hover:bg-[#28675A] transition-colors">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="font-extrabold text-lg tracking-tight text-[#0B192C]">Eduraq</span>
+              <span className="font-extrabold text-lg tracking-tight text-[#123D35]">Eduraq</span>
             </Link>
             <div className="flex items-center gap-1.5">
               {accountPath && (
@@ -296,7 +296,7 @@ export default function Navbar() {
         <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-1">
           <button
             onClick={() => setMobileExploreOpen((v) => !v)}
-            className="w-full flex items-center justify-between text-sm font-bold text-[#0B192C] py-2"
+            className="w-full flex items-center justify-between text-sm font-bold text-[#123D35] py-2"
           >
             <span>{t('استكشف', 'Explore')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${mobileExploreOpen ? 'rotate-180' : ''}`} />
@@ -328,7 +328,7 @@ export default function Navbar() {
           <Link
             href={localeHref('/jobs', language)}
             onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold text-[#0B192C] py-2"
+            className="block text-sm font-bold text-[#123D35] py-2"
           >
             {t('الوظائف الشاغرة', 'Job Openings')}
           </Link>
@@ -336,7 +336,7 @@ export default function Navbar() {
           <Link
             href={localeHref('/events', language)}
             onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold text-[#0B192C] py-2"
+            className="block text-sm font-bold text-[#123D35] py-2"
           >
             {t('الفعاليات', 'Events')}
           </Link>
@@ -344,7 +344,7 @@ export default function Navbar() {
           <Link
             href={localeHref('/tutors', language)}
             onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold text-[#0B192C] py-2"
+            className="block text-sm font-bold text-[#123D35] py-2"
           >
             {t('الأساتذة الخصوصيون', 'Private Tutors')}
           </Link>
@@ -352,7 +352,7 @@ export default function Navbar() {
           <Link
             href="/community"
             onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold text-[#0B192C] py-2"
+            className="block text-sm font-bold text-[#123D35] py-2"
           >
             {t('مجتمع الأهالي', 'Community')}
           </Link>
@@ -386,7 +386,7 @@ export default function Navbar() {
             <Link
               href="/apply"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 text-xs font-bold bg-[#0B192C] text-white rounded-lg"
+              className="w-full text-center py-2.5 text-xs font-bold bg-[#123D35] text-white rounded-lg"
             >
               {t('انضم إلينا كأستاذ أو مؤسسة', 'Join as Tutor or Institution')}
             </Link>
