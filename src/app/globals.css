@@ -8,18 +8,18 @@
   --color-accent-hover: #C2DF65;
   --color-verified: #10B981;
   --color-verified-light: #D1FAE5;
-  --color-surface-bg: #FAF8F1;
+  --color-surface-bg: #FAF9F5;
   --color-surface-card: #FFFFFF;
-  --color-border-subtle: #E2E8F0;
-  --color-text-main: #0F172A;
-  --color-text-muted: #64748B;
+  --color-border-subtle: #E8E6DE;
+  --color-text-main: #17352F;
+  --color-text-muted: #64766F;
   
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-arabic: 'Cairo', system-ui, -apple-system, sans-serif;
 }
 
 :root {
-  --background: #F8FAFC;
+  --background: #FAF9F5;
   --foreground: #0F172A;
 }
 
