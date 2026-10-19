@@ -256,7 +256,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       <div className="bg-[#0B192C] text-white py-10 px-4 sm:px-6 lg:px-8">
@@ -269,7 +269,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="lg:hidden mb-4 flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <button onClick={() => setMobileFilterOpen(true)} className="flex items-center gap-2 text-xs font-extrabold text-[#0B192C]">
             <SlidersHorizontal className="w-4 h-4" />
