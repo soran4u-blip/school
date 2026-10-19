@@ -82,7 +82,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B192C] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#123D35] px-4">
       <div className="fixed inset-x-4 top-4 flex items-center justify-between text-white">
         <Link href="/" className="font-extrabold tracking-tight hover:text-amber-300">Eduraq</Link>
         <button type="button" onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-white/10">
