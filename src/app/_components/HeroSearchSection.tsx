@@ -49,7 +49,7 @@ export default function HeroSearchSection({
   const { language, t } = useLanguage();
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#0B192C] px-4 py-14 text-white sm:px-6 sm:py-18 lg:px-8 lg:py-22">
+    <section className="relative isolate overflow-hidden bg-[#123D35] px-4 py-14 text-white sm:px-6 sm:py-18 lg:px-8 lg:py-22">
       <Image
         src={HERO_IMAGE_URL}
         alt=""
@@ -58,24 +58,24 @@ export default function HeroSearchSection({
         sizes="100vw"
         className="-z-20 object-cover object-[center_30%] opacity-35"
       />
-      <div className="absolute inset-0 -z-10 bg-linear-to-b from-[#0B192C]/70 via-[#0B192C]/82 to-[#071220]/96" />
+      <div className="absolute inset-0 -z-10 bg-linear-to-b from-[#123D35]/70 via-[#123D35]/82 to-[#071220]/96" />
       <div className="pointer-events-none absolute -top-40 start-[8%] -z-10 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-48 end-[8%] -z-10 h-96 w-96 rounded-full bg-[#F1C40F]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-48 end-[8%] -z-10 h-96 w-96 rounded-full bg-[#D9F27C]/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-5xl text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[10px] font-bold tracking-wide text-slate-200 backdrop-blur-sm sm:text-[11px]">
-          <ShieldCheck className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />
+          <ShieldCheck className="h-3.5 w-3.5 text-[#D9F27C]" aria-hidden="true" />
           {t('دليل التعليم في العراق', 'Iraq education directory')}
         </div>
 
         <h1 className="mx-auto mt-5 max-w-4xl text-3xl font-extrabold leading-[1.22] tracking-tight text-balance sm:mt-6 sm:text-5xl lg:text-6xl">
-          {t('اكتشف الخيار الأنسب... واتخذ القرار الصحيح', 'Find the Right School. Make the Right Decision.')}
+          {t('مستقبل أفضل يبدأ باختيار التعليم المناسب', 'A better future starts with the right education.')}
         </h1>
 
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:mt-5 sm:text-base sm:leading-8">
           {t(
-            'قارن بين المدارس، اطّلع على تقييمات حقيقية، اسأل مجتمعك المحلي، واحجز مدرّسك — كل ما تحتاجه قبل اتخاذ القرار، في جميع المحافظات الـ18.',
-            'Compare schools, read real reviews, ask your community, and book a tutor — everything you need before you commit, across all 18 governorates.'
+            'اكتشف المدارس، قارن الخيارات، تعرّف على المدرّسين، واتخذ قرارك بثقة — كل ما تحتاجه للتعليم في العراق.',
+            'Explore trusted schools, compare your options, discover tutors, and make confident education decisions across Iraq.'
           )}
         </p>
 
@@ -85,7 +85,7 @@ export default function HeroSearchSection({
         >
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_12.5rem_auto] sm:items-center sm:gap-0">
             <div className="flex min-w-0 items-center gap-3 rounded-xl bg-slate-50 px-3.5 py-3 text-slate-800 sm:bg-transparent sm:px-4">
-              <Search className="h-5 w-5 shrink-0 text-[#1E3E62]" aria-hidden="true" />
+              <Search className="h-5 w-5 shrink-0 text-[#28675A]" aria-hidden="true" />
               <SearchAutocomplete
                 value={searchKeyword}
                 onChange={setSearchKeyword}
@@ -117,7 +117,7 @@ export default function HeroSearchSection({
             <div className="border-t border-slate-100 pt-2 sm:border-t-0 sm:border-s sm:px-3 sm:pt-0">
               <label className="sr-only" htmlFor="hero-governorate">{t('المحافظة', 'Governorate')}</label>
               <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 sm:bg-transparent sm:px-1">
-                <MapPin className="h-4 w-4 shrink-0 text-[#1E3E62]" aria-hidden="true" />
+                <MapPin className="h-4 w-4 shrink-0 text-[#28675A]" aria-hidden="true" />
                 <select
                   id="hero-governorate"
                   value={searchGovernorate}
@@ -134,7 +134,7 @@ export default function HeroSearchSection({
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#F1C40F] px-6 py-3.5 text-xs font-extrabold text-[#0B192C] shadow-sm transition-all hover:bg-[#D4AC0D] active:scale-[0.98] sm:ms-3 sm:rounded-2xl sm:px-5"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#D9F27C] px-6 py-3.5 text-xs font-extrabold text-[#123D35] shadow-sm transition-all hover:bg-[#C2DF65] active:scale-[0.98] sm:ms-3 sm:rounded-2xl sm:px-5"
             >
               <span>{t('ابحث الآن', 'Search')}</span>
               <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
@@ -143,9 +143,9 @@ export default function HeroSearchSection({
         </form>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-slate-300 sm:mt-6 sm:text-xs">
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t('مؤسسات مدرجة', 'Directory listings')}</span>
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t(`${governorates.length} محافظة`, `${governorates.length} governorates`)}</span>
-          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#F1C40F]" aria-hidden="true" />{t('قرارات أوضح للأهالي', 'Clearer choices for families')}</span>
+          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#D9F27C]" aria-hidden="true" />{t('مؤسسات مدرجة', 'Directory listings')}</span>
+          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#D9F27C]" aria-hidden="true" />{t(`${governorates.length} محافظة`, `${governorates.length} governorates`)}</span>
+          <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#D9F27C]" aria-hidden="true" />{t('قرارات أوضح للأهالي', 'Clearer choices for families')}</span>
         </div>
 
         {quickTags.length > 0 && (
