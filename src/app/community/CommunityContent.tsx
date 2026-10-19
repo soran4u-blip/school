@@ -777,7 +777,7 @@ export default function CommunityContent({
                 <button
                   type="button"
                   onClick={() => void load()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123D35] text-white rounded-xl text-xs font-bold hover:bg-[#1E3E62] transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123D35] text-white rounded-xl text-xs font-bold hover:bg-[#28675A] transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>{t('حاول مرة أخرى', 'Try again')}</span>
