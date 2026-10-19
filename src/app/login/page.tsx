@@ -89,7 +89,7 @@ function LoginForm() {
           {language === 'ar' ? 'English' : 'عربي'}
         </button>
       </div>
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 border border-[#E8E6DE]">
         <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
             <UserCircle2 className="w-7 h-7" />
