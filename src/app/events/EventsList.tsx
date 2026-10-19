@@ -53,20 +53,20 @@ function EventsContent({ events, governorates, initialGovernorate }: EventsListP
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
-      <div className="bg-[#0B192C] text-white py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-3">
-          <div className="flex items-center gap-2 text-xs text-amber-300 font-bold">
+      <div className="bg-[#123D35] text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 text-xs text-[#D9F27C] font-bold">
             <span>{t('دليل العراق التعليمي', 'Eduraq Directory')}</span>
             <span>/</span>
             <span>{t('الفعاليات', 'Events')}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
             {t('فعاليات تعليمية في العراق', 'Education Events Across Iraq')}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal">
+          <p className="text-sm sm:text-base text-white/75 max-w-2xl leading-7 font-normal">
             {t(
               'أيام مفتوحة، معارض، وورش عمل ينظمها المؤسسات التعليمية والمنظمات المعتمدة على المنصة.',
               'Open houses, exhibitions, and workshops hosted by verified institutions and NGOs on the platform.'
@@ -75,7 +75,7 @@ function EventsContent({ events, governorates, initialGovernorate }: EventsListP
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="lg:hidden mb-4 flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <button
             onClick={() => setMobileFilterOpen(true)}
@@ -98,7 +98,7 @@ function EventsContent({ events, governorates, initialGovernorate }: EventsListP
               </div>
             )}
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-[#E8E6DE] shadow-sm space-y-6">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4 text-blue-700" />

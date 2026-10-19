@@ -105,13 +105,14 @@ export default function TutorsList({
     });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
-        <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('نخبة أساتذة التدريس الخصوصي', 'Private Tutors Directory')}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('تواصل مباشر واحجز جلسات فردية أو جماعية مع أفضل الأساتذة المعتمدين.', 'Connect and book individual or group sessions with vetted tutors.')}</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+        <div className="mb-8 rounded-[2rem] bg-[#123D35] px-6 py-8 text-white shadow-sm sm:px-10 sm:py-10">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D9F27C]">{t('دليل العراق التعليمي', 'EDURAQ · IRAQ EDUCATION GUIDE')}</p>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t('نخبة أساتذة التدريس الخصوصي', 'Private Tutors Directory')}</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/75">{t('تواصل مباشر واحجز جلسات فردية أو جماعية مع أفضل الأساتذة المعتمدين.', 'Connect and book individual or group sessions with vetted tutors.')}</p>
         </div>
 
         <div className="mb-6 flex flex-wrap gap-3">
@@ -249,7 +250,7 @@ export default function TutorsList({
                 <Link
                   key={tutor.id}
                   href={localeHref(`/tutors/${tutor.slug || tutor.id}`, language)}
-                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex gap-4 items-start"
+                  className="group rounded-2xl border border-[#E8E6DE] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B8CFC4] hover:shadow-lg flex gap-4 items-start"
                 >
                   <Thumbnail
                     src={tutor.photoUrl}
@@ -261,7 +262,7 @@ export default function TutorsList({
                   />
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-extrabold text-sm text-slate-900">{language === 'en' ? tutor.fullName.en : tutor.fullName.ar}</h3>
+                      <h3 className="font-extrabold text-sm text-[#17352F] transition-colors group-hover:text-[#28675A]">{language === 'en' ? tutor.fullName.en : tutor.fullName.ar}</h3>
                       <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         {tutor.ratingAvg}

@@ -68,20 +68,20 @@ function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsL
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
-      <div className="bg-[#0B192C] text-white py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-3">
-          <div className="flex items-center gap-2 text-xs text-amber-300 font-bold">
+      <div className="bg-[#123D35] text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 text-xs text-[#D9F27C] font-bold">
             <span>{t('دليل العراق التعليمي', 'Eduraq Directory')}</span>
             <span>/</span>
             <span>{t('الوظائف الشاغرة', 'Jobs')}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
             {t('وظائف تعليمية شاغرة في العراق', 'Education Jobs Across Iraq')}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal">
+          <p className="text-sm sm:text-base text-white/75 max-w-2xl leading-7 font-normal">
             {t(
               'تصفح فرص العمل المعلنة من المدارس والجامعات والمعاهد المعتمدة على المنصة وقدّم مباشرة دون الحاجة لإنشاء حساب.',
               'Browse openings posted by verified institutions on the platform and apply directly — no account required.'
@@ -90,7 +90,7 @@ function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsL
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="lg:hidden mb-4 flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <button
             onClick={() => setMobileFilterOpen(true)}
@@ -113,7 +113,7 @@ function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsL
               </div>
             )}
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-[#E8E6DE] shadow-sm space-y-6">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4 text-blue-700" />
@@ -280,7 +280,7 @@ function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsL
                 })}
               </div>
             ) : (
-              <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-4">
+              <div className="bg-white p-12 rounded-2xl border border-[#E8E6DE] text-center space-y-4 shadow-sm">
                 <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
                 <h3 className="font-extrabold text-base text-slate-800">
                   {t('لا توجد وظائف مطابقة', 'No Matching Jobs Found')}
@@ -288,7 +288,7 @@ function JobsContent({ jobs, governorates, subjects, initialGovernorate }: JobsL
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   {t('جرّب تقليل الفلاتر أو العودة لاحقاً لمزيد من الفرص.', 'Try broadening your filters, or check back later for new openings.')}
                 </p>
-                <button onClick={clearFilters} className="px-4 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold">
+                <button onClick={clearFilters} className="px-4 py-2 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-colors">
                   {t('إعادة ضبط كافة الفلاتر', 'Reset All Filters')}
                 </button>
               </div>
