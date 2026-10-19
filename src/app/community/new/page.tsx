@@ -66,19 +66,19 @@ export default function NewCommunityPostPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('ابدأ نقاشاً جديداً', 'Start a new discussion')}</h1>
+          <h1 className="text-2xl font-extrabold text-[#123D35]">{t('ابدأ نقاشاً جديداً', 'Start a new discussion')}</h1>
           <p className="text-sm text-slate-500 mt-1">
             {t('اطرح سؤالك على مجتمع الأهالي والطلاب. سيظهر سؤالك بعد مراجعته من الإدارة.', 'Ask your question to the parent and student community. It appears after admin review.')}
           </p>
         </div>
 
         {submitted ? (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-xs text-center space-y-4">
+          <div className="bg-white p-8 rounded-2xl border border-[#E8E6DE] shadow-sm text-center space-y-4">
             <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
             <h2 className="font-extrabold text-lg text-slate-900">{t('تم استلام سؤالك', 'Your question was received')}</h2>
             <p className="text-sm text-slate-500">
@@ -86,13 +86,13 @@ export default function NewCommunityPostPage() {
             </p>
             <button
               onClick={() => router.push('/community')}
-              className="px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-sm font-bold"
+              className="px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold"
             >
               {t('العودة للمجتمع', 'Back to Community')}
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-[#E8E6DE] shadow-sm space-y-4">
             <input type="text" value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })} className="hidden" tabIndex={-1} autoComplete="off" />
 
             <div>
@@ -102,7 +102,7 @@ export default function NewCommunityPostPage() {
                 required
                 value={form.authorName}
                 onChange={(e) => setForm({ ...form, authorName: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium"
+                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium"
               />
             </div>
 
@@ -112,7 +112,7 @@ export default function NewCommunityPostPage() {
                 required
                 value={form.governorateId}
                 onChange={(e) => setForm({ ...form, governorateId: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium bg-white"
+                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium bg-white"
               >
                 <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
                 {governorates.map((g) => (
@@ -129,7 +129,7 @@ export default function NewCommunityPostPage() {
                 placeholder={t('مثال: أفضل مدرسة ابتدائية في الكرخ؟', 'e.g. Best primary school in Karkh?')}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium"
+                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium"
               />
             </div>
 
@@ -140,7 +140,7 @@ export default function NewCommunityPostPage() {
                 rows={5}
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium resize-none"
+                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium resize-none"
               />
             </div>
 
@@ -149,7 +149,7 @@ export default function NewCommunityPostPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
+              className="w-full px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
             >
               {submitting ? t('جاري النشر...', 'Posting...') : t('نشر السؤال', 'Post question')}
             </button>
