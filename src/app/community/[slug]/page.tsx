@@ -84,7 +84,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
         <Navbar />
         <div className="flex-1 flex items-center justify-center text-sm text-slate-400 font-bold">{t('جاري التحميل...', 'Loading...')}</div>
         <Footer />
@@ -94,7 +94,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
 
   if (!post) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
           <h1 className="font-extrabold text-lg text-slate-800">{t('النقاش غير موجود', 'Discussion Not Found')}</h1>
@@ -106,11 +106,11 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3">
+        <div className="bg-white rounded-2xl border border-[#E8E6DE] shadow-sm p-6 space-y-3">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <h1 className="text-xl font-extrabold text-slate-900">{post.title}</h1>
             <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
@@ -128,14 +128,14 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
             {replies.length} {t('ردود', 'replies')}
           </h2>
           {replies.map((reply) => (
-            <div key={reply.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div key={reply.id} className="bg-white p-4 rounded-2xl border border-[#E8E6DE] shadow-sm">
               <p className="text-sm text-slate-700 whitespace-pre-line">{reply.body}</p>
               <div className="text-xs text-slate-500 font-semibold mt-2">{reply.authorName}</div>
             </div>
           ))}
         </div>
 
-        <form onSubmit={handleReply} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <form onSubmit={handleReply} className="bg-white p-5 rounded-2xl border border-[#E8E6DE] shadow-sm space-y-3">
           <h3 className="text-sm font-bold text-slate-900">{t('أضف رداً', 'Add a reply')}</h3>
           <input type="text" value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })} className="hidden" tabIndex={-1} autoComplete="off" />
           <input
@@ -144,7 +144,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
             placeholder={t('اسمك', 'Your name')}
             value={form.authorName}
             onChange={(e) => setForm({ ...form, authorName: e.target.value })}
-            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium"
+            className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium"
           />
           <textarea
             required
@@ -152,13 +152,13 @@ export default function CommunityPostPage({ params }: { params: Promise<{ slug: 
             placeholder={t('اكتب ردك...', 'Write your reply...')}
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
-            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl font-medium resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium resize-none"
           />
           {error && <p className="text-[11px] font-bold text-rose-600">{error}</p>}
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
+            className="px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
           >
             {submitting ? t('جاري الإرسال...', 'Posting...') : t('إرسال الرد', 'Post reply')}
           </button>
