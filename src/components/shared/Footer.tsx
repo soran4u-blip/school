@@ -17,7 +17,7 @@ export default function Footer() {
   const accountPath = useAccountPath();
 
   return (
-    <footer className="relative isolate mt-auto overflow-hidden border-t border-slate-800 bg-[#0B192C] pt-16 pb-12 text-slate-300">
+    <footer className="relative isolate mt-auto overflow-hidden border-t border-slate-800 bg-[#103B34] pt-16 pb-12 text-slate-300">
       <div className="pointer-events-none absolute -top-32 start-[6%] -z-10 h-80 w-80 rounded-full bg-blue-400/8 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 end-[10%] -z-10 h-72 w-72 rounded-full bg-[#F1C40F]/8 blur-3xl" />
 
@@ -27,7 +27,7 @@ export default function Footer() {
           {/* Col 1: Brand & Ministry Note */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1E3E62] flex items-center justify-center text-[#F1C40F]">
+              <div className="w-10 h-10 rounded-xl bg-[#17695A] flex items-center justify-center text-[#F1C40F]">
                 <GraduationCap className="w-6 h-6" />
               </div>
               <span className="font-extrabold text-2xl text-white tracking-tight">
