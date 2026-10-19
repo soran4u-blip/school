@@ -54,7 +54,7 @@ export default function MyApplicationsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
@@ -70,12 +70,12 @@ export default function MyApplicationsPage() {
             placeholder={t('رقم الهاتف', 'Phone number')}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="flex-1 px-4 py-2.5 text-sm border border-slate-200 rounded-xl font-mono bg-white"
+            className="flex-1 px-4 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-mono bg-white"
           />
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-sm font-bold disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold disabled:opacity-60"
           >
             <Search className="w-4 h-4" />
             {t('بحث', 'Search')}
@@ -92,7 +92,7 @@ export default function MyApplicationsPage() {
           ) : (
             <div className="space-y-3">
               {applications.map((a) => (
-                <div key={a.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <div key={a.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2 flex-wrap">
