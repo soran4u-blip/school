@@ -305,7 +305,7 @@ export default function TutorProfile({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
@@ -364,7 +364,7 @@ export default function TutorProfile({
                     router.push(localeHref('/login', language));
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>{t('مراسلة فورية', 'Chat Now')}</span>
@@ -642,7 +642,7 @@ export default function TutorProfile({
                 <button
                   type="submit"
                   disabled={reviewSubmitting}
-                  className="px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
+                  className="px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
                 >
                   {reviewSubmitting ? t('جاري الإرسال...', 'Submitting...') : t('إرسال التقييم', 'Submit Review')}
                 </button>
@@ -740,7 +740,7 @@ export default function TutorProfile({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   {submitting ? t('جاري الحجز...', 'Booking...') : t('تأكيد الحجز', 'Confirm Booking')}
