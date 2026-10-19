@@ -35,6 +35,11 @@ export default function NewCommunityPostPage() {
       return;
     }
 
+    if (form.authorName.trim().length > 80 || form.title.trim().length > 120 || form.body.trim().length > 2000) {
+      setError(t('تحقق من حدود الأحرف: الاسم 80، العنوان 120، التفاصيل 2000.', 'Please check character limits: name 80, title 120, details 2,000.'));
+      return;
+    }
+
     if (isCooldownActive('community-post')) {
       setError(t('يرجى الانتظار قليلاً قبل نشر سؤال آخر', 'Please wait a moment before posting another question'));
       return;
@@ -100,6 +105,8 @@ export default function NewCommunityPostPage() {
               <input
                 type="text"
                 required
+                maxLength={80}
+                autoComplete="name"
                 value={form.authorName}
                 onChange={(e) => setForm({ ...form, authorName: e.target.value })}
                 className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium"
@@ -126,6 +133,7 @@ export default function NewCommunityPostPage() {
               <input
                 type="text"
                 required
+                maxLength={120}
                 placeholder={t('مثال: أفضل مدرسة ابتدائية في الكرخ؟', 'e.g. Best primary school in Karkh?')}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -138,17 +146,21 @@ export default function NewCommunityPostPage() {
               <textarea
                 required
                 rows={5}
+                maxLength={2000}
+                placeholder={t('اكتب التفاصيل التي تساعد الآخرين على فهم سؤالك...', 'Add enough detail to help others understand your question...')}
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium resize-none"
+                className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium resize-y focus:outline-none focus:ring-2 focus:ring-[#28675A]/30 focus:border-[#28675A]"
               />
+              <p className="text-[11px] text-slate-400 text-end mt-1">{form.body.length}/2000</p>
             </div>
 
-            {error && <p className="text-[11px] font-bold text-rose-600">{error}</p>}
+            <p className="text-xs text-slate-500">{t('لا تضف أرقام هواتف أو معلومات شخصية حساسة. سيُراجع السؤال قبل ظهوره.', 'Avoid phone numbers or sensitive personal information. Your question will be reviewed before it appears.')}</p>
+            {error && <p role="alert" className="text-sm font-semibold text-rose-600">{error}</p>}
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !form.authorName.trim() || !form.governorateId || !form.title.trim() || !form.body.trim()}
               className="w-full px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
             >
               {submitting ? t('جاري النشر...', 'Posting...') : t('نشر السؤال', 'Post question')}
