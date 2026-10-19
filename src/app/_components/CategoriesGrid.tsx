@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Award, BookOpen, GraduationCap, HeartHandshake, School, UserCheck, BriefcaseBusiness } from 'lucide-react';
+import { ArrowRight, Award, BookOpen, GraduationCap, HeartHandshake, School, UserCheck } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Category } from '@/core/types/masterData';
@@ -11,7 +11,7 @@ const tiles = [
   { slug: 'schools', en: 'Schools', ar: 'المدارس', descEn: 'Find the right school', descAr: 'اعثر على المدرسة المناسبة', icon: School, image: 'photo-1562774053-701939374585' },
   { slug: 'universities', en: 'Universities', ar: 'الجامعات', descEn: 'Explore higher education', descAr: 'استكشف التعليم العالي', icon: GraduationCap, image: 'photo-1564981797816-1043664bf78d' },
   { slug: 'tutors', en: 'Tutors', ar: 'المدرسون', descEn: 'Learn with expert tutors', descAr: 'تعلّم مع مدرسين متخصصين', icon: UserCheck, image: 'photo-1509062522246-3755977927d7' },
-  { slug: 'training_centers', en: 'Training Centres', ar: 'مراكز التدريب', descEn: 'Build new skills', descAr: 'طوّر مهارات جديدة', icon: BookOpen, image: 'photo-1513258496099-48168024高' },
+  { slug: 'training_centers', en: 'Training Centres', ar: 'مراكز التدريب', descEn: 'Build new skills', descAr: 'طوّر مهارات جديدة', icon: BookOpen, image: 'photo-1513258496099-48168024d8b6' },
   { slug: 'opportunities', en: 'Opportunities', ar: 'الفرص', descEn: 'Scholarships, programs & events', descAr: 'منح وبرامج وفعاليات', icon: Award, image: 'photo-1523050854058-8df90110c9f1' },
   { slug: 'community', en: 'Community', ar: 'المجتمع', descEn: 'Ask, share and get advice', descAr: 'اسأل وشارك واستفد', icon: HeartHandshake, image: 'photo-1529390079861-591de354faf5' },
 ];
