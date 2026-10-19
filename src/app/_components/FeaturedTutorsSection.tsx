@@ -65,7 +65,7 @@ export default function FeaturedTutorsSection({
             <GraduationCap className="h-4 w-4" aria-hidden="true" />
             {t('كوادر تعليمية وتدريس خصوصي', 'Tutors & Private Educators')}
           </div>
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
+          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#103B34] sm:text-3xl">
             {t('نخبة أساتذة التدريس الخصوصي في العراق', 'Featured Private Tutors in Iraq')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
@@ -78,7 +78,7 @@ export default function FeaturedTutorsSection({
 
         <Link
           href={localeHref('/tutors', language)}
-          className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-blue-700 transition-colors hover:text-blue-900 sm:self-auto"
+          className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-[#17695A] transition-colors hover:text-[#0B594D] sm:self-auto"
         >
           <span>{t('استكشف جميع الأساتذة', 'Explore all tutors')}</span>
           <ArrowRight
@@ -116,7 +116,7 @@ export default function FeaturedTutorsSection({
                   {/* Top: Avatar, Rating & Years of Experience */}
                   <div className="flex items-start gap-3.5">
                     <Link href={profileHref} className="relative shrink-0 block">
-                      <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl overflow-hidden bg-slate-100 ring-2 ring-slate-100 group-hover:ring-[#0B192C]/20 transition-all">
+                      <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl overflow-hidden bg-slate-100 ring-2 ring-slate-100 group-hover:ring-[#103B34]/20 transition-all">
                         <Thumbnail
                           src={tutor.photoUrl}
                           alt={name}
@@ -153,7 +153,7 @@ export default function FeaturedTutorsSection({
                       </div>
 
                       <Link href={profileHref} className="block mt-1.5">
-                        <h3 className="truncate text-base font-extrabold text-slate-900 transition-colors group-hover:text-blue-700">
+                        <h3 className="truncate text-base font-extrabold text-slate-900 transition-colors group-hover:text-[#17695A]">
                           {name}
                         </h3>
                       </Link>
@@ -167,7 +167,7 @@ export default function FeaturedTutorsSection({
                   {/* Taxonomy & Location Pills */}
                   <div className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
                     {subjectLabel && (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-800">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#EEF5F0] px-2.5 py-1 text-[11px] font-bold text-[#155C4D]">
                         <BookOpen className="h-3 w-3 text-blue-600 shrink-0" aria-hidden="true" />
                         <span className="truncate max-w-[130px]">{subjectLabel}</span>
                       </span>
@@ -201,7 +201,7 @@ export default function FeaturedTutorsSection({
                 <div className="mt-5 border-t border-slate-100 pt-3">
                   <div className="mb-3 flex items-baseline justify-between gap-2">
                     <div>
-                      <span className="text-base font-extrabold text-[#0B192C]">
+                      <span className="text-base font-extrabold text-[#103B34]">
                         {formatCurrencyIQD(tutor.hourlyRate.iqd, language)}
                       </span>
                       <span className="mx-1 text-[11px] font-medium text-slate-500">
@@ -219,7 +219,7 @@ export default function FeaturedTutorsSection({
                   <div className="flex items-center gap-2">
                     <Link
                       href={profileHref}
-                      className="flex-1 rounded-xl bg-[#0B192C] py-2.5 text-center text-xs font-extrabold text-white transition-all hover:bg-[#1E3E62] active:scale-[0.98]"
+                      className="flex-1 rounded-xl bg-[#103B34] py-2.5 text-center text-xs font-extrabold text-white transition-all hover:bg-[#1E3E62] active:scale-[0.98]"
                     >
                       {t('احجز جلسة', 'Book session')}
                     </Link>
@@ -255,7 +255,7 @@ export default function FeaturedTutorsSection({
           </p>
           <Link
             href="/apply"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0B192C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#103B34] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]"
           >
             <span>{t('تقديم طلب الانضمام كأستاذ', 'Apply to Join as a Tutor')}</span>
             <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
@@ -264,13 +264,13 @@ export default function FeaturedTutorsSection({
       )}
 
       {/* Educator Recruitment Banner */}
-      <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50/70 via-slate-50 to-amber-50/50 p-5 sm:p-6 shadow-xs">
+      <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-[#D5E3DC] bg-linear-to-r from-blue-50/70 via-slate-50 to-amber-50/50 p-5 sm:p-6 shadow-xs">
         <div className="flex items-center gap-3.5 text-center sm:text-start">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0B192C] text-[#F1C40F] shadow-sm">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#103B34] text-[#F1C40F] shadow-sm">
             <GraduationCap className="h-6 w-6" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-[#0B192C]">
+            <h3 className="text-sm font-extrabold text-[#103B34]">
               {t('هل أنت أستاذ أو معلم خصوصي في العراق؟', 'Are you a private tutor or teacher in Iraq?')}
             </h3>
             <p className="mt-0.5 text-xs text-slate-600">
@@ -284,7 +284,7 @@ export default function FeaturedTutorsSection({
 
         <Link
           href="/apply"
-          className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#F1C40F] px-5 py-2.5 text-xs font-extrabold text-[#0B192C] shadow-sm transition-all hover:bg-[#D4AC0D] active:scale-95"
+          className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#F1C40F] px-5 py-2.5 text-xs font-extrabold text-[#103B34] shadow-sm transition-all hover:bg-[#D4AC0D] active:scale-95"
         >
           <span>{t('انضم كأستاذ معتمد', 'Apply as a Tutor')}</span>
           <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
