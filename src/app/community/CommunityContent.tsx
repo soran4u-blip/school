@@ -450,7 +450,7 @@ export default function CommunityContent({
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       {/* =========================================================================
