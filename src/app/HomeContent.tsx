@@ -165,9 +165,9 @@ export default function HomeContent({
 
       {/* Dual CTA Banner */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="bg-linear-to-r from-[#123D35] to-[#28675A] text-white p-8 sm:p-12 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="bg-linear-to-r from-[#0B594D] to-[#17695A] text-white p-8 sm:p-12 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-center md:text-start max-w-xl">
-            <span className="text-xs font-bold text-[#D9F27C] uppercase tracking-wider">{t('لأصحاب المؤسسات والمدارس', 'For School & University Owners')}</span>
+            <span className="text-xs font-bold text-[#DCECC3] uppercase tracking-wider">{t('لأصحاب المؤسسات والمدارس', 'For School & University Owners')}</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold">
               {t('هل تمثل مدرسة أو جامعة أو مركز تدريب في العراق؟', 'Are you representing an educational institution in Iraq?')}
             </h2>
@@ -181,7 +181,7 @@ export default function HomeContent({
 
           <Link
             href="/apply"
-            className="px-8 py-3.5 bg-[#D9F27C] hover:bg-[#C2DF65] text-[#123D35] font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all active:scale-95 shrink-0"
+            className="px-8 py-3.5 bg-[#DCECC3] hover:bg-[#C7DFA4] text-[#0B594D] font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all active:scale-95 shrink-0"
           >
             {t('سجل مؤسستك التعليمية الآن', '+ Register Your Institution')}
           </Link>
