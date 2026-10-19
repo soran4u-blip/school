@@ -354,11 +354,11 @@ export default function InstitutionProfile({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
       {/* Hero Cover Banner (Ported from Stitch Screen 3) */}
-      <div className="relative h-72 sm:h-96 w-full bg-[#0B192C] overflow-hidden">
+      <div className="relative h-72 sm:h-96 w-full bg-[#123D35] overflow-hidden">
         <Thumbnail
           src={institution.coverImageUrl}
           alt={institution.name.en}
@@ -512,7 +512,7 @@ export default function InstitutionProfile({
           <div className="lg:col-span-8 space-y-6">
             
             {/* Tabs Bar */}
-             <div className="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-xs flex flex-wrap gap-1" role="tablist" aria-label={t('أقسام الملف', 'Profile sections')}>
+             <div className="bg-white rounded-2xl p-1.5 border border-[#E8E6DE] shadow-sm flex flex-wrap gap-1" role="tablist" aria-label={t('أقسام الملف', 'Profile sections')}>
                <button
                  onClick={() => setProfileTab('overview')}
                  role="tab"
@@ -719,7 +719,7 @@ export default function InstitutionProfile({
                   <button
                     type="button"
                     onClick={openInquiry}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors"
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-colors"
                   >
                     {t('اسأل قسم القبول عن المتطلبات', 'Ask admissions about requirements')}
                   </button>
@@ -793,7 +793,7 @@ export default function InstitutionProfile({
                       router.push(localeHref('/login', language));
                     }
                   }}
-                  className="w-full py-3.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  className="w-full py-3.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>{t('مراسلة فورية', 'Chat Now')}</span>
@@ -825,7 +825,7 @@ export default function InstitutionProfile({
 
               <button
                  onClick={openInquiry}
-                className="w-full py-3 border-2 border-[#0B192C] text-[#0B192C] hover:bg-[#0B192C] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 border-2 border-[#123D35] text-[#123D35] hover:bg-[#123D35] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 <span>{t('طلب معلومات إضافية', 'Request More Info')}</span>
