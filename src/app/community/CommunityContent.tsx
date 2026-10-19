@@ -23,6 +23,7 @@ import {
   HelpCircle,
   Sparkles,
   Share2,
+  Bookmark,
   ThumbsUp,
   ShieldCheck,
   Building2,
@@ -190,7 +191,7 @@ export default function CommunityContent({
 
   // Interactive filters & tabs
   const [selectedGov, setSelectedGov] = useState(initialGovernorate || 'all');
-  const [activeTab, setActiveTab] = useState<'all' | 'hot' | 'latest' | 'unanswered'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'hot' | 'latest' | 'unanswered' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sample posts aren't real Firestore docs, so their "helpful" counts stay local-only —
@@ -206,6 +207,35 @@ export default function CommunityContent({
   const [mockLikedPosts, setMockLikedPosts] = useState<Record<string, boolean>>({});
   const [likedRealPostIds, setLikedRealPostIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set());
+  const [followedTopics, setFollowedTopics] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('eduraq-community-saved-posts');
+      if (saved) setSavedPostIds(new Set(JSON.parse(saved) as string[]));
+      const followed = window.localStorage.getItem('eduraq-community-followed-topics');
+      if (followed) setFollowedTopics(new Set(JSON.parse(followed) as string[]));
+    } catch { /* Continue without persisted preferences if storage is blocked. */ }
+  }, []);
+
+  const toggleSavedPost = useCallback((postId: string) => {
+    setSavedPostIds((current) => {
+      const next = new Set(current);
+      if (next.has(postId)) next.delete(postId); else next.add(postId);
+      try { window.localStorage.setItem('eduraq-community-saved-posts', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
+
+  const toggleFollowTopic = useCallback((topic: string) => {
+    setFollowedTopics((current) => {
+      const next = new Set(current);
+      if (next.has(topic)) next.delete(topic); else next.add(topic);
+      try { window.localStorage.setItem('eduraq-community-followed-topics', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
 
   // Real posts need a stable identity to record a "helpful" like against — an anonymous
   // Firebase Auth session, same identity model createCommunityReply already relies on.
@@ -333,7 +363,10 @@ export default function CommunityContent({
     }
 
     // Active Tab Logic
-    if (activeTab === 'hot') {
+    if (activeTab === 'saved') {
+      list = list.filter((p) => savedPostIds.has(p.id));
+      list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    } else if (activeTab === 'hot') {
       // Most replies first
       list.sort((a, b) => b.replyCount - a.replyCount);
     } else if (activeTab === 'latest') {
@@ -353,7 +386,7 @@ export default function CommunityContent({
     }
 
     return list;
-  }, [posts, selectedGov, searchQuery, activeTab]);
+  }, [posts, selectedGov, searchQuery, activeTab, savedPostIds]);
 
   // Calculations for governorate counts
   const govCounts = useMemo(() => {
@@ -572,17 +605,18 @@ export default function CommunityContent({
                 </Link>
               </div>
 
-              {/* Quick Prompt Tags */}
+              {/* Followable topic shortcuts */}
               <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                <span className="font-semibold text-slate-400 me-1">{t('مواضيع سريعة:', 'Topics:')}</span>
+                <span className="font-semibold text-slate-400 me-1">{t('مواضيع تتابعها:', 'Follow topics:')}</span>
                 {popularTopics.slice(0, 3).map((item, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSearchQuery(item.query)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-[#28675A] text-slate-600 font-medium transition-colors"
+                    onClick={() => { setSearchQuery(item.query); toggleFollowTopic(item.query); }}
+                    aria-pressed={followedTopics.has(item.query)}
+                    className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${followedTopics.has(item.query) ? 'bg-[#D9F27C]/50 text-[#123D35]' : 'bg-slate-100 hover:bg-emerald-50 hover:text-[#28675A] text-slate-600'}`}
                   >
-                    #{item.label}
+                    {followedTopics.has(item.query) ? '✓ ' : '#'}{item.label}
                   </button>
                 ))}
               </div>
@@ -636,6 +670,11 @@ export default function CommunityContent({
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>{t('الأحدث', 'Latest')}</span>
+                  </button>
+
+                  <button type="button" onClick={() => setActiveTab('saved')} className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${activeTab === 'saved' ? 'bg-[#123D35] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
+                    <Bookmark className="w-3.5 h-3.5" /><span>{t('المحفوظات', 'Saved')}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'saved' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{savedPostIds.size}</span>
                   </button>
 
                   <button
@@ -896,6 +935,11 @@ export default function CommunityContent({
                             <span>
                               {helpfulCount > 0 && helpfulCount} {t('مفيد', 'Helpful')}
                             </span>
+                          </button>
+
+                          {/* Save discussion for later */}
+                          <button type="button" onClick={() => toggleSavedPost(post.id)} aria-pressed={savedPostIds.has(post.id)} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${savedPostIds.has(post.id) ? 'bg-[#D9F27C]/40 text-[#123D35]' : 'bg-slate-50 hover:bg-emerald-50 text-slate-600'}`} title={savedPostIds.has(post.id) ? t('إزالة من المحفوظات', 'Remove saved discussion') : t('حفظ لوقت لاحق', 'Save discussion for later')}>
+                            <Bookmark className={`w-3.5 h-3.5 ${savedPostIds.has(post.id) ? 'fill-current' : ''}`} /><span className="hidden sm:inline">{savedPostIds.has(post.id) ? t('محفوظ', 'Saved') : t('حفظ', 'Save')}</span>
                           </button>
 
                           {/* Share Button */}
