@@ -42,77 +42,6 @@ interface CommunityContentProps {
   initialGovernorates?: Governorate[];
 }
 
-// Realistic sample community discussions tailored to Iraqi parents and students to ensure
-// the community is lively, interactive, and showcases all filter & sort states.
-const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
-  {
-    id: 'mock-post-1',
-    slug: 'international-schools-baghdad-karkh',
-    governorateId: 'baghdad',
-    authorName: 'أم يوسف (المنصور)',
-    title: 'استفسار عن أفضل المدارس الدولية في جانب الكرخ للمرحلة الابتدائية',
-    body: 'السلام عليكم أعزائي أولياء الأمور، ننتقل قريباً لمنطقة المنصور ونبحث عن مدرسة تطبق منهاجاً دولياً (بريطاني أو كامبردج) وتهتم بنفس الوقت باللغة العربية والتربية الإسلامية. كيف هي تجاربكم مع المدارس الأهلية في المنصور واليرموك؟ وهل ترون الأقساط متناسبة مع جودة التعليم والأنشطة؟',
-    status: 'APPROVED',
-    replyCount: 9,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'mock-post-2',
-    slug: 'school-transport-ankawa-erbil',
-    governorateId: 'erbil',
-    authorName: 'سيروان كاكه يي',
-    title: 'هل تتوفر خطوط نقل موثوقة لمدارس ورياض الأطفال في عنكاوا؟',
-    body: 'مرحباً بالجميع، قمنا بتسجيل أطفالنا في مدرسة بمنطقة عنكاوا ونبحث عن سائق خط مدرسي ملتزم بمعايير الأمان والانضباط في المواعيد. من لديه تجربة سابقة أو رقم سائق موثوق يرجى مشاركته معنا مشكوراً.',
-    status: 'APPROVED',
-    replyCount: 5,
-    createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'mock-post-3',
-    slug: 'private-tutors-prep-basra',
-    governorateId: 'basra',
-    authorName: 'أحمد الجابري (البصرة)',
-    title: 'نصائحكم لاختيار معاهد تقوية أو تدريس خصوصي لمرحلة الثالث متوسط',
-    body: 'ابني بحاجة لتقوية في مادتي الرياضيات واللغة الإنكليزية قبل بدء الامتحانات الوزارية. هل تفضلون المعاهد المعتمدة ذات الصفوف المصغرة أم الدروس الفردية المنزلية؟ وكم متوسط أجور المحاضرات في البصرة حالياً؟',
-    status: 'APPROVED',
-    replyCount: 14,
-    createdAt: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'mock-post-4',
-    slug: 'transfer-student-documents-procedure',
-    governorateId: 'baghdad',
-    authorName: 'مريم العبيدي',
-    title: 'ما هي المستمسكات والإجراءات المطلوبة لنقل طالب بين المدارس هذا العام؟',
-    body: 'أود الاستفسار من أولياء الأمور أو الكوادر الإدارية عن الإجراءات الرسمية المتبعة لنقل طالب من مدرسة حكومية إلى أهلية، وما هي الوثائق المطلوبة من مديرية التربية لضمان عدم تأخير المباشرة؟',
-    status: 'APPROVED',
-    replyCount: 0,
-    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'mock-post-5',
-    slug: 'kindergarten-recommendations-sulaymaniyah',
-    governorateId: 'sulaymaniyah',
-    authorName: 'د. شيلان عثمان',
-    title: 'تجاربكم مع رياض الأطفال ثنائية اللغة (كردي - إنجليزي) في السليمانية',
-    body: 'أبحث عن روضة أطفال تعتمد أسلوب منتسوري أو التعليم التجريبي التفاعلي في السليمانية لعمر 4 سنوات. يهمني جداً أمان البيئة وتأهيل الكادر التربوي وتوفير وجبات صحية.',
-    status: 'APPROVED',
-    replyCount: 4,
-    createdAt: new Date(Date.now() - 52 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'mock-post-6',
-    slug: 'high-school-stem-programs-najaf',
-    governorateId: 'najaf',
-    authorName: 'حيدر الحسيني',
-    title: 'تجاربكم مع مدارس المتميزين والمتفوقين في محافظة النجف الأشرف',
-    body: 'ابنتي اجتازت اختبارات الذكاء الخاصة بمدارس الموهوبين والمتفوقين، ونود معرفة تفاصيل بيئة التعليم، المختبرات العلمية، ونسب النجاح في الامتحانات الوزارية للسنوات السابقة.',
-    status: 'APPROVED',
-    replyCount: 7,
-    createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 // Fallback governorates in case master data is still initializing
 const DEFAULT_GOVERNORATES: Governorate[] = [
   { id: 'baghdad', name: { ar: 'بغداد', en: 'Baghdad' }, code: 'BG', region: 'CENTRAL', lat: 33.3152, lng: 44.3661, isActive: true, displayOrder: 1 },
@@ -194,17 +123,6 @@ export default function CommunityContent({
   const [activeTab, setActiveTab] = useState<'all' | 'hot' | 'latest' | 'unanswered' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sample posts aren't real Firestore docs, so their "helpful" counts stay local-only —
-  // real posts persist theirs via communityPosts/{id}.helpfulCount (see handleToggleHelpful).
-  const [mockHelpfulMap, setMockHelpfulMap] = useState<Record<string, number>>({
-    'mock-post-1': 16,
-    'mock-post-2': 8,
-    'mock-post-3': 22,
-    'mock-post-4': 3,
-    'mock-post-5': 6,
-    'mock-post-6': 11,
-  });
-  const [mockLikedPosts, setMockLikedPosts] = useState<Record<string, boolean>>({});
   const [likedRealPostIds, setLikedRealPostIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set());
@@ -246,46 +164,17 @@ export default function CommunityContent({
       ]);
       const [govs, list] = result;
       setGovernorates(govs && govs.length > 0 ? govs : DEFAULT_GOVERNORATES);
-      // If Firestore contains real posts, show them; merge with sample posts so discussions remain vibrant
-      if (list && list.length > 0) {
-        // Prepend real approved posts ahead of the mock posts
-        const existingIds = new Set(list.map((p) => p.id));
-        const combined = [...list, ...MOCK_COMMUNITY_POSTS.filter((m) => !existingIds.has(m.id))];
-        setPosts(combined);
-      } else {
-        setPosts(MOCK_COMMUNITY_POSTS);
-      }
+      // Only render approved posts from the service; never substitute fabricated activity.
+      setPosts(list || []);
     } catch {
-      // In case network or Firebase is unavailable, fall back gracefully to the mock community
       setGovernorates(DEFAULT_GOVERNORATES);
-      setPosts(MOCK_COMMUNITY_POSTS);
+      setError(t('تعذر تحميل النقاشات. تحقق من اتصالك ثم حاول مرة أخرى.', 'We couldn’t load discussions. Check your connection and try again.'));
+      setPosts([]);
     } finally {
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!initialPosts || initialPosts.length === 0) {
-        void load();
-      } else {
-        // Ensure we have governorates
-        if (!initialGovernorates || initialGovernorates.length === 0) {
-          getGovernorates().then((g) => {
-            if (g && g.length > 0) setGovernorates(g);
-            else setGovernorates(DEFAULT_GOVERNORATES);
-          }).catch(() => setGovernorates(DEFAULT_GOVERNORATES));
-        }
-        // If initialPosts has very few posts, complement with mock posts so the user sees all filter tabs working
-        if (initialPosts.length < 3) {
-          const existingIds = new Set(initialPosts.map((p) => p.id));
-          setPosts([...initialPosts, ...MOCK_COMMUNITY_POSTS.filter((m) => !existingIds.has(m.id))]);
-        }
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [initialPosts, initialGovernorates, load]);
+  }, [t]);
 
   // Once real posts are known, check which of them the current visitor already liked, so a
   // reload doesn't just show every "helpful" button as unliked (the bug this was added to fix).
@@ -297,7 +186,7 @@ export default function CommunityContent({
   // Keyed on the id set (not the `posts` array itself) so an optimistic helpfulCount bump from
   // handleToggleHelpful doesn't re-trigger this and re-fetch everything again.
   const realPostIdsKey = useMemo(
-    () => posts.filter((p) => !p.id.startsWith('mock-')).map((p) => p.id).join(','),
+    () => posts.map((p) => p.id).join(','),
     [posts]
   );
   useEffect(() => {
@@ -389,17 +278,6 @@ export default function CommunityContent({
   const handleToggleHelpful = (e: React.MouseEvent, postId: string) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (postId.startsWith('mock-')) {
-      // Sample post — not a real Firestore doc, so there's nothing to persist against.
-      const isLiked = mockLikedPosts[postId];
-      setMockLikedPosts((prev) => ({ ...prev, [postId]: !isLiked }));
-      setMockHelpfulMap((prev) => ({
-        ...prev,
-        [postId]: (prev[postId] || 0) + (isLiked ? -1 : 1),
-      }));
-      return;
-    }
 
     const wasLiked = likedRealPostIds.has(postId);
     const delta = wasLiked ? -1 : 1;
@@ -768,11 +646,10 @@ export default function CommunityContent({
                 {filteredAndSortedPosts.map((post) => {
                   const gov = activeGovernorates.find((g) => g.id === post.governorateId);
                   const govName = gov ? (language === 'en' ? gov.name.en : gov.name.ar) : post.governorateId;
-                  const isMock = post.id.startsWith('mock-');
-                  const postHref = isMock ? '/community/new' : `/community/${post.slug || post.id}`;
+                  const postHref = `/community/${post.slug || post.id}`;
                   const avatar = getAvatarStyles(post.authorName);
-                  const helpfulCount = isMock ? mockHelpfulMap[post.id] || 0 : post.helpfulCount || 0;
-                  const isLiked = isMock ? mockLikedPosts[post.id] : likedRealPostIds.has(post.id);
+                  const helpfulCount = post.helpfulCount || 0;
+                  const isLiked = likedRealPostIds.has(post.id);
                   const hasReplies = post.replyCount > 0;
 
                   return (
@@ -827,11 +704,6 @@ export default function CommunityContent({
                       <Link href={postHref} className="block mt-3.5">
                         <h2 className="font-black text-base sm:text-lg text-slate-900 leading-snug group-hover:text-[#28675A] transition-colors">
                           {post.title}
-                          {isMock && (
-                            <span className="ms-2 text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full align-middle">
-                              {t('مثال', 'Sample')}
-                            </span>
-                          )}
                         </h2>
                       </Link>
 
@@ -845,16 +717,14 @@ export default function CommunityContent({
                         <div className="flex items-center gap-2 sm:gap-4 text-xs font-bold text-slate-500">
                           {/* Reply Link */}
                           <Link
-                            href={isMock ? '/community/new' : `/community/${post.slug || post.id}`}
+                            href={postHref}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:text-[#28675A] transition-colors"
                           >
                             <MessageCircle className="w-3.5 h-3.5 text-slate-400" />
                             <span>
-                              {isMock
-                                ? t('طرح سؤال مماثل', 'Ask a similar question')
-                                : post.replyCount === 0
-                                  ? t('كن أول من يرد', 'Be the first to reply')
-                                  : `${post.replyCount} ${t('ردود ومشاركات', 'replies')}`}
+                              {post.replyCount === 0
+                                ? t('كن أول من يرد', 'Be the first to reply')
+                                : `${post.replyCount} ${t('ردود ومشاركات', 'replies')}`}
                             </span>
                           </Link>
 
@@ -899,9 +769,7 @@ export default function CommunityContent({
                           className="inline-flex items-center gap-1 text-xs font-extrabold text-[#123D35] group-hover:text-[#28675A] transition-colors"
                         >
                           <span>
-                            {isMock
-                              ? t('ابدأ نقاشاً مشابهاً', 'Start a similar discussion')
-                              : t('قراءة التفاصيل والردود', 'Read full discussion')}
+                            {t('قراءة التفاصيل والردود', 'Read full discussion')}
                           </span>
                           {isRtl ? <ChevronRight className="w-3.5 h-3.5 rotate-180" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </Link>
