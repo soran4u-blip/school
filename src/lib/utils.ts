@@ -33,12 +33,22 @@ function currencyFormatter(language: string, currency: 'IQD' | 'USD'): Intl.Numb
   });
 }
 
+// ICU builds disagree about the invisible direction marks (U+200E, U+200F, U+061C) they wrap around
+// Arabic-script currency: Node and a browser emitted the same amount with a different leading mark,
+// which React reports as a hydration mismatch on every server-rendered price. The page's own dir
+// already orders the text, so the marks are dropped to make server and client output identical.
+const BIDI_MARKS = /[\u200E\u200F\u061C]/g;
+
+function formatMoney(amount: number, currency: 'IQD' | 'USD', language: string): string {
+  return currencyFormatter(language, currency).format(amount).replace(BIDI_MARKS, '');
+}
+
 export function formatCurrencyIQD(amount: number, language: string): string {
-  return currencyFormatter(language, 'IQD').format(amount);
+  return formatMoney(amount, 'IQD', language);
 }
 
 export function formatCurrencyUSD(amount: number, language: string): string {
-  return currencyFormatter(language, 'USD').format(amount);
+  return formatMoney(amount, 'USD', language);
 }
 
 /**
@@ -76,7 +86,7 @@ export function formatDate(date: string, language: string, options?: Intl.DateTi
 // InstitutionProgram.tuitionAnnual.currency). The public profile used to hardcode a '$' regardless,
 // so an institution that priced in IQD had its fees published as dollars.
 export function formatCurrency(amount: number, currency: 'IQD' | 'USD', language: string): string {
-  return currencyFormatter(language, currency).format(amount);
+  return formatMoney(amount, currency, language);
 }
 
 export interface ProfileCompleteness {

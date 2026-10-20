@@ -25,6 +25,13 @@ describe('formatCurrencyIQD', () => {
   });
 });
 
+describe('currency direction marks', () => {
+  it.each(['ar', 'ku'])('emits no invisible bidi marks for %s, so server and client output match', (language) => {
+    expect(formatCurrencyIQD(35000, language)).not.toMatch(/[\u200E\u200F\u061C]/);
+    expect(formatCurrency(35000, 'USD', language)).not.toMatch(/[\u200E\u200F\u061C]/);
+  });
+});
+
 describe('formatCurrencyUSD', () => {
   it('formats using USD symbol', () => {
     expect(formatCurrencyUSD(1200, 'en')).toContain('$');
