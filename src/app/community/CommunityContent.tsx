@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -175,6 +175,24 @@ export default function CommunityContent({
       setLoading(false);
     }
   }, [t]);
+
+  // The server only passes initialPosts when it found some; without them `loading` starts true
+  // and nothing else would ever clear it. Runs once so a language switch doesn't refetch.
+  const initialLoadStarted = useRef(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (initialLoadStarted.current) return;
+      initialLoadStarted.current = true;
+      if (!initialPosts) {
+        void load();
+      } else if (!initialGovernorates || initialGovernorates.length === 0) {
+        getGovernorates()
+          .then((g) => setGovernorates(g && g.length > 0 ? g : DEFAULT_GOVERNORATES))
+          .catch(() => setGovernorates(DEFAULT_GOVERNORATES));
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialPosts, initialGovernorates, load]);
 
   // Once real posts are known, check which of them the current visitor already liked, so a
   // reload doesn't just show every "helpful" button as unliked (the bug this was added to fix).
