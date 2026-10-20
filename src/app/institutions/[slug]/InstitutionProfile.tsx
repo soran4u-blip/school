@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Thumbnail from '@/components/shared/Thumbnail';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import InquiryModal from './InquiryModal';
 import ApplyModal from './ApplyModal';
+import ProfileHeader from './ProfileHeader';
+import ContactCard from './_components/ContactCard';
+import { OverviewTab, FacilitiesTab, AdmissionsTab } from './_components/ProfileSections';
 import ProgramsTab from './_components/ProgramsTab';
 import ReviewsTab from './_components/ReviewsTab';
 import { useLanguage } from '@/core/context/LanguageContext';
@@ -21,26 +22,18 @@ import { getStudent } from '@/core/services/studentService';
 import { uploadFileOnly } from '@/core/firebase/storage';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { localeHref } from '@/lib/locale';
-import { formatCurrency } from '@/lib/utils';
-import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { trackEvent } from '@/lib/analytics';
-import {
-  MapPin,
-  ShieldCheck,
-  Star,
-  Calendar,
-  Users,
-  DollarSign,
-  Phone,
-  Mail,
-  Globe,
-  Clock,
-  MessageSquare,
-  MessageCircle,
-  CheckCircle2,
-  Sparkles,
-  Send,
-  } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_COPY } from './Institution.i18n';
+
+const PROFILE_TABS = [
+  { id: 'overview', label: 'tabOverview' },
+  { id: 'programs', label: 'tabPrograms' },
+  { id: 'facilities', label: 'tabFacilities' },
+  { id: 'admissions', label: 'tabAdmissions' },
+  { id: 'reviews', label: 'tabReviews' },
+] as const;
+type ProfileTab = (typeof PROFILE_TABS)[number]['id'];
 
 // The interactive half of the institution profile. Everything this component needs to render is
 // fetched on the server and handed in as props — see ./page.tsx. It used to fetch the institution,
@@ -58,10 +51,10 @@ export default function InstitutionProfile({
   initialReviews: Review[];
 }) {
   const router = useRouter();
-  const { language, t } = useLanguage();
-  const evidenceFresh = isInstitutionEvidenceFresh(institution);
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_COPY);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'facilities' | 'admissions' | 'reviews'>('overview');
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [myApplicationStatus, setMyApplicationStatus] = useState<Record<string, AdmissionApplicationStatus>>({});
 
@@ -173,11 +166,11 @@ export default function InstitutionProfile({
 
     const allowed = ['image/', 'application/pdf'];
     if (!allowed.some((prefix) => file.type.startsWith(prefix))) {
-      setApplyResult({ success: false, message: t('يرجى اختيار ملف PDF أو صورة', 'Please select a PDF or image file') });
+      setApplyResult({ success: false, message: t('fileTypeError') });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setApplyResult({ success: false, message: t('الحد الأقصى لحجم الملف 5 ميغابايت', 'Max file size is 5MB') });
+      setApplyResult({ success: false, message: t('fileSizeError') });
       return;
     }
 
@@ -188,7 +181,7 @@ export default function InstitutionProfile({
       setApplyDocumentPaths((prev) => [...prev, path]);
       setApplyDocumentNames((prev) => [...prev, file.name]);
     } catch {
-      setApplyResult({ success: false, message: t('تعذر رفع الملف', 'Failed to upload the file') });
+      setApplyResult({ success: false, message: t('uploadFailed') });
     } finally {
       setUploadingDocument(false);
     }
@@ -211,10 +204,10 @@ export default function InstitutionProfile({
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setApplyResult({ success: false, message: data.error || t('تعذر إرسال طلبك', 'Failed to submit your application') });
+        setApplyResult({ success: false, message: data.error || t('applyFailed') });
         return;
       }
-      setApplyResult({ success: true, message: t('تم إرسال طلبك بنجاح! يمكنك متابعة حالته من حسابك.', 'Your application was submitted! You can track its status from your account.') });
+      setApplyResult({ success: true, message: t('applySuccess') });
       trackEvent('institution_application_submitted', {
         institution_id: institution.id,
         institution_slug: institution.slug,
@@ -222,7 +215,7 @@ export default function InstitutionProfile({
       });
       setMyApplicationStatus((prev) => ({ ...prev, [applyProgram.id]: 'SUBMITTED' }));
     } catch {
-      setApplyResult({ success: false, message: t('تعذر إرسال طلبك', 'Failed to submit your application') });
+      setApplyResult({ success: false, message: t('applyFailed') });
     } finally {
       setApplySubmitting(false);
     }
@@ -236,12 +229,12 @@ export default function InstitutionProfile({
     if (reviewForm.hp) return; // honeypot tripped — silently drop
 
     if (!reviewForm.reviewerName.trim() || !reviewForm.comment.trim()) {
-      setReviewError(t('يرجى إدخال الاسم والتعليق', 'Please enter your name and comment'));
+      setReviewError(t('reviewNameComment'));
       return;
     }
 
     if (isCooldownActive('review')) {
-      setReviewError(t('يرجى الانتظار قليلاً قبل إرسال تقييم آخر', 'Please wait a moment before submitting another review'));
+      setReviewError(t('reviewWait'));
       return;
     }
 
@@ -269,7 +262,7 @@ export default function InstitutionProfile({
       setReviewSubmitted(true);
       setReviewForm({ reviewerName: '', rating: 5, comment: '', hp: '' });
     } catch {
-      setReviewError(t('تعذر إرسال التقييم، حاول مرة أخرى', 'Failed to submit review, please try again'));
+      setReviewError(t('reviewFailed'));
     } finally {
       setReviewSubmitting(false);
     }
@@ -282,7 +275,7 @@ export default function InstitutionProfile({
     if (!inquiryForm.fullName.trim() || !inquiryForm.phone.trim()) return;
 
     if (isCooldownActive('inquiry')) {
-      setInquiryError(t('يرجى الانتظار قليلاً قبل إرسال طلب آخر', 'Please wait a moment before submitting another request'));
+      setInquiryError(t('inquiryWait'));
       return;
     }
 
@@ -304,7 +297,7 @@ export default function InstitutionProfile({
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setInquiryError(data.error || t('تعذر إرسال الطلب، حاول مرة أخرى', 'Could not send your request. Please try again.'));
+        setInquiryError(data.error || t('inquiryFailed'));
         return;
       }
 
@@ -317,13 +310,13 @@ export default function InstitutionProfile({
       });
       setInquiryForm({ fullName: '', phone: '', email: '', message: '', hp: '' });
     } catch {
-      setInquiryError(t('تعذر إرسال الطلب، حاول مرة أخرى', 'Could not send your request. Please try again.'));
+      setInquiryError(t('inquiryFailed'));
     } finally {
       setInquirySubmitting(false);
     }
   };
 
-  const setProfileTab = (tab: 'overview' | 'programs' | 'facilities' | 'admissions' | 'reviews') => {
+  const setProfileTab = (tab: ProfileTab) => {
     setActiveTab(tab);
     trackEvent('institution_profile_tab_view', {
       institution_id: institution.id,
@@ -360,152 +353,7 @@ export default function InstitutionProfile({
     <div className="min-h-screen flex flex-col bg-[#FAF9F5]">
       <Navbar />
 
-      {/* Hero Cover Banner (Ported from Stitch Screen 3) */}
-      <div className="relative h-72 sm:h-96 w-full bg-[#123D35] overflow-hidden">
-        <Thumbnail
-          src={institution.coverImageUrl}
-          alt={institution.name.en}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover opacity-60"
-          fallbackClassName="absolute inset-0 bg-transparent"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-[#0B192C] via-[#0B192C]/40 to-transparent"></div>
-
-        <div className="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-6">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs text-slate-300 font-semibold">
-            <Link href="/" className="hover:text-white transition-colors">{t('الرئيسية', 'Home')}</Link>
-            <span>/</span>
-            <Link href={localeHref('/explore', language)} className="hover:text-white transition-colors">{t('الدليل التعليمي', 'Directory')}</Link>
-            <span>/</span>
-            <span className="text-amber-300 font-bold">{language === 'en' ? institution.name.en : institution.name.ar}</span>
-          </div>
-
-          {/* Profile Header info */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 pb-4">
-            <Thumbnail
-              src={institution.logoUrl}
-              alt={institution.name.en}
-              width={112}
-              height={112}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-2xl bg-white shrink-0"
-            />
-
-            <div className="space-y-2 text-white">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-blue-600 text-white">
-                  {category ? (language === 'en' ? category.name.en : category.name.ar) : institution.categoryId}
-                </span>
-
-                {/* Public badge reflects verification status only — the evidence-freshness flag is an
-                    internal data-quality signal surfaced to the institution owner/admin, not visitors. */}
-                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md ${institution.isVerified ? 'text-emerald-300 bg-emerald-950/80 border border-emerald-500/40' : 'text-amber-200 bg-amber-950/80 border border-amber-500/40'}`}>
-                  <ShieldCheck className={`w-3.5 h-3.5 ${institution.isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
-                   <span>
-                     {institution.isVerified
-                        ? (language === 'en' ? institution.verificationBadgeLabel.en : institution.verificationBadgeLabel.ar)
-                        : t('قيد التحقق', 'Verification pending')}
-                   </span>
-                </span>
-              </div>
-
-               <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-                 {language === 'en' ? institution.name.en : institution.name.ar}
-               </h1>
-
-               <p className="max-w-2xl text-xs sm:text-sm text-slate-200 leading-relaxed">
-                 {language === 'en' ? institution.tagline.en : institution.tagline.ar}
-               </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-medium">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{governorate ? (language === 'en' ? governorate.name.en : governorate.name.ar) : institution.governorateId}</span>
-                  <span>-</span>
-                  {/* <bdi> isolates this run from the surrounding Arabic sentence's bidi context —
-                      needed because the address may still be in English only (an institution that
-                      hasn't supplied an Arabic translation yet) and mixed-direction text next to
-                      the "-" separator otherwise gets visually reordered. */}
-                  <bdi>{(language === 'en' ? institution.address.en : institution.address.ar) || institution.address.en || institution.address.ar}</bdi>
-                </div>
-
-                <div className="flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-md text-amber-300 font-bold">
-                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  <span>{institution.metrics.ratingAvg}</span>
-                  <span className="text-slate-400 font-normal">({institution.metrics.reviewCount} {t('تقييم', 'reviews')})</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats Ribbon Bar */}
-      <div className="bg-white border-b border-slate-200 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center sm:text-start">
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('سنة التأسيس', 'Established')}</span>
-               <span className="font-extrabold text-xs text-slate-800">{institution.establishedYear || t('غير محدد', 'Not provided')}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('نظام الطلاب', 'Gender Policy')}</span>
-              <span className="font-extrabold text-xs text-slate-800">
-                {institution.genderPolicy === 'CO_ED' ? t('مختلط (ذكور وإناث)', 'Co-Educational') : t('أحادي', 'Single Gender')}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('متوسط القسط السنوي', 'Tuition Tier')}</span>
-              <span className="font-extrabold text-xs text-slate-800">
-                {institution.tuition.min === 0 ? (
-                  t('مجاني بالكامل', '100% Free')
-                ) : (
-                  // The range is always low-then-high; without an explicit direction, the "-"
-                  // between two number runs gets reordered by the surrounding RTL context in
-                  // Arabic (rendering high-then-low instead).
-                  <span dir="ltr">
-                    {formatCurrency(institution.tuition.min, institution.tuition.currency, language)} - {formatCurrency(institution.tuition.max, institution.tuition.currency, language)}
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Only shown when the institution actually reported a rate. This used to fall back to a
-              hardcoded 92%, which published an invented statistic for every institution that had
-              never supplied one. */}
-          {typeof institution.metrics.graduateEmploymentRate === 'number' && (
-            <div className="flex items-center gap-3 justify-center sm:justify-start">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="block text-[10px] text-slate-400 font-bold uppercase">{t('نسبة توظيف الخريجين', 'Graduate Rate')}</span>
-                <span className="font-extrabold text-xs text-emerald-600 font-mono">
-                  {institution.metrics.graduateEmploymentRate}%
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <ProfileHeader institution={institution} governorate={governorate} category={category} />
 
       {/* Main Profile Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
@@ -515,145 +363,25 @@ export default function InstitutionProfile({
           <div className="lg:col-span-8 space-y-6">
             
             {/* Tabs Bar */}
-             <div className="bg-white rounded-2xl p-1.5 border border-[#E8E6DE] shadow-sm flex flex-wrap gap-1" role="tablist" aria-label={t('أقسام الملف', 'Profile sections')}>
-               <button
-                 onClick={() => setProfileTab('overview')}
-                 role="tab"
-                 aria-selected={activeTab === 'overview'}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  activeTab === 'overview' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {t('نظرة عامة والاعتماد', 'Overview & Accreditation')}
-              </button>
-
-               <button
-                 onClick={() => setProfileTab('programs')}
-                 role="tab"
-                 aria-selected={activeTab === 'programs'}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  activeTab === 'programs' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {t('الكليات والبرامج والأقساط', 'Programs & Tuition')}
-              </button>
-
-               <button
-                 onClick={() => setProfileTab('facilities')}
-                 role="tab"
-                 aria-selected={activeTab === 'facilities'}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  activeTab === 'facilities' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {t('المرافق والخدمات', 'Campus Facilities')}
-              </button>
-
-               <button
-                 onClick={() => setProfileTab('admissions')}
-                 role="tab"
-                 aria-selected={activeTab === 'admissions'}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  activeTab === 'admissions' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {t('شروط القبول ومعدلات الوزاري', 'Admission Requirements')}
-              </button>
-
-               <button
-                 onClick={() => setProfileTab('reviews')}
-                 role="tab"
-                 aria-selected={activeTab === 'reviews'}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-                  activeTab === 'reviews' ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {t('التقييمات والآراء', 'Reviews')}
-              </button>
+            <div className="bg-white rounded-2xl p-1.5 border border-[#E8E6DE] shadow-sm flex flex-wrap gap-1" role="tablist" aria-label={t('sections')}>
+              {PROFILE_TABS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setProfileTab(id)}
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
+                    activeTab === id ? 'bg-[#0B192C] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  {t(label)}
+                </button>
+              ))}
             </div>
 
             {/* Tab 1: Overview */}
             {activeTab === 'overview' && (
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#0B192C] mb-3">
-                    {t('عن المؤسسة ورؤيتها التعليمية', 'About the Institution')}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                    {language === 'en' ? institution.description.en : institution.description.ar}
-                  </p>
-                </div>
-
-                 {/* Accreditation Details Card */}
-                 <div className={`p-5 rounded-2xl border space-y-2 ${evidenceFresh ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'}`}>
-                   <div className={`flex items-center gap-2 font-extrabold text-sm ${evidenceFresh ? 'text-emerald-900' : 'text-amber-900'}`}>
-                     <ShieldCheck className={`w-5 h-5 ${evidenceFresh ? 'text-emerald-600' : 'text-amber-600'}`} />
-                     <span>
-                       {evidenceFresh
-                          ? t('حالة الاعتماد والترخيص', 'Accreditation & licensing')
-                          : t('بيانات الاعتماد غير متاحة للتحقق', 'Accreditation details not verified')}
-                     </span>
-                   </div>
-                    {evidenceFresh && institution.accreditation?.authority && (
-                      <p className="text-xs font-bold text-slate-700">
-                        {language === 'en' ? institution.accreditation.authority.en : institution.accreditation.authority.ar}
-                      </p>
-                    )}
-                    <p className={`text-xs leading-relaxed ${institution.isVerified && evidenceFresh ? 'text-emerald-800' : 'text-amber-800'}`}>
-                      {evidenceFresh && institution.accreditation?.details?.[language === 'en' ? 'en' : 'ar'] || t(
-                        'لم تتم إضافة تفاصيل اعتماد خاصة بهذه المؤسسة بعد. تواصل مع قسم القبول للتحقق من المتطلبات الرسمية.',
-                        'Institution-specific accreditation details have not been supplied yet. Contact admissions to confirm official requirements.'
-                      )}
-                    </p>
-                    {evidenceFresh && institution.accreditation?.verifiedAt && (
-                     <p className="text-[11px] text-slate-500">
-                       {t('آخر تحقق:', 'Last verified:')} {institution.accreditation.verifiedAt}
-                     </p>
-                   )}
-                 </div>
-
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                     <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                       {t('لغات التدريس', 'Languages of instruction')}
-                     </span>
-                     <span className="text-xs font-extrabold text-slate-800">
-                       {institution.languagesOfInstruction?.length
-                         ? institution.languagesOfInstruction.map((code) => ({ AR: 'العربية', EN: 'English', KU: 'Kurdish', FR: 'Français' }[code])).join('، ')
-                         : t('غير محددة', 'Not specified')}
-                     </span>
-                   </div>
-                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                     <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                       {t('آخر تحديث للملف', 'Profile updated')}
-                     </span>
-                     <span className="text-xs font-extrabold text-slate-800">
-                       {new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(institution.updatedAt))}
-                     </span>
-                   </div>
-                 </div>
-
-                 {institution.galleryUrls && institution.galleryUrls.length > 0 && (
-                   <div>
-                     <h3 className="text-sm font-extrabold text-[#0B192C] mb-3">
-                       {t('صور من الحرم والمرافق', 'Campus & facilities')}
-                     </h3>
-                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                       {institution.galleryUrls.slice(0, 4).map((url, index) => (
-                         <div key={`${url}-${index}`} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-                           <Thumbnail
-                             src={url}
-                             alt={`${institution.name.en} ${index + 1}`}
-                             fill
-                             sizes="(max-width: 640px) 50vw, 25vw"
-                             className="object-cover"
-                           />
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                 )}
-               </div>
+                <OverviewTab institution={institution} />
             )}
 
             {/* Tab 2: Programs & Tuition */}
@@ -663,71 +391,12 @@ export default function InstitutionProfile({
 
             {/* Tab 3: Campus Facilities */}
             {activeTab === 'facilities' && (
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                <h2 className="text-lg font-extrabold text-[#0B192C]">
-                  {t('المرافق والخدمات الجامعية والمدرسية', 'Campus Facilities')}
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {institution.facilities?.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-slate-800">{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                <FacilitiesTab institution={institution} />
             )}
 
             {/* Tab 4: Admissions */}
             {activeTab === 'admissions' && (
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                <h2 className="text-lg font-extrabold text-[#0B192C]">
-                  {t('شروط القبول ومستمسكات التقديم', 'Admissions & Requirements')}
-                </h2>
-
-                <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
-                  {institution.admissions?.overview?.[language === 'en' ? 'en' : 'ar'] && (
-                    <p className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
-                      {institution.admissions?.overview?.[language === 'en' ? 'en' : 'ar']}
-                    </p>
-                  )}
-
-                  {institution.admissions?.requiredDocuments?.some((document) => document.ar || document.en) ? (
-                    <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
-                      <h3 className="font-bold text-blue-900 mb-2">{t('المستمسكات المطلوبة:', 'Required Documents:')}</h3>
-                      <ul className="list-disc list-inside space-y-1 text-xs text-blue-800">
-                        {institution.admissions?.requiredDocuments
-                          ?.filter((document) => document.ar || document.en)
-                          .map((document, index) => (
-                            <li key={index}>{language === 'en' ? document.en || document.ar : document.ar || document.en}</li>
-                          ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-600">
-                      {t(
-                        'لم تنشر المؤسسة قائمة المستمسكات المطلوبة بعد. تواصل مع قسم القبول للتأكد من المتطلبات الرسمية.',
-                        'This institution has not published its required documents yet. Contact admissions to confirm the official requirements.'
-                      )}
-                    </div>
-                  )}
-
-                  {institution.admissions?.notes?.[language === 'en' ? 'en' : 'ar'] && (
-                    <p className="text-xs text-slate-600">
-                      {institution.admissions?.notes?.[language === 'en' ? 'en' : 'ar']}
-                    </p>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={openInquiry}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-colors"
-                  >
-                    {t('اسأل قسم القبول عن المتطلبات', 'Ask admissions about requirements')}
-                  </button>
-                </div>
-              </div>
+                <AdmissionsTab institution={institution} openInquiry={openInquiry} />
             )}
 
             {/* Tab 5: Reviews */}
@@ -746,140 +415,7 @@ export default function InstitutionProfile({
           </div>
 
           {/* Right Column: Sticky Admissions CTA & Contact Card */}
-          <aside className="lg:col-span-4 sticky top-28 space-y-6">
-            
-            {/* Direct WhatsApp Admissions Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-lg space-y-5">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">{t('شعبة شؤون الطلبة والتسجيل', 'Student Admissions Office')}</span>
-                <h3 className="text-base font-extrabold text-[#0B192C]">
-                  {t('تواصل مباشر مع قسم القبول', 'Direct Admissions Inquiry')}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  {t('استفسر عن المقاعد المتبقية، الأقساط، والمنح عبر واتساب فوراً.', 'Chat directly with admissions officers on WhatsApp.')}
-                </p>
-              </div>
-
-              {/* In-app chat, for students who'd rather not hand over a WhatsApp number. Only
-                  shown once the institution has a linked account to receive it — conversations are
-                  keyed by Auth uid, so institution.userId (not institution.id) is the recipient. */}
-              {institution.userId && (
-                <button
-                 onClick={async () => {
-                   trackEvent('institution_chat_start', {
-                     institution_id: institution.id,
-                     institution_slug: institution.slug,
-                   });
-                   try {
-                      const res = await fetch('/api/conversations', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          recipientId: institution.userId,
-                          recipientRole: 'institution',
-                          recipientName: language === 'en' ? institution.name.en : institution.name.ar,
-                          recipientPhone: institution.contact?.phonePrimary,
-                          context: {
-                            type: 'institution',
-                            title: language === 'en' ? `Admissions — ${institution.name.en}` : `القبول — ${institution.name.ar}`,
-                            id: institution.id,
-                          },
-                        }),
-                      });
-                      const data = await res.json();
-                      if (data.success && data.conversation) {
-                        router.push(`/messages?conversationId=${data.conversation.id}`);
-                      } else {
-                        router.push(localeHref('/login', language));
-                      }
-                    } catch {
-                      router.push(localeHref('/login', language));
-                    }
-                  }}
-                  className="w-full py-3.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{t('مراسلة فورية', 'Chat Now')}</span>
-                </button>
-              )}
-
-              {/* Direct WhatsApp CTA Button — hidden when no number is set, which otherwise
-                  produced a broken `wa.me/` link. */}
-              {institution.contact?.whatsappNumber && (
-                 <a
-                   href={`https://wa.me/${institution.contact.whatsappNumber}?text=${encodeURIComponent(
-                    t(
-                      `مرحباً، أود الاستفسار عن القبول والتسجيل في ${institution.name.ar}`,
-                      `Hi, I'd like to ask about admissions at ${institution.name.en || institution.name.ar}`
-                    )
-                   )}`}
-                   onClick={() => trackEvent('institution_whatsapp_click', {
-                     institution_id: institution.id,
-                     institution_slug: institution.slug,
-                   })}
-                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{t('مراسلة عبر واتساب الرسمي', 'Chat on Official WhatsApp')}</span>
-                </a>
-              )}
-
-              <button
-                 onClick={openInquiry}
-                className="w-full py-3 border-2 border-[#123D35] text-[#123D35] hover:bg-[#123D35] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                <span>{t('طلب معلومات إضافية', 'Request More Info')}</span>
-              </button>
-
-              <div className="pt-4 border-t border-slate-100 space-y-3 text-xs">
-                {institution.contact?.phonePrimary && (
-                  <div className="flex items-center gap-3 text-slate-700" dir="ltr">
-                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                    <a href={`tel:${institution.contact.phonePrimary.replace(/\s+/g, '')}`} className="font-semibold font-mono hover:text-blue-700">
-                      {institution.contact.phonePrimary}
-                    </a>
-                  </div>
-                )}
-
-                {institution.contact?.email && (
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                    <a href={`mailto:${institution.contact.email}`} className="font-medium hover:text-blue-700">
-                      {institution.contact.email}
-                    </a>
-                  </div>
-                )}
-
-                {institution.contact.website && (
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-                     <a
-                       href={institution.contact.website}
-                       onClick={() => trackEvent('institution_website_click', {
-                         institution_id: institution.id,
-                         institution_slug: institution.slug,
-                       })}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="text-blue-600 hover:underline font-semibold"
-                     >
-                      {t('الموقع الإلكتروني الرسمي', 'Official Website')}
-                    </a>
-                  </div>
-                )}
-
-                {institution.contact.workingHours && (
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>{language === 'en' ? institution.contact.workingHours.en : institution.contact.workingHours.ar}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </aside>
+          <ContactCard institution={institution} openInquiry={openInquiry} />
         </div>
       </div>
 

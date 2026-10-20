@@ -6,15 +6,13 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
 import { formatCurrency, formatDate, todayLocalDate } from '@/lib/utils';
+import { pickLocalized } from '@/lib/localized';
+import { useT, type CopyVars } from '@/lib/useT';
+import { ADMISSION_STATUS_COPY, INSTITUTION_COPY } from '../Institution.i18n';
 
-const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
-  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
-  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
-  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
-  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
-  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
-  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
-};
+// "1 seat left" vs "3 seats left" is a per-language plural, so it is two dictionary entries.
+const seatsLeftLabel = (t: (key: 'seatLeft' | 'seatsLeft', vars: CopyVars) => string, n: number) =>
+  t(n === 1 ? 'seatLeft' : 'seatsLeft', { n });
 
 const ADMISSION_STATUS_STYLES: Record<AdmissionApplicationStatus, string> = {
   SUBMITTED: 'bg-blue-50 text-blue-700',
@@ -35,16 +33,17 @@ export default function ProgramsTab({
   myApplicationStatus: Record<string, AdmissionApplicationStatus>;
   openApply: (program: InstitutionProgram) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_COPY);
   const today = todayLocalDate();
 
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <h2 className="text-lg font-extrabold text-[#0B192C]">
-          {t('البرامج الأكاديمية والأقساط السنوية للعام الحالي', 'Academic Programs & Annual Tuition')}
+          {t('programsHeading')}
         </h2>
-        <span className="text-xs text-slate-400 font-semibold">{institution.programs?.length || 0} {t('برنامج متاح', 'programs')}</span>
+        <span className="text-xs text-slate-400 font-semibold">{t('programsCount', { n: institution.programs?.length || 0 })}</span>
       </div>
 
       <div className="divide-y divide-slate-100">
@@ -53,15 +52,15 @@ export default function ProgramsTab({
             <div key={prog.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900">
-                  {language === 'en' ? prog.name.en : prog.name.ar}
+                  {pickLocalized(prog.name, language)}
                 </h3>
                 <span className="text-xs text-slate-500 font-semibold">
-                  {language === 'en' ? prog.facultyName.en : prog.facultyName.ar} • {prog.durationYears} {t('سنوات دراسية', 'years')}
+                  {pickLocalized(prog.facultyName, language)} • {t('programYears', { n: prog.durationYears })}
                 </span>
                 {prog.minBaccalaureateScore && (
                   <div className="mt-1">
                     <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                      {t('الحد الأدنى لمعدل السادس الإعدادي:', 'Min Baccalaureate:')} {prog.minBaccalaureateScore}%
+                      {t('minBaccalaureate', { n: prog.minBaccalaureateScore })}
                     </span>
                   </div>
                 )}
@@ -72,16 +71,13 @@ export default function ProgramsTab({
                   {prog.applicationDeadline && prog.applicationDeadline >= today && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
                       <CalendarClock className="w-3 h-3" />
-                      {t('آخر موعد للتقديم:', 'Applications close:')} {formatDate(prog.applicationDeadline, language)}
+                      {t('applicationsClose', { date: formatDate(prog.applicationDeadline, language) })}
                     </span>
                   )}
                   {typeof prog.capacity === 'number' && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                       <Users className="w-3 h-3" />
-                      {t(
-                        `${Math.max(0, prog.capacity - (prog.acceptedCount || 0))} مقعد متبقٍ`,
-                        `${Math.max(0, prog.capacity - (prog.acceptedCount || 0))} seat${Math.max(0, prog.capacity - (prog.acceptedCount || 0)) === 1 ? '' : 's'} left`
-                      )}
+                      {seatsLeftLabel(t, Math.max(0, prog.capacity - (prog.acceptedCount || 0)))}
                     </span>
                   )}
                 </div>
@@ -90,29 +86,29 @@ export default function ProgramsTab({
               <div className="text-end space-y-2">
                 <div>
                   <span className="block text-sm font-black text-[#0B192C]">
-                    {formatCurrency(prog.tuitionAnnual.amount, prog.tuitionAnnual.currency, language)} / {t('سنوياً', 'year')}
+                    {formatCurrency(prog.tuitionAnnual.amount, prog.tuitionAnnual.currency, language)} / {t('perYearLong')}
                   </span>
                 </div>
                 {myApplicationStatus[prog.id] ? (
                   <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full ${ADMISSION_STATUS_STYLES[myApplicationStatus[prog.id]]}`}>
-                    {language === 'en' ? ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].en : ADMISSION_STATUS_LABELS[myApplicationStatus[prog.id]].ar}
+                    {pickLocalized(ADMISSION_STATUS_COPY[myApplicationStatus[prog.id]], language)}
                   </span>
                 ) : prog.isActive && prog.isAcceptingApplications !== false && (!prog.applicationDeadline || prog.applicationDeadline >= today) ? (
                   <button
                     onClick={() => openApply(prog)}
                     className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg text-xs font-bold transition-colors"
                   >
-                    {t('التقديم الآن', 'Apply Now')}
+                    {t('applyNow')}
                   </button>
                 ) : (
-                  <span className="text-[11px] font-bold text-slate-400">{t('التقديم مغلق حالياً', 'Applications closed')}</span>
+                  <span className="text-[11px] font-bold text-slate-400">{t('applicationsClosed')}</span>
                 )}
               </div>
             </div>
           ))
         ) : (
           <div className="py-8 text-center text-xs text-slate-400">
-            {t('لم يتم إدراج برامج تفصيلية حتى الآن. تواصل مع قسم التسجيل لمزيد من التفاصيل.', 'No specific programs listed.')}
+            {t('noPrograms')}
           </div>
         )}
       </div>

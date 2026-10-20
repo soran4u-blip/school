@@ -5,6 +5,9 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
 import { Review } from '@/core/types/review';
 import { ShieldCheck, Star } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_COPY } from '../Institution.i18n';
 
 // The public institution profile's Reviews tab: the approved review list plus the inline
 // review-submission form.
@@ -27,15 +30,16 @@ export default function ReviewsTab({
   reviewError: string;
   onSubmitReview: (e: React.FormEvent) => void;
 }) {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_COPY);
 
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <h2 className="text-lg font-extrabold text-[#0B192C]">
-          {t('تقييمات وآراء الطلبة وأولياء الأمور', 'Student & Parent Reviews')}
+          {t('reviewsHeading')}
         </h2>
-        <span className="text-xs text-slate-400 font-semibold">{reviews.length} {t('تقييم معتمد', 'approved reviews')}</span>
+        <span className="text-xs text-slate-400 font-semibold">{t('approvedCount', { n: reviews.length })}</span>
       </div>
 
       <div className="divide-y divide-slate-100">
@@ -46,9 +50,9 @@ export default function ReviewsTab({
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-sm text-slate-900">{rev.reviewerName}</span>
                   {rev.verified && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title={t('طالب مقبول فعلياً في هذه المؤسسة', 'This student was actually accepted at this institution')}>
+                    <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title={t('verifiedStudentHint')}>
                       <ShieldCheck className="w-2.5 h-2.5" />
-                      {t('طالب موثّق', 'Verified Student')}
+                      {t('verifiedStudent')}
                     </span>
                   )}
                 </div>
@@ -62,7 +66,7 @@ export default function ReviewsTab({
               {rev.reply && institution && (
                 <div className="ms-4 ps-3 border-s-2 border-emerald-200 mt-2">
                   <span className="text-[10px] font-bold text-emerald-700">
-                    {t(`رد ${institution.name.ar}`, `${institution.name.en}'s reply`)}
+                    {t('reply', { name: pickLocalized(institution.name, language) })}
                   </span>
                   <p className="text-xs text-slate-600 leading-relaxed">{rev.reply.text}</p>
                 </div>
@@ -71,18 +75,18 @@ export default function ReviewsTab({
           ))
         ) : (
           <div className="py-8 text-center text-xs text-slate-400">
-            {t('لا توجد تقييمات معتمدة بعد. كن أول من يشارك رأيه.', 'No approved reviews yet. Be the first to share your experience.')}
+            {t('noApprovedReviews')}
           </div>
         )}
       </div>
 
       {/* Write a Review */}
       <div className="pt-5 border-t border-slate-100">
-        <h3 className="font-bold text-sm text-slate-900 mb-3">{t('شارك تقييمك', 'Write a Review')}</h3>
+        <h3 className="font-bold text-sm text-slate-900 mb-3">{t('writeReview')}</h3>
 
         {reviewSubmitted ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800">
-            {t('شكراً لك! تم إرسال تقييمك وسيظهر بعد مراجعته من الإدارة.', 'Thank you! Your review was submitted and will appear after moderation.')}
+            {t('reviewThanks')}
           </div>
         ) : (
           <form onSubmit={onSubmitReview} className="space-y-3">
@@ -98,7 +102,7 @@ export default function ReviewsTab({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 type="text"
-                placeholder={t('اسمك', 'Your name')}
+                placeholder={t('yourName')}
                 value={reviewForm.reviewerName}
                 onChange={(e) => setReviewForm({ ...reviewForm, reviewerName: e.target.value })}
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
@@ -116,7 +120,7 @@ export default function ReviewsTab({
               </div>
             </div>
             <textarea
-              placeholder={t('اكتب تعليقك هنا...', 'Write your comment here...')}
+              placeholder={t('commentPlaceholder')}
               value={reviewForm.comment}
               onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
               rows={3}
@@ -128,7 +132,7 @@ export default function ReviewsTab({
               disabled={reviewSubmitting}
               className="px-5 py-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
             >
-              {reviewSubmitting ? t('جاري الإرسال...', 'Submitting...') : t('إرسال التقييم', 'Submit Review')}
+              {reviewSubmitting ? t('submitting') : t('submitReview')}
             </button>
           </form>
         )}

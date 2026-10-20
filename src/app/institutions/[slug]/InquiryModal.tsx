@@ -4,6 +4,9 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_COPY } from './Institution.i18n';
 
 // The "Request more info" dialog on an institution profile. Its own file because it is a whole
 // form with its own submitted/failed states, and it shares nothing with the profile tabs beyond
@@ -27,7 +30,8 @@ export default function InquiryModal({
   error: string;
   onClose: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_COPY);
 
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="presentation">
@@ -41,29 +45,29 @@ export default function InquiryModal({
               type="button"
               onClick={onClose}
               className="absolute top-4 end-4 text-slate-400 hover:text-slate-700"
-              aria-label={t('إغلاق', 'Close')}
+              aria-label={t('close')}
             >
               <X className="w-4 h-4" />
             </button>
 
             <h3 id="inquiry-dialog-title" className="text-base font-extrabold text-[#0B192C] mb-1">
-              {t('طلب معلومات إضافية', 'Request More Info')}
+              {t('requestInfo')}
             </h3>
             <p className="text-xs text-slate-500 mb-5">
-              {t('سيتواصل معك قسم القبول في', 'The admissions office at')} {language === 'en' ? institution.name.en : institution.name.ar} {t('في أقرب وقت.', 'will get back to you shortly.')}
+              {t('inquiryIntro', { name: pickLocalized(institution.name, language) })}
             </p>
 
             {submitted ? (
               <div className="space-y-4">
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800">
-                  {t('تم إرسال طلبك بنجاح! سنتواصل معك قريباً.', 'Your request was sent successfully! We will contact you soon.')}
+                  {t('inquirySent')}
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
                   className="w-full py-3 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50"
                 >
-                  {t('العودة إلى الملف', 'Back to profile')}
+                  {t('backToProfile')}
                 </button>
               </div>
             ) : (
@@ -77,19 +81,19 @@ export default function InquiryModal({
                   className="absolute -left-[9999px] w-px h-px overflow-hidden"
                   aria-hidden="true"
                 />
-                <label htmlFor="inquiry-full-name" className="sr-only">{t('الاسم الكامل', 'Full name')}</label>
+                <label htmlFor="inquiry-full-name" className="sr-only">{t('fullName')}</label>
                 <input
                   id="inquiry-full-name"
                   type="text"
                   required
                   maxLength={100}
                   autoFocus
-                  placeholder={t('الاسم الكامل', 'Full name')}
+                  placeholder={t('fullName')}
                   value={form.fullName}
                   onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                   className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl"
                 />
-                <label htmlFor="inquiry-phone" className="sr-only">{t('رقم الهاتف', 'Phone number')}</label>
+                <label htmlFor="inquiry-phone" className="sr-only">{t('phone')}</label>
                 <input
                   id="inquiry-phone"
                   type="text"
@@ -97,26 +101,26 @@ export default function InquiryModal({
                   maxLength={30}
                   inputMode="tel"
                   dir="ltr"
-                  placeholder={t('رقم الهاتف', 'Phone number')}
+                  placeholder={t('phone')}
                   value={form.phone}
                   onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                   className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl font-mono"
                 />
-                <label htmlFor="inquiry-email" className="sr-only">{t('البريد الإلكتروني', 'Email')}</label>
+                <label htmlFor="inquiry-email" className="sr-only">{t('emailLabel')}</label>
                 <input
                   id="inquiry-email"
                   type="email"
                   maxLength={200}
-                  placeholder={t('البريد الإلكتروني (اختياري)', 'Email (optional)')}
+                  placeholder={t('emailOptional')}
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl"
                 />
-                <label htmlFor="inquiry-message" className="sr-only">{t('رسالتك', 'Your message')}</label>
+                <label htmlFor="inquiry-message" className="sr-only">{t('yourMessage')}</label>
                 <textarea
                   id="inquiry-message"
                   maxLength={3000}
-                  placeholder={t('رسالتك (اختياري)', 'Your message (optional)')}
+                  placeholder={t('messageOptional')}
                   value={form.message}
                   onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
                   rows={3}
@@ -128,7 +132,7 @@ export default function InquiryModal({
                   disabled={submitting}
                   className="w-full py-3 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-60"
                 >
-                  {submitting ? t('جاري الإرسال...', 'Sending...') : t('إرسال الطلب', 'Send Request')}
+                  {submitting ? t('sending') : t('sendRequest')}
                 </button>
               </form>
             )}
