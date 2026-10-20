@@ -6,11 +6,15 @@ import { ArrowRight, ChevronDown, MapPin } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import { Governorate } from '@/core/types/masterData';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { HOME_COPY } from './Home.i18n';
 
 // A compact location directory between the campaign card and tutor showcase. Each tile keeps the
 // full governorate route and live listing total, but is easier to scan as a set of destinations.
 export default function GovernoratesExplorer({ governorates }: { governorates: Governorate[] }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(HOME_COPY);
   const orderedGovernorates = governorates
     .map((governorate, index) => ({ governorate, index }))
     .sort((a, b) => (b.governorate.institutionsCount || 0) - (a.governorate.institutionsCount || 0) || a.index - b.index)
@@ -26,14 +30,14 @@ export default function GovernoratesExplorer({ governorates }: { governorates: G
     >
       <div className="flex items-start justify-between gap-2">
         <span className={`line-clamp-1 text-xs font-extrabold transition-colors group-hover:text-[#17695A] sm:text-sm ${empty ? 'text-slate-600' : 'text-slate-800'}`}>
-          {language === 'en' ? gov.name.en : gov.name.ar}
+          {pickLocalized(gov.name, language)}
         </span>
         <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1 font-mono text-[9px] font-bold text-slate-500 transition-colors group-hover:bg-[#0B594D] group-hover:text-white">
           {gov.code}
         </span>
       </div>
       <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-slate-400">
-        <span>{empty ? t('لا توجد مؤسسات بعد', 'No listings yet') : `${gov.institutionsCount || 0} ${t('مؤسسة', 'listings')}`}</span>
+        <span>{empty ? t('govNoListings') : t('govListings', { n: gov.institutionsCount || 0 })}</span>
         <ArrowRight className="h-3.5 w-3.5 text-slate-300 rtl:rotate-180 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600" aria-hidden="true" />
       </div>
     </Link>
@@ -45,17 +49,17 @@ export default function GovernoratesExplorer({ governorates }: { governorates: G
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] lg:items-start lg:gap-12">
           <div className="lg:pt-1">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#17695A]">
-              {t('تغطية وطنية شاملة', 'Nationwide coverage')}
+              {t('govEyebrow')}
             </p>
             <h2 className="mt-2 max-w-md text-2xl font-extrabold tracking-tight text-[#0B192C] sm:text-3xl">
-              {t('ابحث بالقرب منك، في أي محافظة عراقية', 'Find the right place, closer to home')}
+              {t('govTitle')}
             </h2>
             <p className="mt-3 max-w-md text-xs leading-6 text-slate-500 sm:text-sm">
-              {t('اختر محافظتك لتصفح المدارس والجامعات والمؤسسات التعليمية المتاحة فيها.', 'Choose a governorate to browse the schools, universities, and education providers available there.')}
+              {t('govIntro')}
             </p>
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#D5E3DC] bg-[#EEF5F0] px-3 py-1.5 text-[11px] font-bold text-[#155C4D]">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {t(`${governorates.length} محافظة، ${availableGovernorates.length} متاحة الآن`, `${governorates.length} governorates, ${availableGovernorates.length} available now`)}
+              {t('govSummary', { total: governorates.length, available: availableGovernorates.length })}
             </div>
           </div>
 
@@ -64,18 +68,18 @@ export default function GovernoratesExplorer({ governorates }: { governorates: G
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">{availableGovernorates.map((gov) => renderGovernorate(gov))}</div>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-xs font-semibold text-slate-500">
-                {t('سيتم إضافة المؤسسات حسب المحافظة قريباً.', 'Listings will be added by governorate soon.')}
+                {t('govSoon')}
               </div>
             )}
 
             {otherGovernorates.length > 0 && (
               <details className="group rounded-xl border border-[#E8E6DE] bg-white/60 p-3">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-extrabold text-slate-700 [&::-webkit-details-marker]:hidden">
-                  <span>{t(`محافظات أخرى (${otherGovernorates.length})`, `Other governorates (${otherGovernorates.length})`)}</span>
+                  <span>{t('govOthers', { n: otherGovernorates.length })}</span>
                   <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
                 </summary>
                 <p className="mt-2 text-[11px] leading-5 text-slate-500">
-                  {t('هذه المحافظات جاهزة لاستقبال مؤسسات جديدة في الدليل.', 'These locations are ready for new institutions to join the directory.')}
+                  {t('govOthersNote')}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">{otherGovernorates.map((gov) => renderGovernorate(gov, true))}</div>
               </details>

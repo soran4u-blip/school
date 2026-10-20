@@ -5,6 +5,9 @@ import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { CMSBanner } from '@/core/types/masterData';
 import { pickWeightedBanner } from '@/lib/bannerLogic';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { HOME_COPY } from './Home.i18n';
 
 const ROTATE_INTERVAL_MS = 6000;
 const FADE_MS = 300;
@@ -13,7 +16,8 @@ const FADE_MS = 300;
 // visitor stays on the page. The layout intentionally keeps the campaign copy on a solid panel:
 // advertiser images can now be any colour or level of detail without compromising readability.
 export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(HOME_COPY);
   const [banner, setBanner] = useState(() => pickWeightedBanner(banners));
   const [visible, setVisible] = useState(true);
 
@@ -42,9 +46,9 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
 
   if (!banner?.imageUrl) return null;
 
-  const eyebrow = language === 'en' ? banner.title.en : banner.title.ar;
-  const headline = language === 'en' ? banner.subtitle.en : banner.subtitle.ar;
-  const cta = language === 'en' ? banner.ctaText?.en : banner.ctaText?.ar;
+  const eyebrow = pickLocalized(banner.title, language);
+  const headline = pickLocalized(banner.subtitle, language);
+  const cta = pickLocalized(banner.ctaText, language);
   const hasLink = Boolean(banner.ctaLink);
 
   return (
@@ -53,7 +57,7 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
         href={banner.ctaLink || undefined}
         target={hasLink ? '_blank' : undefined}
         rel={hasLink ? 'noopener noreferrer sponsored' : undefined}
-        aria-label={hasLink ? `${headline} — ${t('فتح الإعلان', 'Open advertisement')}` : undefined}
+        aria-label={hasLink ? `${headline} — ${t('openAd')}` : undefined}
         className="group grid overflow-hidden rounded-2xl border border-slate-200 bg-[#0B192C] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.65)] sm:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] sm:rounded-3xl transition-all duration-300 sm:hover:-translate-y-0.5 sm:hover:shadow-[0_22px_48px_-26px_rgba(15,23,42,0.75)]"
         style={{ transitionDuration: `${FADE_MS}ms`, opacity: visible ? 1 : 0 }}
       >
@@ -63,7 +67,7 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
 
           <div className="relative flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#F5D76E] sm:text-[11px]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#F1C40F]" />
-            {t('محتوى برعاية', 'Sponsored')}
+            {t('sponsored')}
           </div>
 
           <div className="relative my-5 max-w-xl sm:my-7">
@@ -79,7 +83,7 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
               </span>
             )}
             {banners.length > 1 && (
-              <span className="ms-auto flex gap-1" aria-label={t('إعلان دوّار', 'Rotating advertisement')}>
+              <span className="ms-auto flex gap-1" aria-label={t('rotatingAd')}>
                 {banners.slice(0, 4).map((item) => (
                   <span key={item.id} className={`h-1.5 rounded-full transition-all duration-300 ${item.id === banner.id ? 'w-5 bg-[#F1C40F]' : 'w-1.5 bg-white/25'}`} />
                 ))}
@@ -94,7 +98,7 @@ export default function AdBannerSection({ banners }: { banners: CMSBanner[] }) {
           <img src={banner.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div className="absolute inset-0 bg-linear-to-t from-[#0B192C]/35 via-transparent to-transparent sm:bg-linear-to-s from-[#0B192C]/25 via-transparent to-transparent" />
           <span className="absolute top-3 end-3 rounded-full border border-white/20 bg-slate-950/45 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-md">
-            {t('إعلان', 'Ad')}
+            {t('ad')}
           </span>
         </div>
       </a>

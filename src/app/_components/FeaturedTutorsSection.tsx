@@ -19,6 +19,9 @@ import {
   Star,
   Video,
 } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { HOME_COPY } from './Home.i18n';
 
 interface FeaturedTutorsSectionProps {
   featuredTutors: Tutor[];
@@ -31,7 +34,8 @@ export default function FeaturedTutorsSection({
   subjects = [],
   governorates = [],
 }: FeaturedTutorsSectionProps) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(HOME_COPY);
 
   const getDeliveryModeLabel = (modes: Tutor['deliveryMode']) => {
     const hasOnline = modes?.includes('ONLINE');
@@ -39,12 +43,12 @@ export default function FeaturedTutorsSection({
     const hasHybrid = modes?.includes('HYBRID');
 
     if (hasHybrid || (hasOnline && hasInPerson)) {
-      return t('حضوري وعبر الإنترنت', 'In-Person & Online');
+      return t('deliveryBoth');
     }
     if (hasOnline) {
-      return t('عبر الإنترنت', 'Online');
+      return t('online');
     }
-    return t('حضوري', 'In-Person');
+    return t('deliveryInPerson');
   };
 
   const gridClass =
@@ -63,16 +67,13 @@ export default function FeaturedTutorsSection({
         <div className="max-w-2xl">
           <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
             <GraduationCap className="h-4 w-4" aria-hidden="true" />
-            {t('كوادر تعليمية وتدريس خصوصي', 'Tutors & Private Educators')}
+            {t('tutorsEyebrow')}
           </div>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#103B34] sm:text-3xl">
-            {t('نخبة أساتذة التدريس الخصوصي في العراق', 'Featured Private Tutors in Iraq')}
+            {t('tutorsTitle')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
-            {t(
-              'احجز جلسات فردية أو جماعية مع أساتذة معتمدين، وتواصل معهم مباشرةً عبر واتساب.',
-              'Book 1-on-1 or group sessions with vetted tutors, and connect directly via WhatsApp.'
-            )}
+            {t('tutorsIntro')}
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export default function FeaturedTutorsSection({
           href={localeHref('/tutors', language)}
           className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-[#17695A] transition-colors hover:text-[#0B594D] sm:self-auto"
         >
-          <span>{t('استكشف جميع الأساتذة', 'Explore all tutors')}</span>
+          <span>{t('tutorsAll')}</span>
           <ArrowRight
             className="h-4 w-4 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform"
             aria-hidden="true"
@@ -93,18 +94,18 @@ export default function FeaturedTutorsSection({
         <div className={`mx-auto grid grid-cols-1 gap-5 lg:gap-6 ${gridClass}`}>
           {featuredTutors.map((tutor) => {
             const profileHref = localeHref(`/tutors/${tutor.slug || tutor.id}`, language);
-            const name = language === 'en' ? tutor.fullName.en : tutor.fullName.ar;
+            const name = pickLocalized(tutor.fullName, language);
             const hasReviews = tutor.reviewCount > 0;
 
             const tutorSubject = tutor.subjectIds?.[0]
               ? subjects.find((s) => s.id === tutor.subjectIds[0])
               : null;
             const subjectLabel = tutorSubject
-              ? (language === 'en' ? tutorSubject.name.en : tutorSubject.name.ar)
+              ? pickLocalized(tutorSubject.name, language)
               : null;
 
             const gov = governorates.find((g) => g.id === tutor.governorateId);
-            const govName = gov ? (language === 'en' ? gov.name.en : gov.name.ar) : null;
+            const govName = gov ? pickLocalized(gov.name, language) : null;
             const deliveryLabel = getDeliveryModeLabel(tutor.deliveryMode);
 
             return (
@@ -136,7 +137,7 @@ export default function FeaturedTutorsSection({
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-1 text-xs font-bold text-slate-800">
                           <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
-                          <span>{hasReviews ? tutor.ratingAvg.toFixed(1) : t('جديد', 'New')}</span>
+                          <span>{hasReviews ? tutor.ratingAvg.toFixed(1) : t('newTutor')}</span>
                           {hasReviews && (
                             <span className="text-[11px] font-normal text-slate-400">
                               ({tutor.reviewCount})
@@ -147,7 +148,7 @@ export default function FeaturedTutorsSection({
                         {tutor.yearsOfExperience > 0 && (
                           <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
                             <Award className="h-3 w-3 text-amber-600" aria-hidden="true" />
-                            <span>{t(`خبرة ${tutor.yearsOfExperience} سنة`, `${tutor.yearsOfExperience}y exp`)}</span>
+                            <span>{t('yearsExp', { n: tutor.yearsOfExperience })}</span>
                           </span>
                         )}
                       </div>
@@ -159,7 +160,7 @@ export default function FeaturedTutorsSection({
                       </Link>
 
                       <p className="mt-0.5 line-clamp-1 text-xs font-medium text-slate-500">
-                        {language === 'en' ? tutor.title.en : tutor.title.ar}
+                        {pickLocalized(tutor.title, language)}
                       </p>
                     </div>
                   </div>
@@ -175,7 +176,7 @@ export default function FeaturedTutorsSection({
 
                     <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
                       <MapPin className="h-3 w-3 text-slate-500 shrink-0" aria-hidden="true" />
-                      <span>{govName || t('العراق', 'Iraq')}</span>
+                      <span>{govName || t('iraq')}</span>
                     </span>
 
                     <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
@@ -189,9 +190,7 @@ export default function FeaturedTutorsSection({
                     <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
                       <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
                       <span className="truncate">
-                        {language === 'en'
-                          ? tutor.verificationBadgeLabel?.en || 'Verified Instructor'
-                          : tutor.verificationBadgeLabel?.ar || 'أستاذ وزاري معتمد وموثّق'}
+                        {pickLocalized(tutor.verificationBadgeLabel, language) || t('verifiedInstructor')}
                       </span>
                     </div>
                   )}
@@ -205,13 +204,13 @@ export default function FeaturedTutorsSection({
                         {formatCurrencyIQD(tutor.hourlyRate.iqd, language)}
                       </span>
                       <span className="mx-1 text-[11px] font-medium text-slate-500">
-                        / {t('ساعة', 'hr')}
+                        / {t('perHour')}
                       </span>
                     </div>
 
                     {tutor.groupRate?.iqd > 0 && (
                       <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                        {t('متاح مجموعات', 'Group slots')}
+                        {t('groupSlots')}
                       </span>
                     )}
                   </div>
@@ -221,16 +220,13 @@ export default function FeaturedTutorsSection({
                       href={profileHref}
                       className="flex-1 rounded-xl bg-[#103B34] py-2.5 text-center text-xs font-extrabold text-white transition-all hover:bg-[#1E3E62] active:scale-[0.98]"
                     >
-                      {t('احجز جلسة', 'Book session')}
+                      {t('bookSession')}
                     </Link>
                     <a
                       href={`https://wa.me/${tutor.whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={t(
-                        `تواصل عبر واتساب مع ${name}`,
-                        `Contact ${name} on WhatsApp`
-                      )}
+                      aria-label={t('contactTutorWhatsApp', { name })}
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-95"
                     >
                       <MessageSquare className="h-4 w-4" aria-hidden="true" />
@@ -245,19 +241,16 @@ export default function FeaturedTutorsSection({
         <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <GraduationCap className="mx-auto mb-2 h-10 w-10 text-slate-400" aria-hidden="true" />
           <h3 className="text-base font-extrabold text-slate-900">
-            {t('لا يوجد أساتذة منشورون حالياً', 'No published tutors yet')}
+            {t('noTutors')}
           </h3>
           <p className="mt-2 text-xs leading-6 text-slate-500">
-            {t(
-              'كن أول من ينضم إلى نخبة المعلمين المعتمدين في العراق واستقبل طلبات التدريس.',
-              'Be the first to join our vetted educators directory and start receiving student bookings.'
-            )}
+            {t('noTutorsNote')}
           </p>
           <Link
             href="/apply"
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#103B34] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]"
           >
-            <span>{t('تقديم طلب الانضمام كأستاذ', 'Apply to Join as a Tutor')}</span>
+            <span>{t('applyTutor')}</span>
             <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
           </Link>
         </div>
@@ -271,13 +264,10 @@ export default function FeaturedTutorsSection({
           </div>
           <div>
             <h3 className="text-sm font-extrabold text-[#103B34]">
-              {t('هل أنت أستاذ أو معلم خصوصي في العراق؟', 'Are you a private tutor or teacher in Iraq?')}
+              {t('recruitTitle')}
             </h3>
             <p className="mt-0.5 text-xs text-slate-600">
-              {t(
-                'انضم إلى دليل مدرسي المنصة المعتمدين واستقبل طلبات الحجز المباشرة من آلاف الطلبة وأولياء الأمور.',
-                'Join our vetted tutors directory and start receiving direct booking requests from students across Iraq.'
-              )}
+              {t('recruitBody')}
             </p>
           </div>
         </div>
@@ -286,7 +276,7 @@ export default function FeaturedTutorsSection({
           href="/apply"
           className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#F1C40F] px-5 py-2.5 text-xs font-extrabold text-[#103B34] shadow-sm transition-all hover:bg-[#D4AC0D] active:scale-95"
         >
-          <span>{t('انضم كأستاذ معتمد', 'Apply as a Tutor')}</span>
+          <span>{t('recruitCta')}</span>
           <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
         </Link>
       </div>

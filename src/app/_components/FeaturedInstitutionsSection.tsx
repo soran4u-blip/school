@@ -9,6 +9,9 @@ import { Governorate, Category } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { ArrowRight, MapPin, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { HOME_COPY } from './Home.i18n';
 
 // The directory's first content showcase. Cards make the institution itself the focal point and
 // keep the profile action dominant, while the secondary WhatsApp route remains available.
@@ -21,7 +24,8 @@ export default function FeaturedInstitutionsSection({
   governorates: Governorate[];
   categories: Category[];
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(HOME_COPY);
   const gridClass = featuredInstitutions.length === 1
     ? 'max-w-xl'
     : featuredInstitutions.length === 2
@@ -34,13 +38,13 @@ export default function FeaturedInstitutionsSection({
         <div className="max-w-2xl">
           <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            {t('مؤسسات تعليمية ضمن الدليل', 'Institutions in the directory')}
+            {t('instEyebrow')}
           </div>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#103B34] sm:text-3xl">
-            {t('أبرز الصروح التعليمية في العراق', 'Featured Iraqi educational institutions')}
+            {t('instTitle')}
           </h2>
           <p className="mt-2 text-xs leading-6 text-slate-500 sm:text-sm">
-            {t('قارن التفاصيل وتواصل مباشرةً قبل اتخاذ الخطوة التالية.', 'Compare the details and contact institutions before your next step.')}
+            {t('instIntro')}
           </p>
         </div>
 
@@ -48,7 +52,7 @@ export default function FeaturedInstitutionsSection({
           href={localeHref('/explore', language)}
           className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-[#17695A] transition-colors hover:text-[#0B594D] sm:self-auto"
         >
-          <span>{t('عرض جميع المؤسسات', 'View all institutions')}</span>
+          <span>{t('instAll')}</span>
           <ArrowRight className="h-4 w-4 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
         </Link>
       </div>
@@ -59,6 +63,7 @@ export default function FeaturedInstitutionsSection({
             const gov = governorates.find((item) => item.id === inst.governorateId);
             const cat = categories.find((item) => item.id === inst.categoryId);
             const profileHref = localeHref(`/institutions/${inst.slug}`, language);
+            const instName = pickLocalized(inst.name, language);
             const hasReviews = inst.metrics.reviewCount > 0;
             const publiclyVerified = inst.isVerified && isInstitutionEvidenceFresh(inst);
 
@@ -70,7 +75,7 @@ export default function FeaturedInstitutionsSection({
                 <Link href={profileHref} className="relative block h-48 overflow-hidden bg-slate-100">
                   <Thumbnail
                     src={inst.coverImageUrl}
-                    alt={language === 'en' ? inst.name.en : inst.name.ar}
+                    alt={pickLocalized(inst.name, language)}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -78,20 +83,20 @@ export default function FeaturedInstitutionsSection({
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-[#071220]/70 via-[#071220]/5 to-transparent" />
                   <div className="absolute top-3 start-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-extrabold text-[#103B34] shadow-sm backdrop-blur-sm">
-                    {cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}
+                    {cat ? pickLocalized(cat.name, language) : inst.categoryId}
                   </div>
                   <div className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full bg-[#103B34]/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
                     <Star
                       className={`h-3.5 w-3.5 ${hasReviews ? 'fill-[#F1C40F] text-[#F1C40F]' : 'text-white/70'}`}
                       aria-hidden="true"
                     />
-                    {hasReviews ? inst.metrics.ratingAvg.toFixed(1) : t('لا توجد تقييمات', 'No reviews')}
+                    {hasReviews ? inst.metrics.ratingAvg.toFixed(1) : t('noReviews')}
                   </div>
                   <div className="absolute bottom-3 start-4 end-4 flex items-end justify-between gap-3">
                     <div className="min-w-0">
                       <p className="flex items-center gap-1 text-[11px] font-semibold text-white/85">
                         <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        {gov ? (language === 'en' ? gov.name.en : gov.name.ar) : inst.governorateId}
+                        {gov ? pickLocalized(gov.name, language) : inst.governorateId}
                       </p>
                     </div>
                     <Thumbnail
@@ -107,11 +112,11 @@ export default function FeaturedInstitutionsSection({
                 <div className="p-5">
                   <Link href={profileHref} className="block">
                     <h3 className="line-clamp-1 text-base font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-[#17695A]">
-                      {language === 'en' ? inst.name.en : inst.name.ar}
+                      {pickLocalized(inst.name, language)}
                     </h3>
                   </Link>
                   <p className="mt-2 min-h-10 text-xs leading-5 text-slate-600 line-clamp-2">
-                    {language === 'en' ? inst.tagline.en : inst.tagline.ar}
+                    {pickLocalized(inst.tagline, language)}
                   </p>
 
                   <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
@@ -119,12 +124,12 @@ export default function FeaturedInstitutionsSection({
                       {publiclyVerified ? <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" /> : null}
                       <span className="truncate">
                         {publiclyVerified
-                          ? (language === 'en' ? inst.verificationBadgeLabel.en : inst.verificationBadgeLabel.ar)
-                          : t('مدرج على المنصة', 'Listed on Eduraq')}
+                          ? pickLocalized(inst.verificationBadgeLabel, language)
+                          : t('listedOnPlatform')}
                       </span>
                     </span>
                     <span className="shrink-0 text-[11px] font-extrabold text-slate-700">
-                      {inst.tuition.min === 0 ? t('مجاني', 'Free') : `$${inst.tuition.min.toLocaleString()} / ${t('سنوياً', 'yr')}`}
+                      {inst.tuition.min === 0 ? t('free') : `$${inst.tuition.min.toLocaleString()} / ${t('perYear')}`}
                     </span>
                   </div>
 
@@ -133,14 +138,14 @@ export default function FeaturedInstitutionsSection({
                       href={profileHref}
                       className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#103B34] py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#1E3E62]"
                     >
-                      {t('عرض التفاصيل', 'View profile')}
+                      {t('viewProfile')}
                       <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
                     </Link>
                     <a
                       href={`https://wa.me/${inst.contact.whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={t(`تواصل عبر واتساب مع ${inst.name.ar}`, `Contact ${inst.name.en} on WhatsApp`)}
+                      aria-label={t('contactInstWhatsApp', { name: instName })}
                       className="flex h-[2.375rem] w-[2.375rem] shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
                     >
                       <MessageSquare className="h-4 w-4" aria-hidden="true" />
@@ -153,10 +158,10 @@ export default function FeaturedInstitutionsSection({
         </div>
       ) : (
         <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-          <h3 className="text-base font-extrabold text-slate-900">{t('لا توجد مؤسسات منشورة بعد', 'No published institutions yet')}</h3>
-          <p className="mt-2 text-xs leading-6 text-slate-500">{t('استكشف المحافظات أو تصفح الدليل الكامل عند إضافة مؤسسات جديدة.', 'Explore governorates or browse the full directory as new institutions are added.')}</p>
+          <h3 className="text-base font-extrabold text-slate-900">{t('noInstitutions')}</h3>
+          <p className="mt-2 text-xs leading-6 text-slate-500">{t('noInstitutionsNote')}</p>
           <Link href={localeHref('/explore', language)} className="mt-4 inline-flex rounded-xl bg-[#103B34] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1E3E62]">
-            {t('فتح الدليل الكامل', 'Open full directory')}
+            {t('openDirectory')}
           </Link>
         </div>
       )}

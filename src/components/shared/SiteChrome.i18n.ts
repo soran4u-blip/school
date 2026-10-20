@@ -37,7 +37,7 @@ export const CHROME_COPY = {
   footerCategories: { ar: 'الفئات التعليمية', en: 'Directory Categories', ku: 'پۆلە پەروەردەییەکان' },
   majorGovernorates: { ar: 'أبرز المحافظات', en: 'Major Governorates', ku: 'گرنگترین پارێزگاکان' },
   platformLinks: { ar: 'روابط المنصة والإدارة', en: 'Platform & Admin', ku: 'بەستەرەکانی پلاتفۆرم و بەڕێوەبردن' },
-  myBookings: { ar: 'حجوزاتي', en: 'My Bookings', ku: 'پێشوەختکردنەکانم' },
+  myBookings: { ar: 'حجوزاتي', en: 'My Bookings', ku: 'حیجزەکانم' },
   myApplications: { ar: 'طلبات التوظيف الخاصة بي', en: 'My Job Applications', ku: 'داواکارییەکانی کارم' },
   joinStatus: { ar: 'حالة طلب الانضمام', en: 'Join Application Status', ku: 'دۆخی داواکاری بەشداریکردن' },
   trustCenter: { ar: 'مركز الثقة والتحقق', en: 'Trust & Verification Center', ku: 'ناوەندی متمانە و پشتڕاستکردنەوە' },
