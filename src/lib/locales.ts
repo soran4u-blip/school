@@ -8,8 +8,6 @@ export interface LocaleConfig {
   dir: 'rtl' | 'ltr';
   htmlLang: string;
   intl: string;
-  /** Tried in order when the runtime has no Intl data for `intl` (see intlLocale). */
-  intlFallbacks?: string[];
   /** URL prefix of the language's route tree; '' for the default (Arabic) unprefixed tree. */
   prefix: '' | '/en' | '/ku';
   hreflang: string;
@@ -21,7 +19,7 @@ export interface LocaleConfig {
 export const LOCALES: Record<SupportedLanguage, LocaleConfig> = {
   ar: { dir: 'rtl', htmlLang: 'ar', intl: 'ar-IQ', prefix: '', hreflang: 'ar-IQ', nativeName: 'العربية', shortName: 'عربي' },
   en: { dir: 'ltr', htmlLang: 'en', intl: 'en-US', prefix: '/en', hreflang: 'en', nativeName: 'English', shortName: 'EN' },
-  ku: { dir: 'rtl', htmlLang: 'ckb', intl: 'ckb-IQ', intlFallbacks: ['ar-IQ'], prefix: '/ku', hreflang: 'ckb', nativeName: 'کوردی', shortName: 'کوردی' },
+  ku: { dir: 'rtl', htmlLang: 'ckb', intl: 'ar-IQ', prefix: '/ku', hreflang: 'ckb', nativeName: 'کوردی', shortName: 'کوردی' },
 };
 
 export const SUPPORTED_LANGUAGES = Object.keys(LOCALES) as SupportedLanguage[];
@@ -33,15 +31,14 @@ export function isSupportedLanguage(value: unknown): value is SupportedLanguage 
 }
 
 /**
- * The BCP-47 tags to hand to Intl.* for a language, best first; unknown values read as the default.
- * Every Intl constructor and toLocale*String accepts the list and uses the first tag the runtime
- * has data for. That matters for Sorani: some runtimes (e.g. Electron/Chromium builds with a
- * trimmed ICU) lack `ckb`, and a bare 'ckb-IQ' then silently formats as en-US ("Sep 16", "IQD 35,000").
- * Falling back to ar-IQ keeps the Arabic script and digits, which Sorani readers also use.
+ * The BCP-47 tag to hand to Intl.* for a language; unknown values read as the default.
+ * Sorani deliberately formats with ar-IQ rather than ckb-IQ: ICU `ckb` data is missing from some
+ * runtimes (trimmed Chromium/Electron builds) and present in others (Node), so the server and the
+ * client rendered different month names and hydration failed. ar-IQ is available everywhere and
+ * gives the same Arabic script and digits Sorani readers use; the cost is Arabic month names.
  */
-export function intlLocale(language: string): string[] {
-  const config = isSupportedLanguage(language) ? LOCALES[language] : LOCALES[DEFAULT_LANGUAGE];
-  return [config.intl, ...(config.intlFallbacks ?? [])];
+export function intlLocale(language: string): string {
+  return isSupportedLanguage(language) ? LOCALES[language].intl : LOCALES[DEFAULT_LANGUAGE].intl;
 }
 
 /**

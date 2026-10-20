@@ -6,7 +6,7 @@ import { normalizeSearchText } from './textNormalize';
 
 describe('locales', () => {
   it('describes direction, html lang and Intl tag per language', () => {
-    expect(LOCALES.ku).toMatchObject({ dir: 'rtl', htmlLang: 'ckb', intl: 'ckb-IQ', prefix: '/ku' });
+    expect(LOCALES.ku).toMatchObject({ dir: 'rtl', htmlLang: 'ckb', intl: 'ar-IQ', prefix: '/ku' });
     expect(LOCALES.en).toMatchObject({ dir: 'ltr', prefix: '/en' });
     expect(LOCALES.ar).toMatchObject({ dir: 'rtl', prefix: '' });
   });
@@ -15,9 +15,9 @@ describe('locales', () => {
     expect(isSupportedLanguage('ku')).toBe(true);
     expect(isSupportedLanguage('fr')).toBe(false);
     expect(isSupportedLanguage('toString')).toBe(false);
-    expect(intlLocale('ku')).toEqual(['ckb-IQ', 'ar-IQ']);
-    expect(intlLocale('en')).toEqual(['en-US']);
-    expect(intlLocale('xx')).toEqual(['ar-IQ']);
+    expect(intlLocale('ku')).toBe('ar-IQ');
+    expect(intlLocale('en')).toBe('en-US');
+    expect(intlLocale('xx')).toBe('ar-IQ');
   });
 
   it('pins a language only on whole path segments', () => {
