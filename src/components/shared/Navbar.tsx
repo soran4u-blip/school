@@ -148,15 +148,17 @@ export default function Navbar() {
               <span className="font-extrabold text-xl tracking-tight text-[#0B594D]">Eduraq</span>
             </Link>
 
-            <div className="justify-self-center flex items-center rounded-full p-1 gap-1 bg-slate-100/80">
-              <div className="relative" ref={exploreRef}>
+            <div className="relative justify-self-center flex items-center rounded-full p-1 gap-1 bg-slate-100/80">
+              <div ref={exploreRef}>
                 <button onClick={() => setExploreOpen((v) => !v)} className={navPill(isExploreActive || exploreOpen)}>
                   {t('استكشف', 'Explore')}
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${exploreOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {exploreOpen && (
-                  <div className="absolute top-full mt-2 end-0 w-[520px] bg-white rounded-2xl border border-slate-200 shadow-lg p-5 grid grid-cols-2 gap-6 text-start">
+                  // Anchored to the centred pill (not the Explore button, which sits at its edge), so the
+                  // panel grows symmetrically and stays on screen in both reading directions.
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[520px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-lg p-5 grid grid-cols-2 gap-6 text-start">
                     <div>
                       <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
                         {t('الفئات', 'Categories')}
