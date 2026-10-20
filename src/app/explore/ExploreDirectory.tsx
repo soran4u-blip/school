@@ -24,8 +24,10 @@ import ShortlistTray from './_components/ShortlistTray';
 import DirectorySkeleton from './_components/DirectorySkeleton';
 import { EMPTY_SHORTLIST, readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
-import { matchesLocalized } from '@/lib/localized';
+import { matchesLocalized, pickLocalized } from '@/lib/localized';
 import { normalizeSearchText } from '@/lib/textNormalize';
+import { useT } from '@/lib/useT';
+import { EXPLORE_COPY } from './Explore.i18n';
 
 interface ExploreDirectoryProps {
   institutions: Institution[];
@@ -41,7 +43,8 @@ interface ExploreDirectoryProps {
 const listFromParam = (value: string | null) => value?.split(',').filter(Boolean) ?? [];
 
 function ExploreContent({ institutions, tutors, categories, governorates, accreditations, curricula, subjects }: ExploreDirectoryProps) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(EXPLORE_COPY);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -160,7 +163,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
       return;
     }
     if (!navigator.geolocation) {
-      setNearMeError(t('المتصفح لا يدعم تحديد الموقع', 'Location is not supported by this browser'));
+      setNearMeError(t('locationUnsupported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -169,7 +172,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         setNearMeError('');
         setSortBy('distance_asc');
       },
-      () => setNearMeError(t('تعذر الوصول إلى الموقع', 'Could not access your location'))
+      () => setNearMeError(t('locationDenied'))
     );
   };
 
@@ -222,17 +225,17 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   if (searchQuery.trim()) activeFilters.push({ key: 'q', label: `"${searchQuery.trim()}"`, clear: () => setSearchQuery('') });
   if (selectedCategory !== 'all') {
     const category = categories.find((item) => item.slug === selectedCategory);
-    activeFilters.push({ key: 'category', label: category ? (language === 'en' ? category.name.en : category.name.ar) : selectedCategory, clear: () => setSelectedCategory('all') });
+    activeFilters.push({ key: 'category', label: category ? pickLocalized(category.name, language) : selectedCategory, clear: () => setSelectedCategory('all') });
   }
   if (selectedGov !== 'all') {
     const governorate = governorates.find((item) => item.id === selectedGov);
-    activeFilters.push({ key: 'governorate', label: governorate ? (language === 'en' ? governorate.name.en : governorate.name.ar) : selectedGov, clear: () => setSelectedGov('all') });
+    activeFilters.push({ key: 'governorate', label: governorate ? pickLocalized(governorate.name, language) : selectedGov, clear: () => setSelectedGov('all') });
   }
-  if (verifiedOnly) activeFilters.push({ key: 'verified', label: t('موثق فقط', 'Verified only'), clear: () => setVerifiedOnly(false) });
-  if (selectedAccreditations.length > 0) activeFilters.push({ key: 'accreditations', label: `${t('اعتمادات', 'Accreditations')}: ${selectedAccreditations.length}`, clear: () => setSelectedAccreditations([]) });
-  if (selectedCurricula.length > 0) activeFilters.push({ key: 'curricula', label: `${t('مناهج', 'Curricula')}: ${selectedCurricula.length}`, clear: () => setSelectedCurricula([]) });
+  if (verifiedOnly) activeFilters.push({ key: 'verified', label: t('verifiedOnly'), clear: () => setVerifiedOnly(false) });
+  if (selectedAccreditations.length > 0) activeFilters.push({ key: 'accreditations', label: `${t('accreditationsFilter')}: ${selectedAccreditations.length}`, clear: () => setSelectedAccreditations([]) });
+  if (selectedCurricula.length > 0) activeFilters.push({ key: 'curricula', label: `${t('curriculaFilter')}: ${selectedCurricula.length}`, clear: () => setSelectedCurricula([]) });
   if (priceMin || priceMax) activeFilters.push({ key: 'price', label: `${priceMin || '0'} - ${priceMax || '∞'} ${priceCurrency}`, clear: () => { setPriceMin(''); setPriceMax(''); } });
-  if (minRating > 0) activeFilters.push({ key: 'rating', label: `${t('تقييم', 'Rating')} ${minRating}+`, clear: () => setMinRating(0) });
+  if (minRating > 0) activeFilters.push({ key: 'rating', label: `${t('ratingFilter')} ${minRating}+`, clear: () => setMinRating(0) });
 
   const handleSaveSearch = async () => {
     if (!currentUser) {
@@ -242,10 +245,10 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
     setSavingSearch(true);
     try {
       const label = [
-        selectedCategory !== 'all' && categories.find((c) => c.slug === selectedCategory)?.name[language === 'en' ? 'en' : 'ar'],
-        selectedGov !== 'all' && governorates.find((g) => g.id === selectedGov)?.name[language === 'en' ? 'en' : 'ar'],
+        selectedCategory !== 'all' && pickLocalized(categories.find((c) => c.slug === selectedCategory)?.name, language),
+        selectedGov !== 'all' && pickLocalized(governorates.find((g) => g.id === selectedGov)?.name, language),
         searchQuery.trim(),
-      ].filter(Boolean).join(' • ') || t('بحث بدون فلاتر', 'Unfiltered search');
+      ].filter(Boolean).join(' • ') || t('unfilteredSearch');
       const filters: SavedSearchFilters = {};
       if (searchQuery.trim()) filters.q = searchQuery.trim();
       if (selectedCategory !== 'all') filters.categoryId = selectedCategory;
@@ -264,10 +267,10 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
       <div className="bg-[#0B192C] text-white py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex items-center gap-2 text-xs text-amber-300 font-bold">
-            <span>{t('دليل العراق التعليمي', 'Eduraq Directory')}</span><span>/</span><span>{t('استكشاف وتصفية المؤسسات', 'Explore & Facets')}</span>
+            <span>{t('crumbHome')}</span><span>/</span><span>{t('crumbExplore')}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black">{t('دليل المدارس والجامعات والمعاهد في العراق', 'Iraq education directory')}</h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal">{t('تصفح وقارن بين المؤسسات التعليمية المدرجة في كافة المحافظات، مع تفاصيل الأقساط ومعايير القبول.', 'Filter and compare education listings across Iraq, with tuition and admissions details.')}</p>
+          <h1 className="text-2xl sm:text-4xl font-black">{t('title')}</h1>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal">{t('intro')}</p>
         </div>
       </div>
 
@@ -275,21 +278,21 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
         <div className="lg:hidden mb-4 flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <button onClick={() => setMobileFilterOpen(true)} className="flex items-center gap-2 text-xs font-extrabold text-[#0B192C]">
             <SlidersHorizontal className="w-4 h-4" />
-            <span>{t('تصفية النتائج والفلاتر', 'Filter Results')}</span>
+            <span>{t('filterResults')}</span>
           </button>
-          <span className="text-xs text-slate-500 font-bold">{sorted.length} {t('مؤسسة', 'listings')}</span>
+          <span className="text-xs text-slate-500 font-bold">{t('listingsCount', { n: sorted.length })}</span>
         </div>
 
         {activeFilters.length > 0 && (
-          <div className="mb-6 flex flex-wrap items-center gap-2" aria-label={t('الفلاتر النشطة', 'Active filters')}>
-            <span className="me-1 text-xs font-extrabold text-slate-500">{t('تصفية حسب:', 'Filtered by:')}</span>
+          <div className="mb-6 flex flex-wrap items-center gap-2" aria-label={t('activeFilters')}>
+            <span className="me-1 text-xs font-extrabold text-slate-500">{t('filteredBy')}</span>
             {activeFilters.map((filter) => (
               <button key={filter.key} type="button" onClick={filter.clear} className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-800 hover:bg-blue-100">
                 {filter.label}<X className="h-3 w-3" aria-hidden="true" />
               </button>
             ))}
             <button type="button" onClick={clearFilters} className="text-[11px] font-bold text-slate-500 underline-offset-4 hover:text-[#0B192C] hover:underline">
-              {t('مسح الكل', 'Clear all')}
+              {t('clearAll')}
             </button>
           </div>
         )}

@@ -4,14 +4,18 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
 import { SupportedLanguage } from '@/core/types/masterData';
+import { intlLocale } from '@/lib/locales';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 import { Check, ChevronDown, GitCompareArrows, X } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { EXPLORE_COPY } from '../Explore.i18n';
 
-function tuitionLabel(institution: Institution, language: SupportedLanguage, t: (ar: string, en: string) => string) {
-  if (institution.tuition.min === 0) return t('مجاني', 'Free');
+function tuitionLabel(institution: Institution, language: SupportedLanguage, free: string) {
+  if (institution.tuition.min === 0) return free;
   const symbol = institution.tuition.currency === 'USD' ? '$' : 'د.ع';
-  const min = institution.tuition.min.toLocaleString(language === 'ar' ? 'ar-IQ' : 'en-US');
-  const max = institution.tuition.max.toLocaleString(language === 'ar' ? 'ar-IQ' : 'en-US');
+  const min = institution.tuition.min.toLocaleString(intlLocale(language));
+  const max = institution.tuition.max.toLocaleString(intlLocale(language));
   return `${symbol}${min}${institution.tuition.max > institution.tuition.min ? ` - ${symbol}${max}` : ''}`;
 }
 
@@ -24,7 +28,8 @@ export default function CompareTray({
   onRemove: (id: string) => void;
   onClear: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(EXPLORE_COPY);
   const [expanded, setExpanded] = useState(false);
 
   if (institutions.length === 0) return null;
@@ -43,8 +48,8 @@ export default function CompareTray({
               <GitCompareArrows className="h-4 w-4" aria-hidden="true" />
             </span>
             <span>
-              <span className="block text-xs font-extrabold">{t('مقارنة المؤسسات', 'Compare institutions')}</span>
-              <span className="block text-[11px] text-slate-300">{institutions.length}/3 {t('مضافة', 'selected')}</span>
+              <span className="block text-xs font-extrabold">{t('compareTitle')}</span>
+              <span className="block text-[11px] text-slate-300">{t('compareSelected', { n: institutions.length })}</span>
             </span>
             <ChevronDown className={`h-4 w-4 text-slate-300 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
@@ -54,7 +59,7 @@ export default function CompareTray({
             onClick={onClear}
             className="text-[11px] font-bold text-slate-300 underline-offset-4 hover:text-white hover:underline"
           >
-            {t('مسح المقارنة', 'Clear')}
+            {t('compareClear')}
           </button>
         </div>
 
@@ -67,34 +72,34 @@ export default function CompareTray({
                     type="button"
                     onClick={() => onRemove(institution.id)}
                     className="absolute end-2 top-2 rounded-full p-1 text-slate-300 hover:bg-white/10 hover:text-white"
-                    aria-label={t(`إزالة ${institution.name.ar} من المقارنة`, `Remove ${institution.name.en} from comparison`)}
+                    aria-label={t('compareRemove', { name: pickLocalized(institution.name, language) })}
                   >
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                   <div className="pe-5 text-xs font-extrabold leading-5">
-                    {language === 'en' ? institution.name.en : institution.name.ar}
+                    {pickLocalized(institution.name, language)}
                   </div>
                   <div className="mt-2 space-y-1.5 text-[11px] text-slate-300">
                     <div className="flex items-center justify-between gap-2">
-                      <span>{t('القسط', 'Tuition')}</span>
-                      <span className="font-bold text-white">{tuitionLabel(institution, language, t)}</span>
+                      <span>{t('tuition')}</span>
+                      <span className="font-bold text-white">{tuitionLabel(institution, language, t('free'))}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span>{t('التقييم', 'Rating')}</span>
+                      <span>{t('rating')}</span>
                       <span className="font-bold text-white">
-                        {institution.metrics.reviewCount > 0 ? `${institution.metrics.ratingAvg.toFixed(1)} (${institution.metrics.reviewCount})` : t('لا توجد تقييمات', 'No reviews')}
+                        {institution.metrics.reviewCount > 0 ? `${institution.metrics.ratingAvg.toFixed(1)} (${institution.metrics.reviewCount})` : t('noReviews')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span>{t('موثق', 'Verified')}</span>
-                        <Check className={`h-3.5 w-3.5 ${institution.isVerified && isInstitutionEvidenceFresh(institution) ? 'text-emerald-300' : 'text-slate-500'}`} aria-label={institution.isVerified && isInstitutionEvidenceFresh(institution) ? t('نعم', 'Yes') : t('لا', 'No')} />
+                      <span>{t('verified')}</span>
+                        <Check className={`h-3.5 w-3.5 ${institution.isVerified && isInstitutionEvidenceFresh(institution) ? 'text-emerald-300' : 'text-slate-500'}`} aria-label={institution.isVerified && isInstitutionEvidenceFresh(institution) ? t('yes') : t('no')} />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             <p className="mt-3 text-[11px] leading-5 text-slate-300">
-              {t('قارن المعلومات الأساسية قبل فتح التفاصيل والتواصل مع المؤسسة.', 'Compare the essentials before opening a profile or contacting a school.')}
+              {t('compareNote')}
             </p>
           </div>
         )}

@@ -16,6 +16,9 @@ import {
   RotateCcw,
   Navigation,
 } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { EXPLORE_COPY } from '../Explore.i18n';
 
 // The explore page's left faceted-filters sidebar: keyword search, price range, rating
 // threshold, near-me distance, category/governorate selects, accreditation/curriculum
@@ -116,13 +119,14 @@ export default function FilterSidebar({
 
   clearFilters: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(EXPLORE_COPY);
 
   return (
     <aside className={`lg:col-span-4 space-y-6 ${mobileFilterOpen ? 'fixed inset-0 z-50 bg-white p-6 overflow-y-auto block' : 'hidden lg:block'}`}>
       {mobileFilterOpen && (
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
-          <h3 className="font-extrabold text-slate-900 text-sm">{t('فلاتر البحث', 'Filters')}</h3>
+          <h3 className="font-extrabold text-slate-900 text-sm">{t('filters')}</h3>
           <button onClick={() => setMobileFilterOpen(false)} className="p-1 text-slate-500">
             <X className="w-5 h-5" />
           </button>
@@ -135,26 +139,26 @@ export default function FilterSidebar({
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-blue-700" />
-            <span className="font-extrabold text-sm text-[#0B192C]">{t('تصفية حسب', 'Filter By')}</span>
+            <span className="font-extrabold text-sm text-[#0B192C]">{t('filterBy')}</span>
           </div>
           <button
             onClick={clearFilters}
             className="text-xs font-bold text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>{t('إعادة ضبط', 'Reset')}</span>
+            <span>{t('reset')}</span>
           </button>
         </div>
 
         {/* Keyword Search Input */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2">{t('البحث بالاسم أو الكلمة المفتاحية', 'Keyword Search')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('keywordSearch')}</label>
           <div className="relative">
             <SearchAutocomplete
               value={searchQuery}
               onChange={setSearchQuery}
               onSubmit={() => {}}
-              placeholder={t('مثال: بغداد، طب، بريطاني...', 'e.g. Medicine, British...')}
+              placeholder={t('keywordPlaceholder')}
               className="w-full"
               inputClassName="w-full text-xs px-3 py-2.5 ps-9 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 font-medium"
               institutions={institutions}
@@ -168,7 +172,7 @@ export default function FilterSidebar({
         {/* Price Range */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-bold text-slate-700">{t('الميزانية السنوية', 'Annual Budget')}</label>
+            <label className="block text-xs font-bold text-slate-700">{t('annualBudget')}</label>
             <div className="flex rounded-lg overflow-hidden border border-slate-200 text-[10px] font-bold">
               {(['IQD', 'USD'] as const).map((cur) => (
                 <button
@@ -188,7 +192,7 @@ export default function FilterSidebar({
               min={0}
               value={priceMin}
               onChange={(e) => setPriceMin(e.target.value)}
-              placeholder={t('من', 'Min')}
+              placeholder={t('min')}
               className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-blue-600"
             />
             <span className="text-slate-300 text-xs">—</span>
@@ -197,7 +201,7 @@ export default function FilterSidebar({
               min={0}
               value={priceMax}
               onChange={(e) => setPriceMax(e.target.value)}
-              placeholder={t('إلى', 'Max')}
+              placeholder={t('max')}
               className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-blue-600"
             />
           </div>
@@ -205,7 +209,7 @@ export default function FilterSidebar({
 
         {/* Rating Threshold */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2">{t('الحد الأدنى للتقييم', 'Minimum Rating')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('minRating')}</label>
           <div className="flex gap-2">
             {[0, 3, 4].map((r) => (
               <button
@@ -217,7 +221,7 @@ export default function FilterSidebar({
                 }`}
               >
                 {r === 0 ? (
-                  t('الكل', 'Any')
+                  t('any')
                 ) : (
                   <>
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -239,7 +243,7 @@ export default function FilterSidebar({
             }`}
           >
             <Navigation className="w-3.5 h-3.5" />
-            <span>{nearMeCoords ? t('القريب مني مفعّل', 'Near Me is on') : t('البحث بالقرب مني', 'Search Near Me')}</span>
+            <span>{nearMeCoords ? t('nearMeOn') : t('nearMe')}</span>
           </button>
           {nearMeCoords && (
             <select
@@ -248,7 +252,7 @@ export default function FilterSidebar({
               className="w-full mt-2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 cursor-pointer focus:outline-blue-600"
             >
               {[5, 10, 25, 50, 100].map((km) => (
-                <option key={km} value={km}>{t(`ضمن ${km} كم`, `Within ${km} km`)}</option>
+                <option key={km} value={km}>{t('withinKm', { km })}</option>
               ))}
             </select>
           )}
@@ -257,7 +261,7 @@ export default function FilterSidebar({
 
         {/* Categories Filter */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2">{t('الفئة التعليمية', 'Category')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('category')}</label>
           <div className="space-y-1.5">
             <label
               onClick={() => setSelectedCategory('all')}
@@ -265,7 +269,7 @@ export default function FilterSidebar({
                 selectedCategory === 'all' ? 'bg-blue-50 font-bold text-blue-900' : 'hover:bg-slate-50 text-slate-600 font-medium'
               }`}
             >
-              <span>{t('كافة الفئات', 'All Categories')}</span>
+              <span>{t('allCategories')}</span>
               <span className="text-[10px] text-slate-400 font-mono">{institutions.length}</span>
             </label>
 
@@ -281,7 +285,7 @@ export default function FilterSidebar({
                     isSelected ? 'bg-blue-50 font-bold text-blue-900' : 'hover:bg-slate-50 text-slate-600 font-medium'
                   }`}
                 >
-                  <span>{language === 'en' ? cat.name.en : cat.name.ar}</span>
+                  <span>{pickLocalized(cat.name, language)}</span>
                   <span className="text-[10px] text-slate-400 font-mono">{count}</span>
                 </label>
               );
@@ -291,16 +295,16 @@ export default function FilterSidebar({
 
         {/* Iraqi Governorates Filter (Dynamic - Zero Hardcoding) */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2">{t('المحافظة العراقية', 'Governorate (18)')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('governorateLabel')}</label>
           <select
             value={selectedGov}
             onChange={(e) => setSelectedGov(e.target.value)}
             className="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 cursor-pointer focus:outline-blue-600"
           >
-            <option value="all">{t('كافة محافظات العراق (18)', 'All Iraqi Governorates (18)')}</option>
+            <option value="all">{t('allGovernorates')}</option>
             {governorates.map((gov) => (
               <option key={gov.id} value={gov.id}>
-                {language === 'en' ? gov.name.en : gov.name.ar} ({gov.region})
+                {pickLocalized(gov.name, language)} ({gov.region})
               </option>
             ))}
           </select>
@@ -308,7 +312,7 @@ export default function FilterSidebar({
 
         {/* Accreditations (MoHESR / MoE / IB / Cambridge) */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2">{t('الاعتماد والترخيص الرسمي', 'Official Accreditation')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-2">{t('accreditation')}</label>
           <div className="space-y-2">
             {accreditations.map((acc) => {
               const isChecked = selectedAccreditations.includes(acc.id);
@@ -323,7 +327,7 @@ export default function FilterSidebar({
                   }`}>
                     {isChecked && <Check className="w-3 h-3" />}
                   </div>
-                  <span>{language === 'en' ? acc.name.en : acc.name.ar}</span>
+                  <span>{pickLocalized(acc.name, language)}</span>
                 </label>
               );
             })}
@@ -333,7 +337,7 @@ export default function FilterSidebar({
         {/* Curriculum (Iraqi / British / American / etc.) */}
         {curricula.length > 0 && (
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">{t('المنهج الدراسي', 'Curriculum')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-2">{t('curriculum')}</label>
             <div className="space-y-2">
               {curricula.map((curr) => {
                 const isChecked = selectedCurricula.includes(curr.id);
@@ -348,7 +352,7 @@ export default function FilterSidebar({
                     }`}>
                       {isChecked && <Check className="w-3 h-3" />}
                     </div>
-                    <span>{language === 'en' ? curr.name.en : curr.name.ar}</span>
+                    <span>{pickLocalized(curr.name, language)}</span>
                   </label>
                 );
               })}
@@ -361,7 +365,7 @@ export default function FilterSidebar({
           <label className="flex items-center justify-between cursor-pointer">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-bold text-slate-800">{t('المؤسسات الموثقة وزارياً فقط', 'Verified by Ministry Only')}</span>
+              <span className="text-xs font-bold text-slate-800">{t('ministryVerified')}</span>
             </div>
             <input
               type="checkbox"
@@ -377,7 +381,7 @@ export default function FilterSidebar({
             onClick={() => setMobileFilterOpen(false)}
             className="w-full py-3 bg-[#0B192C] text-white rounded-xl text-xs font-bold mt-4"
           >
-            {t('تطبيق الفلاتر', 'Apply Filters')}
+            {t('applyFilters')}
           </button>
         )}
       </div>

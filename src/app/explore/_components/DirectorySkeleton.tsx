@@ -1,12 +1,17 @@
+'use client';
+
 import React from 'react';
+import { useT } from '@/lib/useT';
+import { EXPLORE_COPY } from '../Explore.i18n';
 
 function SkeletonBlock({ className }: { className: string }) {
   return <div className={`animate-pulse rounded-lg bg-slate-200/80 ${className}`} aria-hidden="true" />;
 }
 
 export default function DirectorySkeleton() {
+  const t = useT(EXPLORE_COPY);
   return (
-    <div className="min-h-screen bg-[#F8FAFC]" role="status" aria-label="Loading directory">
+    <div className="min-h-screen bg-[#F8FAFC]" role="status" aria-label={t('loadingDirectory')}>
       <div className="h-16 border-b border-slate-200 bg-white" />
       <div className="bg-[#0B192C] px-4 py-12 sm:px-8">
         <div className="mx-auto max-w-7xl space-y-4">
