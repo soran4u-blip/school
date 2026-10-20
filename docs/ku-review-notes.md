@@ -62,3 +62,15 @@ Known gaps in this slice (not Sorani-specific):
   back to Arabic until WP3 adds it.
 - `layout.tsx` metadata (titles/descriptions) for these routes is owned by WP2.
 - Phone/WhatsApp message templates (pre-filled chat text) are translated like any other string.
+
+## WP4b — community (`src/app/community/**`)
+
+Dictionary: `src/app/community/Community.i18n.ts`. Drafted by Claude, not native-reviewed.
+
+- `/community` has no `/ku` URL tree by design (see `community/layout.tsx`: posts are user-written,
+  single-language content), so the UI follows the saved language preference only.
+- User posts and replies are shown as submitted; only the surrounding UI is translated.
+- Uncertain terms: «کۆمەڵگە» (community), «فۆرومی ئینتەراکتیڤی دایک و باوکان» (interactive parents
+  forum), «چاوەڕێی وەڵام» (awaiting reply), «سوودبەخش» (helpful), the relative-time phrasing
+  («… لەمەوبەر»), and «باخچەی منداڵان» for kindergarten.
+- The trending-topic chips keep Arabic search terms (posts are mostly Arabic) with translated labels.

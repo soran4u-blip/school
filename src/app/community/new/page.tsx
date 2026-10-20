@@ -9,9 +9,13 @@ import { getGovernorates } from '@/core/services/masterDataService';
 import { Governorate } from '@/core/types/masterData';
 import { isCooldownActive, markSubmitted } from '@/lib/spamGuard';
 import { CheckCircle2 } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { COMMUNITY_COPY } from '../Community.i18n';
 
 export default function NewCommunityPostPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(COMMUNITY_COPY);
   const router = useRouter();
 
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
@@ -31,17 +35,17 @@ export default function NewCommunityPostPage() {
     if (form.hp) return; // honeypot tripped — silently drop
 
     if (!form.authorName.trim() || !form.governorateId || !form.title.trim() || !form.body.trim()) {
-      setError(t('يرجى تعبئة كل الحقول', 'Please fill in every field'));
+      setError(t('fillAll'));
       return;
     }
 
     if (form.authorName.trim().length > 80 || form.title.trim().length > 120 || form.body.trim().length > 2000) {
-      setError(t('تحقق من حدود الأحرف: الاسم 80، العنوان 120، التفاصيل 2000.', 'Please check character limits: name 80, title 120, details 2,000.'));
+      setError(t('newLimits'));
       return;
     }
 
     if (isCooldownActive('community-post')) {
-      setError(t('يرجى الانتظار قليلاً قبل نشر سؤال آخر', 'Please wait a moment before posting another question'));
+      setError(t('postWait'));
       return;
     }
 
@@ -64,7 +68,7 @@ export default function NewCommunityPostPage() {
       markSubmitted('community-post');
       setSubmitted(true);
     } catch {
-      setError(t('تعذر نشر سؤالك، حاول مرة أخرى', 'Failed to post your question, please try again'));
+      setError(t('postFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -76,24 +80,24 @@ export default function NewCommunityPostPage() {
 
       <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-[#123D35]">{t('ابدأ نقاشاً جديداً', 'Start a new discussion')}</h1>
+          <h1 className="text-2xl font-extrabold text-[#123D35]">{t('newTitle')}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {t('اطرح سؤالك على مجتمع الأهالي والطلاب. سيظهر سؤالك بعد مراجعته من الإدارة.', 'Ask your question to the parent and student community. It appears after admin review.')}
+            {t('newIntro')}
           </p>
         </div>
 
         {submitted ? (
           <div className="bg-white p-8 rounded-2xl border border-[#E8E6DE] shadow-sm text-center space-y-4">
             <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-            <h2 className="font-extrabold text-lg text-slate-900">{t('تم استلام سؤالك', 'Your question was received')}</h2>
+            <h2 className="font-extrabold text-lg text-slate-900">{t('received')}</h2>
             <p className="text-sm text-slate-500">
-              {t('سيظهر سؤالك في صفحة المجتمع بعد الموافقة عليه من الإدارة.', 'It will appear on the community page once approved by an admin.')}
+              {t('receivedNote')}
             </p>
             <button
               onClick={() => router.push('/community')}
               className="px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold"
             >
-              {t('العودة للمجتمع', 'Back to Community')}
+              {t('backToCommunity')}
             </button>
           </div>
         ) : (
@@ -101,7 +105,7 @@ export default function NewCommunityPostPage() {
             <input type="text" value={form.hp} onChange={(e) => setForm({ ...form, hp: e.target.value })} className="hidden" tabIndex={-1} autoComplete="off" />
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('اسمك', 'Your name')}</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('yourName')}</label>
               <input
                 type="text"
                 required
@@ -114,27 +118,27 @@ export default function NewCommunityPostPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('المحافظة', 'Governorate')}</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('governorate')}</label>
               <select
                 required
                 value={form.governorateId}
                 onChange={(e) => setForm({ ...form, governorateId: e.target.value })}
                 className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium bg-white"
               >
-                <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
+                <option value="">{t('selectGovernorate')}</option>
                 {governorates.map((g) => (
-                  <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+                  <option key={g.id} value={g.id}>{pickLocalized(g.name, language)}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('عنوان السؤال', 'Question title')}</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('questionTitle')}</label>
               <input
                 type="text"
                 required
                 maxLength={120}
-                placeholder={t('مثال: أفضل مدرسة ابتدائية في الكرخ؟', 'e.g. Best primary school in Karkh?')}
+                placeholder={t('titlePlaceholder')}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium"
@@ -142,12 +146,12 @@ export default function NewCommunityPostPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('تفاصيل السؤال', 'Details')}</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('details')}</label>
               <textarea
                 required
                 rows={5}
                 maxLength={2000}
-                placeholder={t('اكتب التفاصيل التي تساعد الآخرين على فهم سؤالك...', 'Add enough detail to help others understand your question...')}
+                placeholder={t('detailsPlaceholder')}
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
                 className="w-full px-3 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-medium resize-y focus:outline-none focus:ring-2 focus:ring-[#28675A]/30 focus:border-[#28675A]"
@@ -155,7 +159,7 @@ export default function NewCommunityPostPage() {
               <p className="text-[11px] text-slate-400 text-end mt-1">{form.body.length}/2000</p>
             </div>
 
-            <p className="text-xs text-slate-500">{t('لا تضف أرقام هواتف أو معلومات شخصية حساسة. سيُراجع السؤال قبل ظهوره.', 'Avoid phone numbers or sensitive personal information. Your question will be reviewed before it appears.')}</p>
+            <p className="text-xs text-slate-500">{t('privacyNote')}</p>
             {error && <p role="alert" className="text-sm font-semibold text-rose-600">{error}</p>}
 
             <button
@@ -163,7 +167,7 @@ export default function NewCommunityPostPage() {
               disabled={submitting || !form.authorName.trim() || !form.governorateId || !form.title.trim() || !form.body.trim()}
               className="w-full px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
             >
-              {submitting ? t('جاري النشر...', 'Posting...') : t('نشر السؤال', 'Post question')}
+              {submitting ? t('publishing') : t('postQuestion')}
             </button>
           </form>
         )}
