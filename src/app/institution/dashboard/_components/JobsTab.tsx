@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import LocalizedField from '@/components/shared/LocalizedField';
 import Link from 'next/link';
 import { Plus, Briefcase, Users, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
@@ -68,38 +69,20 @@ export default function JobsTab({
 
               {editingJob && (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      placeholder={t('jobTitleAr')}
-                      value={editingJob.title.ar}
-                      onChange={(e) => setEditingJob({ ...editingJob, title: { ...editingJob.title, ar: e.target.value } })}
-                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('jobTitleEn')}
-                      value={editingJob.title.en}
-                      onChange={(e) => setEditingJob({ ...editingJob, title: { ...editingJob.title, en: e.target.value } })}
-                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <textarea
-                      rows={3}
-                      placeholder={t('jobDescriptionAr')}
-                      value={editingJob.description.ar}
-                      onChange={(e) => setEditingJob({ ...editingJob, description: { ...editingJob.description, ar: e.target.value } })}
-                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-                    />
-                    <textarea
-                      rows={3}
-                      placeholder={t('jobDescriptionEn')}
-                      value={editingJob.description.en}
-                      onChange={(e) => setEditingJob({ ...editingJob, description: { ...editingJob.description, en: e.target.value } })}
-                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-                    />
-                  </div>
+                  <LocalizedField
+            compact
+            labels={{ ar: t('jobTitleAr'), en: t('jobTitleEn'), ku: t('jobTitleKu') }}
+            value={editingJob.title}
+            onChange={(v) => setEditingJob({ ...editingJob, title: v })}
+          />
+                  <LocalizedField
+            compact
+            multiline
+            inputClassName="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
+            labels={{ ar: t('jobDescriptionAr'), en: t('jobDescriptionEn'), ku: t('jobDescriptionKu') }}
+            value={editingJob.description}
+            onChange={(v) => setEditingJob({ ...editingJob, description: v })}
+          />
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <select
                       value={editingJob.employmentType}

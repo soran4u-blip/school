@@ -7,7 +7,7 @@ import { Governorate, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import PhotoFocalPointPicker from '@/components/shared/PhotoFocalPointPicker';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
-import BilingualTextField from '@/components/shared/BilingualTextField';
+import LocalizedField from '@/components/shared/LocalizedField';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
 import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
 import { getTutorCompleteness } from '@/lib/utils';
@@ -114,36 +114,26 @@ export default function ProfileTab({
           />
         )}
 
-        <BilingualTextField
-          labelAr={t('fullNameAr')}
-          labelEn={t('fullNameEn')}
-          valueAr={tutor.fullName?.ar || ''}
-          valueEn={tutor.fullName?.en || ''}
-          onChangeAr={(v) => setTutor({ ...tutor, fullName: { ...tutor.fullName, ar: v } })}
-          onChangeEn={(v) => setTutor({ ...tutor, fullName: { ...tutor.fullName, en: v } })}
+        <LocalizedField
+          labels={{ ar: t('fullNameAr'), en: t('fullNameEn'), ku: t('fullNameKu') }}
+          value={tutor.fullName}
+          onChange={(v) => setTutor({ ...tutor, fullName: v })}
         />
 
-        <BilingualTextField
-          labelAr={t('titleAr')}
-          labelEn={t('titleEn')}
-          valueAr={tutor.title?.ar || ''}
-          valueEn={tutor.title?.en || ''}
-          onChangeAr={(v) => setTutor({ ...tutor, title: { ...tutor.title, ar: v } })}
-          onChangeEn={(v) => setTutor({ ...tutor, title: { ...tutor.title, en: v } })}
-          placeholderAr="أستاذ الفيزياء للفرع العلمي"
-          placeholderEn="Senior Physics Instructor"
+        <LocalizedField
+          labels={{ ar: t('titleAr'), en: t('titleEn'), ku: t('titleKu') }}
+          value={tutor.title}
+          onChange={(v) => setTutor({ ...tutor, title: v })}
+          placeholders={{ ar: 'أستاذ الفيزياء للفرع العلمي', en: 'Senior Physics Instructor', ku: 'مامۆستای بالای فیزیا بۆ بەشی زانستی' }}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('bioAr')}</label>
-            <textarea rows={4} value={tutor.bio?.ar || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('bioEn')}</label>
-            <textarea rows={4} dir="ltr" value={tutor.bio?.en || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: tutor.bio?.ar || '', en: e.target.value } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
-          </div>
-        </div>
+        <LocalizedField
+          labels={{ ar: t('bioAr'), en: t('bioEn'), ku: t('bioKu') }}
+          value={tutor.bio}
+          onChange={(v) => setTutor({ ...tutor, bio: v })}
+          multiline
+          rows={4}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>

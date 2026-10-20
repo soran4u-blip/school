@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import LocalizedField from '@/components/shared/LocalizedField';
 import Link from 'next/link';
 import { Plus, Trash2, Save, Users } from 'lucide-react';
 import { useT } from '@/lib/useT';
@@ -48,41 +49,23 @@ export default function ProgramsTab({
               <div className="space-y-3">
                 {programs.map((prog) => (
                   <div key={prog.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder={t('programNameAr')}
-                        value={prog.name.ar}
-                        onChange={(e) => updateProgram(prog.id, { name: { ...prog.name, ar: e.target.value } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        placeholder={t('programNameEn')}
-                        value={prog.name.en}
-                        onChange={(e) => updateProgram(prog.id, { name: { ...prog.name, en: e.target.value } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                      />
-                    </div>
+                    <LocalizedField
+            compact
+            inputClassName="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+            labels={{ ar: t('programNameAr'), en: t('programNameEn'), ku: t('programNameKu') }}
+            value={prog.name}
+            onChange={(v) => updateProgram(prog.id, { name: v })}
+          />
                     {/* Faculty gets one input per language, same as the program name above. It used
                         to be a single field writing the same string into both halves, so typing an
                         Arabic faculty name silently overwrote the English one (and vice versa). */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder={t('facultyAr')}
-                        value={prog.facultyName.ar}
-                        onChange={(e) => updateProgram(prog.id, { facultyName: { ...prog.facultyName, ar: e.target.value } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        placeholder={t('facultyEn')}
-                        value={prog.facultyName.en}
-                        onChange={(e) => updateProgram(prog.id, { facultyName: { ...prog.facultyName, en: e.target.value } })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                      />
-                    </div>
+                    <LocalizedField
+            compact
+            inputClassName="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+            labels={{ ar: t('facultyAr'), en: t('facultyEn'), ku: t('facultyKu') }}
+            value={prog.facultyName}
+            onChange={(v) => updateProgram(prog.id, { facultyName: v })}
+          />
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 mb-1">{t('durationYears')}</label>

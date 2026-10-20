@@ -8,8 +8,7 @@ import { Institution } from '@/core/types/institution';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import DocumentUploadField from '@/components/shared/DocumentUploadField';
-import BilingualTextField from '@/components/shared/BilingualTextField';
-import BilingualTextarea from '@/components/shared/BilingualTextarea';
+import LocalizedField from '@/components/shared/LocalizedField';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
 import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
 import { getInstitutionCompletenessFromGuardrails } from '@/lib/publishingGuardrails';
@@ -99,43 +98,32 @@ export default function ProfileTab({
           />
         </div>
 
-        <BilingualTextField
-          labelAr={t('nameAr')}
-          labelEn={t('nameEn')}
-          valueAr={institution.name?.ar || ''}
-          valueEn={institution.name?.en || ''}
-          onChangeAr={(v) => setInstitution({ ...institution, name: { ...institution.name, ar: v } })}
-          onChangeEn={(v) => setInstitution({ ...institution, name: { ...institution.name, en: v } })}
+        <LocalizedField
+          labels={{ ar: t('nameAr'), en: t('nameEn'), ku: t('nameKu') }}
+          value={institution.name}
+          onChange={(v) => setInstitution({ ...institution, name: v })}
         />
 
-        <BilingualTextField
-          labelAr={t('taglineAr')}
-          labelEn={t('taglineEn')}
-          valueAr={institution.tagline?.ar || ''}
-          valueEn={institution.tagline?.en || ''}
-          onChangeAr={(v) => setInstitution({ ...institution, tagline: { ...institution.tagline, ar: v } })}
-          onChangeEn={(v) => setInstitution({ ...institution, tagline: { ...institution.tagline, en: v } })}
+        <LocalizedField
+          labels={{ ar: t('taglineAr'), en: t('taglineEn'), ku: t('taglineKu') }}
+          value={institution.tagline}
+          onChange={(v) => setInstitution({ ...institution, tagline: v })}
         />
 
-        <BilingualTextarea
-          labelAr={t('descriptionAr')}
-          labelEn={t('descriptionEn')}
-          valueAr={institution.description?.ar || ''}
-          valueEn={institution.description?.en || ''}
-          onChangeAr={(v) => setInstitution({ ...institution, description: { ...institution.description, ar: v } })}
-          onChangeEn={(v) => setInstitution({ ...institution, description: { ...institution.description, en: v } })}
+        <LocalizedField
+          labels={{ ar: t('descriptionAr'), en: t('descriptionEn'), ku: t('descriptionKu') }}
+          value={institution.description}
+          onChange={(v) => setInstitution({ ...institution, description: v })}
+          multiline
         />
 
         {/* Address is a LocalizedString and the public profile renders whichever half matches the
             visitor's language — but the form only ever exposed the Arabic one, so the English
             address could never be filled in. */}
-        <BilingualTextField
-          labelAr={t('addressAr')}
-          labelEn={t('addressEn')}
-          valueAr={institution.address?.ar || ''}
-          valueEn={institution.address?.en || ''}
-          onChangeAr={(v) => setInstitution({ ...institution, address: { ...institution.address, ar: v } })}
-          onChangeEn={(v) => setInstitution({ ...institution, address: { ...institution.address, en: v } })}
+        <LocalizedField
+          labels={{ ar: t('addressAr'), en: t('addressEn'), ku: t('addressKu') }}
+          value={institution.address}
+          onChange={(v) => setInstitution({ ...institution, address: v })}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -212,15 +200,11 @@ export default function ProfileTab({
 
         {/* Working hours show on the public contact card but had no field here at all, so no
             institution could ever set them. */}
-        <BilingualTextField
-          labelAr={t('hoursAr')}
-          labelEn={t('hoursEn')}
-          valueAr={institution.contact?.workingHours?.ar || ''}
-          valueEn={institution.contact?.workingHours?.en || ''}
-          onChangeAr={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: { ar: v, en: institution.contact?.workingHours?.en || '' } } })}
-          onChangeEn={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: { ar: institution.contact?.workingHours?.ar || '', en: v } } })}
-          placeholderAr="الأحد - الخميس، 8:00 ص - 3:00 م"
-          placeholderEn="Sun - Thu, 8:00 AM - 3:00 PM"
+        <LocalizedField
+          labels={{ ar: t('hoursAr'), en: t('hoursEn'), ku: t('hoursKu') }}
+          value={institution.contact?.workingHours}
+          onChange={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: v } })}
+          placeholders={{ ar: 'الأحد - الخميس، 8:00 ص - 3:00 م', en: 'Sun - Thu, 8:00 AM - 3:00 PM', ku: 'یەکشەممە - پێنجشەممە، 8:00ی بەیانی - 3:00ی دوانیوەڕۆ' }}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

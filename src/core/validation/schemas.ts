@@ -101,7 +101,7 @@ export const listingAdminUpdateSchema = z
 
 // Superadmin edit to the single system_settings/global doc (/api/admin/settings). Every field is
 // optional so the admin settings form can PATCH just the section it changed.
-const localizedStringSchema = z.object({ ar: z.string(), en: z.string() });
+const localizedStringSchema = z.object({ ar: z.string(), en: z.string(), ku: z.string().optional() });
 
 export const systemSettingsUpdateSchema = z.object({
   siteName: localizedStringSchema.optional(),

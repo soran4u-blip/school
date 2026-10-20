@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import LocalizedField from './LocalizedField';
 import { Plus, CalendarDays, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { EduEvent } from '@/core/types/event';
@@ -57,38 +58,20 @@ export default function EventsManager({
 
       {editingEvent && (
         <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              placeholder={t('titleAr')}
-              value={editingEvent.title.ar}
-              onChange={(e) => setEditingEvent({ ...editingEvent, title: { ...editingEvent.title, ar: e.target.value } })}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder={t('titleEn')}
-              value={editingEvent.title.en}
-              onChange={(e) => setEditingEvent({ ...editingEvent, title: { ...editingEvent.title, en: e.target.value } })}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <textarea
-              rows={3}
-              placeholder={t('descAr')}
-              value={editingEvent.description.ar}
-              onChange={(e) => setEditingEvent({ ...editingEvent, description: { ...editingEvent.description, ar: e.target.value } })}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-            />
-            <textarea
-              rows={3}
-              placeholder={t('descEn')}
-              value={editingEvent.description.en}
-              onChange={(e) => setEditingEvent({ ...editingEvent, description: { ...editingEvent.description, en: e.target.value } })}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
-            />
-          </div>
+          <LocalizedField
+            compact
+            labels={{ ar: t('titleAr'), en: t('titleEn'), ku: t('titleKu') }}
+            value={editingEvent.title}
+            onChange={(v) => setEditingEvent({ ...editingEvent, title: v })}
+          />
+          <LocalizedField
+            compact
+            multiline
+            inputClassName="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg resize-none"
+            labels={{ ar: t('descAr'), en: t('descEn'), ku: t('descKu') }}
+            value={editingEvent.description}
+            onChange={(v) => setEditingEvent({ ...editingEvent, description: v })}
+          />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <select
               value={editingEvent.eventType}

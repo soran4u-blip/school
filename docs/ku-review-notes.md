@@ -99,3 +99,14 @@ Known gaps (not string translation):
 - `EMPLOYMENT_LABELS` (jobs) and `AvailabilityTab` `DAY_LABELS` have no `ku`; `completeness.missingFields`
   (`lib/publishingGuardrails`) has no `ku`. These fall back to Arabic.
 - Admin institutions list shows `name.en` on the secondary line for Sorani readers.
+
+## WP4d — Sorani input fields and demo data
+
+- Owner dashboards (institution profile / programs / jobs, employer jobs, tutor profile, events manager) now use
+  `src/components/shared/LocalizedField.tsx`: one input per language (Arabic, English, Sorani). Saving one language keeps the others.
+  The admin forms are unchanged (still Arabic/English only).
+- `src/core/seed/seedData.json`: every localized field now has a Sorani draft (cities, categories, taxonomies, search tags, the 4 seeded
+  institutions with programs, the 2 seeded tutors, site name and announcement). Review the names and descriptions with a native speaker.
+- `scripts/backfill-ku.mjs` fills `ku` on documents already in Firestore from those translations plus a small list of demo accounts (AUIB,
+  UNICEF Basra, the E2E test institution). Dry run by default; `--write` applies. Real users' names and bios are not machine-translated.
+- `localizedStringSchema` (admin settings) now keeps `ku` instead of stripping it.
