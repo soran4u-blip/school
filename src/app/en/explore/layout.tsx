@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { siteUrl } from '@/lib/siteUrl';
+import { buildLocaleMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Explore Schools, Universities & Institutes',
-  alternates: {
-    canonical: '/en/explore',
-    languages: { 'ar-IQ': `${siteUrl}/explore`, en: `${siteUrl}/en/explore` },
-  },
-};
+export const metadata = buildLocaleMetadata('en', '/explore', { title: 'Explore Schools, Universities & Institutes' });
 
 export default function ExploreEnLayout({ children }: { children: React.ReactNode }) {
   return children;

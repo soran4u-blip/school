@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { siteUrl } from '@/lib/siteUrl';
+import { buildLocaleMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Find Private Tutors in Iraq',
-  alternates: {
-    canonical: '/en/tutors',
-    languages: { 'ar-IQ': `${siteUrl}/tutors`, en: `${siteUrl}/en/tutors` },
-  },
-};
+export const metadata = buildLocaleMetadata('en', '/tutors', { title: 'Find Private Tutors in Iraq' });
 
 export default function TutorsEnLayout({ children }: { children: React.ReactNode }) {
   return children;

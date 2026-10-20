@@ -91,3 +91,21 @@ describe('search normalisation', () => {
     expect(matchesLocalized(undefined, 'x')).toBe(false);
   });
 });
+
+describe('seo helpers', () => {
+  it('builds absolute per-language URLs and a reciprocal hreflang map', async () => {
+    const { absoluteLocaleUrl, hreflangUrls, localeAlternates, buildLocaleMetadata } = await import('./seo');
+    const base = absoluteLocaleUrl('/', 'ar');
+    expect(absoluteLocaleUrl('/', 'ku')).toBe(`${base}/ku`);
+    expect(absoluteLocaleUrl('/tutors/ali', 'en')).toBe(`${base}/en/tutors/ali`);
+
+    const map = hreflangUrls('/explore');
+    expect(Object.keys(map).sort()).toEqual(['ar-IQ', 'ckb', 'en', 'x-default']);
+    expect(map['ckb']).toBe(`${base}/ku/explore`);
+    expect(map['x-default']).toBe(map['ar-IQ']);
+
+    expect(localeAlternates('/explore', 'ku').canonical).toBe('/ku/explore');
+    expect(localeAlternates('/', 'ar').canonical).toBe('/');
+    expect(buildLocaleMetadata('ku', '/jobs', { title: 'x' }).alternates?.languages).toEqual(hreflangUrls('/jobs'));
+  });
+});

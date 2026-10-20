@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { siteUrl } from '@/lib/siteUrl';
+import { buildLocaleMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'My Job Applications',
-  alternates: {
-    canonical: '/en/my-applications',
-    languages: { 'ar-IQ': `${siteUrl}/my-applications`, en: `${siteUrl}/en/my-applications` },
-  },
-};
+export const metadata = buildLocaleMetadata('en', '/my-applications', { title: 'My Job Applications' });
 
 export default function MyApplicationsEnLayout({ children }: { children: React.ReactNode }) {
   return children;

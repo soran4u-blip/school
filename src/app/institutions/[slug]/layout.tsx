@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getPublicInstitutionBySlug } from '@/core/server/data/institutions';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-import { siteUrl } from '@/lib/siteUrl';
+import { localeAlternates } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -35,13 +35,7 @@ export async function generateMetadata({
       description,
       images: institution.coverImageUrl ? [institution.coverImageUrl] : undefined,
     },
-    alternates: {
-      canonical: `/institutions/${institution.slug}`,
-      languages: {
-        'ar-IQ': `${siteUrl}/institutions/${institution.slug}`,
-        en: `${siteUrl}/en/institutions/${institution.slug}`,
-      },
-    },
+    alternates: localeAlternates(`/institutions/${institution.slug}`, 'ar'),
   };
 }
 

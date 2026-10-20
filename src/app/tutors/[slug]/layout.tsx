@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getPublicTutorBySlug } from '@/core/server/data/tutors';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-import { siteUrl } from '@/lib/siteUrl';
+import { localeAlternates } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -35,13 +35,7 @@ export async function generateMetadata({
       description,
       images: tutor.photoUrl ? [tutor.photoUrl] : undefined,
     },
-    alternates: {
-      canonical: `/tutors/${tutor.slug || tutor.id}`,
-      languages: {
-        'ar-IQ': `${siteUrl}/tutors/${tutor.slug || tutor.id}`,
-        en: `${siteUrl}/en/tutors/${tutor.slug || tutor.id}`,
-      },
-    },
+    alternates: localeAlternates(`/tutors/${tutor.slug || tutor.id}`, 'ar'),
   };
 }
 

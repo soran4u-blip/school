@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getPublicJobBySlug } from '@/core/server/data/jobs';
 import { getPublicInstitutionBySlug } from '@/core/server/data/institutions';
 import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-import { siteUrl } from '@/lib/siteUrl';
+import { localeAlternates } from '@/lib/seo';
 
 const EMPLOYMENT_TYPE_SCHEMA: Record<string, string> = {
   FULL_TIME: 'FULL_TIME',
@@ -41,13 +41,7 @@ export async function generateMetadata({
       title,
       description,
     },
-    alternates: {
-      canonical: `/jobs/${job.slug || job.id}`,
-      languages: {
-        'ar-IQ': `${siteUrl}/jobs/${job.slug || job.id}`,
-        en: `${siteUrl}/en/jobs/${job.slug || job.id}`,
-      },
-    },
+    alternates: localeAlternates(`/jobs/${job.slug || job.id}`, 'ar'),
   };
 }
 
