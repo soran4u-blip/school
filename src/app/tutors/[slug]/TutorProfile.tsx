@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
@@ -41,6 +41,7 @@ export default function TutorProfile({
   initialReviews: Review[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { language } = useLanguage();
   const t = useT(TUTOR_PROFILE_COPY);
@@ -100,10 +101,10 @@ export default function TutorProfile({
       setJoinBookingId(searchParams.get('bookGroup') || undefined);
       setForm({ subjectId: subjects[0]?.id || '', recurring: false, weeks: 4 });
       setResult(null);
-      router.replace(localeHref(`/tutors/${tutor.slug || tutor.id}`, language), { scroll: false });
+      router.replace(pathname, { scroll: false }); // drops the booking params, stays in the current language tree
     }, 0);
     return () => window.clearTimeout(restore);
-  }, [bookingMode, currentUser, language, router, searchParams, selectedSlot, subjects, tutor.id, tutor.slug]);
+  }, [bookingMode, currentUser, pathname, router, searchParams, selectedSlot, subjects, tutor.id, tutor.slug]);
 
   // Slot availability is the one piece that must stay live rather than server-rendered — it
   // changes as other students book.

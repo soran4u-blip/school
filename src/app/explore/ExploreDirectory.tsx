@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useSyncExternalStore, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
+import { DEFAULT_LANGUAGE, localeFromPathname } from '@/lib/locales';
 import { saveSearch } from '@/core/services/savedSearchService';
 import { SavedSearchFilters } from '@/core/types/savedSearch';
 import { Category, Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -47,6 +48,9 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const t = useT(EXPLORE_COPY);
   const searchParams = useSearchParams();
   const router = useRouter();
+  // The URL decides which tree we're in; the saved preference must not rewrite it (a ku/en
+  // preference on unprefixed /explore used to bounce the visitor to /ku/explore or /en/explore).
+  const pathname = usePathname();
 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [savedSearchSignature, setSavedSearchSignature] = useState<string | null>(null);
@@ -61,9 +65,9 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
 
   useEffect(() => {
     if (searchParams.get('category') === 'tutors') {
-      router.replace(localeHref('/tutors', language));
+      router.replace(localeHref('/tutors', localeFromPathname(pathname) ?? DEFAULT_LANGUAGE));
     }
-  }, [language, router, searchParams]);
+  }, [pathname, router, searchParams]);
 
   // Filter states start from the URL so a copied directory link opens in the same state.
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -107,11 +111,11 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
       if (sortBy !== 'recommended' && sortBy !== 'distance_asc') params.set('sort', sortBy);
 
       const query = params.toString();
-      router.replace(`${localeHref('/explore', language)}${query ? `?${query}` : ''}`, { scroll: false });
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false });
     }, 250);
 
     return () => window.clearTimeout(timer);
-  }, [language, router, searchQuery, selectedCategory, selectedGov, verifiedOnly, selectedAccreditations, selectedCurricula, priceCurrency, priceMin, priceMax, minRating, sortBy]);
+  }, [pathname, router, searchQuery, selectedCategory, selectedGov, verifiedOnly, selectedAccreditations, selectedCurricula, priceCurrency, priceMin, priceMax, minRating, sortBy]);
 
   const filtered = institutions.filter((inst) => {
     if (selectedCategory !== 'all' && inst.categoryId !== selectedCategory) return false;
