@@ -37,7 +37,9 @@ export default function HeroSearchSection({
   return (
     <section className="relative isolate overflow-hidden bg-[#f7f4ed] px-4 pb-8 pt-10 text-slate-900 sm:px-6 sm:pb-10 sm:pt-14 lg:px-8 lg:py-16">
       <Image src={HERO_IMAGE_URL} alt="" fill priority sizes="100vw" className="absolute inset-0 -z-20 object-cover object-center" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#f8f5ee] via-[#f8f5ee]/95 to-[#f8f5ee]/20" />
+      {/* Text spans the full width on small screens, so cover the photo evenly there; from lg the
+          photo shows on the side away from the text, which flips with the reading direction. */}
+      <div className="absolute inset-0 -z-10 bg-[#f8f5ee]/92 lg:bg-transparent lg:bg-linear-to-r lg:rtl:bg-linear-to-l lg:from-[#f8f5ee] lg:via-[#f8f5ee]/95 lg:to-[#f8f5ee]/20" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-20 bg-gradient-to-t from-white/80 to-transparent" />
       <div className="mx-auto max-w-7xl">
         <div className="max-w-3xl">
