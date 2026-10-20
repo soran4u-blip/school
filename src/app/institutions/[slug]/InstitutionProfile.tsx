@@ -126,12 +126,15 @@ export default function InstitutionProfile({
     const program = institution.programs?.find((item) => item.id === programId);
     if (!program) return;
 
-    setActiveTab('programs');
-    setApplyProgram(program);
-    setApplyForm({ message: '' });
-    setApplyDocumentPaths([]);
-    setApplyDocumentNames([]);
-    setApplyResult(null);
+    const timer = window.setTimeout(() => {
+      setActiveTab('programs');
+      setApplyProgram(program);
+      setApplyForm({ message: '' });
+      setApplyDocumentPaths([]);
+      setApplyDocumentNames([]);
+      setApplyResult(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [currentUser, institution]);
 
   const openApply = (program: InstitutionProgram) => {

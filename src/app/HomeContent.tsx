@@ -127,7 +127,6 @@ export default function HomeContent({
       )}
 
       <HeroSearchSection
-        categories={liveCategories}
         governorates={liveGovernorates}
         quickTags={quickTags}
         featuredInstitutions={directoryInstitutions}

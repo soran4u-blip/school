@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
 import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
-import { Governorate, Category, QuickSearchTag, TaxonomyItem } from '@/core/types/masterData';
+import { Governorate, QuickSearchTag, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
 import { ArrowRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
@@ -14,11 +14,11 @@ import { ArrowRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 const HERO_IMAGE_URL = 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85';
 
 export default function HeroSearchSection({
-  categories, governorates, quickTags, featuredInstitutions, featuredTutors, subjects,
+  governorates, quickTags, featuredInstitutions, featuredTutors, subjects,
   searchKeyword, setSearchKeyword, searchCategory, setSearchCategory, searchGovernorate,
   setSearchGovernorate, submitHeroSearch, handleHeroSearch,
 }: {
-  categories: Category[]; governorates: Governorate[]; quickTags: QuickSearchTag[];
+  governorates: Governorate[]; quickTags: QuickSearchTag[];
   featuredInstitutions: Institution[]; featuredTutors: Tutor[]; subjects: TaxonomyItem[];
   searchKeyword: string; setSearchKeyword: (value: string) => void;
   searchCategory: string; setSearchCategory: (value: string) => void;

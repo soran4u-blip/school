@@ -29,10 +29,7 @@ import {
   Building2,
   GraduationCap,
   ChevronRight,
-  ArrowRight,
-  ArrowLeft,
   X,
-  MessageSquarePlus,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -127,11 +124,16 @@ export default function CommunityContent({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set());
 
+  // Read after mount so server and first client render match; deferred to keep setState out of
+  // the effect body.
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem('eduraq-community-saved-posts');
-      if (saved) setSavedPostIds(new Set(JSON.parse(saved) as string[]));
-    } catch { /* Continue without persisted preferences if storage is blocked. */ }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem('eduraq-community-saved-posts');
+        if (saved) setSavedPostIds(new Set(JSON.parse(saved) as string[]));
+      } catch { /* Continue without persisted preferences if storage is blocked. */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const toggleSavedPost = useCallback((postId: string) => {
