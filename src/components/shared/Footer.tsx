@@ -7,9 +7,13 @@ import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
 import { useAccountPath } from '@/lib/useAccountPath';
 import { GraduationCap, ShieldCheck, Mail, Phone, MessageCircleMore } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { CHROME_COPY } from './SiteChrome.i18n';
 
 export default function Footer() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(CHROME_COPY);
   // Provided by the root layout from one server-side read — see MasterDataContext.
   const { categories, governorates: allGovernorates, systemSettings } = useMasterData();
   const governorates = allGovernorates.slice(0, 8); // Top governorates for footer links
@@ -35,15 +39,12 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
-              {t(
-                'منصة وطنية لاكتشاف ومقارنة المدارس والجامعات والمعاهد والبرامج التعليمية في العراق. تعرّف على التفاصيل وتواصل مع الجهات المدرجة مباشرةً.',
-                'A national platform for discovering and comparing schools, universities, institutes, programs, and tutors across Iraq.'
-              )}
+              {t('tagline')}
             </p>
             <div className="inline-flex max-w-sm items-center gap-2 rounded-full border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-[11px] font-bold text-emerald-400">
               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>
-                {t('مصمم للبحث والمقارنة التعليمية', 'Built for education discovery and comparison')}
+                {t('builtFor')}
               </span>
             </div>
           </div>
@@ -51,7 +52,7 @@ export default function Footer() {
           {/* Col 2: Educational Categories (Dynamic) */}
           <div>
             <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
-              {t('الفئات التعليمية', 'Directory Categories')}
+              {t('footerCategories')}
             </h3>
             <ul className="space-y-2.5 text-sm">
               {categories.map((cat) => (
@@ -61,8 +62,8 @@ export default function Footer() {
                     className="hover:text-white transition-colors"
                   >
                     {cat.slug === 'tutors'
-                      ? t('أساتذة خصوصيون', 'Private tutors')
-                      : (language === 'en' ? cat.name.en : cat.name.ar)}
+                      ? t('privateTutors')
+                      : pickLocalized(cat.name, language)}
                   </Link>
                 </li>
               ))}
@@ -72,7 +73,7 @@ export default function Footer() {
           {/* Col 3: Key Governorates (Dynamic) */}
           <div>
             <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
-              {t('أبرز المحافظات', 'Major Governorates')}
+              {t('majorGovernorates')}
             </h3>
             <ul className="space-y-2.5 text-sm">
               {governorates.map((gov) => (
@@ -81,7 +82,7 @@ export default function Footer() {
                     href={`${localeHref('/explore', language)}?governorate=${gov.id}`}
                     className="hover:text-white transition-colors"
                   >
-                    {language === 'en' ? gov.name.en : gov.name.ar}
+                    {pickLocalized(gov.name, language)}
                   </Link>
                 </li>
               ))}
@@ -91,53 +92,53 @@ export default function Footer() {
           {/* Col 4: Platform & Admin */}
           <div>
             <h3 className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
-              {t('روابط المنصة والإدارة', 'Platform & Admin')}
+              {t('platformLinks')}
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
                 {accountPath ? (
                   <Link href={accountPath} className="hover:text-white transition-colors">
-                    {t('حسابي', 'My Account')}
+                    {t('myAccount')}
                   </Link>
                 ) : (
                   <Link href={localeHref('/login', language)} className="hover:text-white transition-colors">
-                    {t('تسجيل الدخول', 'Login')}
+                    {t('login')}
                   </Link>
                 )}
               </li>
               <li>
                 <Link href="/account" className="hover:text-white transition-colors">
-                  {t('حجوزاتي', 'My Bookings')}
+                  {t('myBookings')}
                 </Link>
               </li>
               <li>
                 <Link href={localeHref('/jobs', language)} className="hover:text-white transition-colors">
-                  {t('الوظائف الشاغرة', 'Job Openings')}
+                  {t('jobOpenings')}
                 </Link>
               </li>
               <li>
                 <Link href={localeHref('/events', language)} className="hover:text-white transition-colors">
-                  {t('الفعاليات', 'Events')}
+                  {t('events')}
                 </Link>
               </li>
               <li>
                 <Link href={localeHref('/my-applications', language)} className="hover:text-white transition-colors">
-                  {t('طلبات التوظيف الخاصة بي', 'My Job Applications')}
+                  {t('myApplications')}
                 </Link>
               </li>
               <li>
                 <Link href="/apply/status" className="hover:text-white transition-colors">
-                  {t('حالة طلب الانضمام', 'Join Application Status')}
+                  {t('joinStatus')}
                 </Link>
               </li>
               <li>
                 <Link href="/community" className="hover:text-white transition-colors">
-                  {t('مجتمع الأهالي', 'Community')}
+                  {t('communityParents')}
                 </Link>
               </li>
               <li>
                 <Link href={localeHref('/trust', language)} className="hover:text-white transition-colors">
-                  {t('مركز الثقة والتحقق', 'Trust & Verification Center')}
+                  {t('trustCenter')}
                 </Link>
               </li>
               <li className="pt-2 text-xs text-slate-400 space-y-1">
@@ -158,11 +159,11 @@ export default function Footer() {
                     href={`https://wa.me/${systemSettings.contactWhatsApp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t('التواصل عبر واتساب', 'Contact us on WhatsApp')}
+                    aria-label={t('contactWhatsApp')}
                     className="flex items-center gap-2 hover:text-white transition-colors"
                   >
                     <MessageCircleMore className="w-3.5 h-3.5" />
-                    <span>{t('واتساب', 'WhatsApp')}</span>
+                    <span>{t('whatsapp')}</span>
                   </a>
                 )}
               </li>
@@ -172,11 +173,11 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-400 sm:flex-row">
-          <p>© {new Date().getFullYear()} Eduraq. {t('جميع الحقوق محفوظة لجمهورية العراق.', 'All rights reserved. Republic of Iraq.')}</p>
+          <p>© {new Date().getFullYear()} Eduraq. {t('rights')}</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-center sm:justify-end">
-            <Link href="/privacy" className="hover:text-white transition-colors">{t('سياسة الخصوصية', 'Privacy Policy')}</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">{t('شروط الاستخدام', 'Terms of Use')}</Link>
-            <span>{t('تحديث فوري وقاعدة بيانات ديناميكية', 'Real-time & Zero Hardcoding Engine')}</span>
+            <Link href="/privacy" className="hover:text-white transition-colors">{t('privacy')}</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">{t('terms')}</Link>
+            <span>{t('engine')}</span>
           </div>
         </div>
       </div>

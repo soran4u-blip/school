@@ -1,6 +1,10 @@
-import React from 'react';
+'use client';
 
-export default function LoadingState({ label = 'Loading' }: { label?: string }) {
+import React from 'react';
+import { useLanguage } from '@/core/context/LanguageContext';
+
+export default function LoadingState({ label }: { label?: string }) {
+  const { t } = useLanguage();
   return (
     <div className="flex min-h-[55vh] items-center justify-center bg-[#F8FAFC] px-6" role="status" aria-live="polite">
       <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
@@ -14,7 +18,7 @@ export default function LoadingState({ label = 'Loading' }: { label?: string }) 
         <div className="h-2 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full w-1/2 animate-pulse rounded-full bg-[#F1C40F]" aria-hidden="true" />
         </div>
-        <p className="text-center text-xs font-bold text-slate-500">{label}...</p>
+        <p className="text-center text-xs font-bold text-slate-500">{label ?? t('جاري التحميل | Loading', 'Loading', 'باردەکرێت')}...</p>
       </div>
     </div>
   );

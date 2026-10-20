@@ -30,9 +30,13 @@ import {
 import NotificationCenter from './NotificationCenter';
 import { useTotalUnreadMessages } from '@/lib/useTotalUnreadMessages';
 import { useAccountPath } from '@/lib/useAccountPath';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { CHROME_COPY } from './SiteChrome.i18n';
 
 export default function Navbar() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(CHROME_COPY);
   const router = useRouter();
   const pathname = usePathname();
   // Provided by the root layout from one server-side read, rather than fetched here on every
@@ -100,7 +104,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 hover:text-white transition-colors"
               >
                 <MessageCircleMore className="w-3 h-3" />
-                {t('واتساب', 'WhatsApp')}
+                {t('whatsapp')}
               </a>
             )}
           </div>
@@ -110,17 +114,17 @@ export default function Navbar() {
               <>
                 <Link href={accountPath} className="flex items-center gap-1 hover:text-white transition-colors">
                   <UserCheck className="w-3 h-3" />
-                  {t('حسابي', 'My Account')}
+                  {t('myAccount')}
                 </Link>
                 <button onClick={handleLogout} className="flex items-center gap-1 hover:text-white transition-colors">
                   <LogOut className="w-3 h-3" />
-                  {t('تسجيل الخروج', 'Log Out')}
+                  {t('logOut')}
                 </button>
               </>
             ) : (
               <Link href={localeHref('/login', language)} className="flex items-center gap-1 hover:text-white transition-colors">
                 <UserCheck className="w-3 h-3" />
-                {t('تسجيل الدخول', 'Login')}
+                {t('login')}
               </Link>
             )}
           </div>
@@ -141,7 +145,7 @@ export default function Navbar() {
             <div className="relative justify-self-center flex items-center rounded-full p-1 gap-1 bg-slate-100/80">
               <div ref={exploreRef}>
                 <button onClick={() => setExploreOpen((v) => !v)} className={navPill(isExploreActive || exploreOpen)}>
-                  {t('استكشف', 'Explore')}
+                  {t('explore')}
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${exploreOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -151,7 +155,7 @@ export default function Navbar() {
                   <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[520px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-lg p-5 grid grid-cols-2 gap-6 text-start">
                     <div>
                       <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
-                        {t('الفئات', 'Categories')}
+                        {t('categories')}
                       </h3>
                       <div className="space-y-0.5">
                         {categories.map((cat) => (
@@ -162,15 +166,15 @@ export default function Navbar() {
                             className="block px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B594D] transition-colors"
                           >
                             {cat.slug === 'tutors'
-                              ? t('أساتذة خصوصيون', 'Private tutors')
-                              : (language === 'en' ? cat.name.en : cat.name.ar)}
+                              ? t('privateTutors')
+                              : pickLocalized(cat.name, language)}
                           </Link>
                         ))}
                       </div>
                     </div>
                     <div>
                       <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
-                        {t('حسب المحافظة', 'By Governorate')}
+                        {t('byGovernorate')}
                       </h3>
                       <div className="space-y-0.5">
                         {governorates.slice(0, 6).map((gov) => (
@@ -181,7 +185,7 @@ export default function Navbar() {
                             className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0B594D] transition-colors"
                           >
                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                            {language === 'en' ? gov.name.en : gov.name.ar}
+                            {pickLocalized(gov.name, language)}
                           </Link>
                         ))}
                       </div>
@@ -191,7 +195,7 @@ export default function Navbar() {
                       onClick={() => setExploreOpen(false)}
                       className="col-span-2 flex items-center justify-center gap-1.5 mt-1 pt-3 border-t border-slate-100 text-sm font-bold text-[#17695A] hover:text-[#0B594D]"
                     >
-                      {t('عرض كل المؤسسات والفلاتر', 'View all listings & filters')}
+                      {t('viewAllFilters')}
                     </Link>
                   </div>
                 )}
@@ -199,22 +203,22 @@ export default function Navbar() {
 
               <Link href={localeHref('/jobs', language)} className={navPill(isJobsActive)}>
                 <Briefcase className="w-3.5 h-3.5" />
-                {t('الوظائف', 'Jobs')}
+                {t('jobs')}
               </Link>
 
               <Link href={localeHref('/events', language)} className={navPill(isEventsActive)}>
                 <CalendarDays className="w-3.5 h-3.5" />
-                {t('الفعاليات', 'Events')}
+                {t('events')}
               </Link>
 
               <Link href={localeHref('/tutors', language)} className={navPill(isTutorsActive)}>
                 <UserCheck className="w-3.5 h-3.5" />
-                {t('الأساتذة', 'Tutors')}
+                {t('tutors')}
               </Link>
 
               <Link href="/community" className={navPill(isCommunityActive)}>
                 <Users className="w-3.5 h-3.5" />
-                {t('المجتمع', 'Community')}
+                {t('community')}
               </Link>
             </div>
 
@@ -224,7 +228,7 @@ export default function Navbar() {
                   <Link
                     href="/messages"
                     className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                    title={t('الرسائل', 'Messages')}
+                    title={t('messages')}
                   >
                     <MessageCircle className="w-5 h-5" />
                     {unreadMessages > 0 && (
@@ -241,7 +245,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B594D] hover:bg-[#17695A] text-white text-sm font-bold shadow-xs transition-all active:scale-95"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-[#DCECC3]" />
-                <span>{t('انضم إلينا', 'Join Eduraq')}</span>
+                <span>{t('join')}</span>
               </Link>
             </div>
           </div>
@@ -260,7 +264,7 @@ export default function Navbar() {
                   <Link
                     href="/messages"
                     className="relative p-1.5 text-slate-600 hover:text-slate-900"
-                    title={t('الرسائل', 'Messages')}
+                    title={t('messages')}
                   >
                     <MessageCircle className="w-5 h-5" />
                     {unreadMessages > 0 && (
@@ -288,7 +292,7 @@ export default function Navbar() {
             onClick={() => setMobileExploreOpen((v) => !v)}
             className="w-full flex items-center justify-between text-sm font-bold text-[#0B594D] py-2"
           >
-            <span>{t('استكشف', 'Explore')}</span>
+            <span>{t('explore')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${mobileExploreOpen ? 'rotate-180' : ''}`} />
           </button>
           {mobileExploreOpen && (
@@ -298,7 +302,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-sm font-semibold text-[#17695A] py-1.5"
               >
-                {t('عرض الكل والفلاتر', 'View all & filters')}
+                {t('viewAllMobile')}
               </Link>
               {categories.map((cat) => (
                 <Link
@@ -308,8 +312,8 @@ export default function Navbar() {
                   className="block text-sm text-slate-600 py-1.5"
                 >
                   {cat.slug === 'tutors'
-                    ? t('أساتذة خصوصيون', 'Private tutors')
-                    : (language === 'en' ? cat.name.en : cat.name.ar)}
+                    ? t('privateTutors')
+                    : pickLocalized(cat.name, language)}
                 </Link>
               ))}
             </div>
@@ -320,7 +324,7 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B594D] py-2"
           >
-            {t('الوظائف الشاغرة', 'Job Openings')}
+            {t('jobOpenings')}
           </Link>
 
           <Link
@@ -328,7 +332,7 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B594D] py-2"
           >
-            {t('الفعاليات', 'Events')}
+            {t('events')}
           </Link>
 
           <Link
@@ -336,7 +340,7 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B594D] py-2"
           >
-            {t('الأساتذة الخصوصيون', 'Private Tutors')}
+            {t('privateTutorsLong')}
           </Link>
 
           <Link
@@ -344,7 +348,7 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-bold text-[#0B594D] py-2"
           >
-            {t('مجتمع الأهالي', 'Community')}
+            {t('communityParents')}
           </Link>
 
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
@@ -355,13 +359,13 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
                 >
-                  {t('حسابي', 'My Account')}
+                  {t('myAccount')}
                 </Link>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
                   className="w-full text-center py-2 text-xs font-bold text-red-700 border border-red-200 rounded-lg"
                 >
-                  {t('تسجيل الخروج', 'Log Out')}
+                  {t('logOut')}
                 </button>
               </>
             ) : (
@@ -370,7 +374,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2 text-xs font-bold text-slate-700 border border-slate-200 rounded-lg"
               >
-                {t('تسجيل الدخول', 'Login')}
+                {t('login')}
               </Link>
             )}
             <Link
@@ -378,7 +382,7 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 text-xs font-bold bg-[#0B594D] text-white rounded-lg"
             >
-              {t('انضم إلينا كأستاذ أو مؤسسة', 'Join as Tutor or Institution')}
+              {t('joinAs')}
             </Link>
           </div>
         </div>
