@@ -22,7 +22,7 @@ import EmptyResults from './_components/EmptyResults';
 import CompareTray from './_components/CompareTray';
 import ShortlistTray from './_components/ShortlistTray';
 import DirectorySkeleton from './_components/DirectorySkeleton';
-import { readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
+import { EMPTY_SHORTLIST, readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 
 interface ExploreDirectoryProps {
@@ -47,7 +47,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
   const [savedSearchSignature, setSavedSearchSignature] = useState<string | null>(null);
   const [savingSearch, setSavingSearch] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  const shortlistIds = useSyncExternalStore(subscribeToShortlist, readShortlist, () => []);
+  const shortlistIds = useSyncExternalStore(subscribeToShortlist, readShortlist, () => EMPTY_SHORTLIST);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
@@ -344,7 +344,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
 
             {sorted.length > 0 ? (
               <div className="space-y-5">
-                {sorted.map((inst) => {
+                {sorted.map((inst, index) => {
                   const gov = governorates.find((g) => g.id === inst.governorateId);
                   const cat = categories.find((c) => c.id === inst.categoryId);
                   const isCompared = compareIds.includes(inst.id);
@@ -352,6 +352,7 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
                     <InstitutionCard
                       key={inst.id}
                       institution={inst}
+                      priorityImage={index === 0}
                       governorate={gov}
                       category={cat}
                       compareSelected={isCompared}

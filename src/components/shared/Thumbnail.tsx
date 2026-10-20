@@ -57,7 +57,7 @@ export default function Thumbnail({
   const style = objectPosition ? { objectPosition } : undefined;
 
   if (fill) {
-    return <Image src={validSrc} alt={alt} fill sizes={sizes} priority={priority} className={className} style={style} onError={() => setFailedSrc(validSrc)} />;
+    return <Image src={validSrc} alt={alt} fill sizes={sizes} preload={priority} className={className} style={style} onError={() => setFailedSrc(validSrc)} />;
   }
 
   return (
@@ -67,7 +67,7 @@ export default function Thumbnail({
       width={width ?? 40}
       height={height ?? 40}
       sizes={sizes}
-      priority={priority}
+      preload={priority}
       className={className}
       style={style}
       onError={() => setFailedSrc(validSrc)}

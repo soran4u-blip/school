@@ -12,6 +12,7 @@ import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
 
 export default function InstitutionCard({
   institution,
+  priorityImage = false,
   governorate,
   category,
   compareSelected,
@@ -21,6 +22,8 @@ export default function InstitutionCard({
   onShortlist,
 }: {
   institution: Institution;
+  // The first card's cover is the page's largest contentful paint, so it skips lazy loading.
+  priorityImage?: boolean;
   governorate: Governorate | undefined;
   category: Category | undefined;
   compareSelected: boolean;
@@ -40,6 +43,7 @@ export default function InstitutionCard({
           src={institution.coverImageUrl}
           alt={institution.name.en}
           fill
+          priority={priorityImage}
           sizes="(max-width: 768px) 100vw, 256px"
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           fallbackClassName="absolute inset-0"

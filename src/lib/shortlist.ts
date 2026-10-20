@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'eduraq-shortlist';
-const EMPTY_SHORTLIST: string[] = [];
+export const EMPTY_SHORTLIST: string[] = [];
 let cachedShortlist: string[] | null = null;
 
 export function readShortlist(): string[] {
