@@ -4,96 +4,29 @@ import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/core/firebase/config';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { AlertCircle } from 'lucide-react';
-import { ThreadMessage, Thread } from '@/core/types/message';
 import { BookingView } from '@/core/types/bookingView';
+import { ThreadMessage, Thread } from '@/core/types/message';
 import { subscribeToThreadMessages, markThreadRead } from '@/core/services/messagingService';
 import { Student } from '@/core/types/student';
 import { getStudent, saveStudentProfile } from '@/core/services/studentService';
 import { getTaxonomies } from '@/core/services/masterDataService';
 import { TaxonomyItem } from '@/core/types/masterData';
-import { AdmissionApplicationStatus } from '@/core/types/admission';
 import NotificationsToggle from '@/components/shared/NotificationsToggle';
 import { SavedSearch } from '@/core/types/savedSearch';
 import { getSavedSearches, deleteSavedSearch } from '@/core/services/savedSearchService';
+import { AccountBooking, AccountInquiry, AccountJobApplication, AccountAdmissionApplication, toAccountBooking } from './accountTypes';
 import StudentProfileCard from './_components/StudentProfileCard';
 import SavedSearchesSection from './_components/SavedSearchesSection';
 import BookingsSection from './_components/BookingsSection';
 import AdmissionApplicationsSection from './_components/AdmissionApplicationsSection';
 import InquiriesSection from './_components/InquiriesSection';
 import JobApplicationsSection from './_components/JobApplicationsSection';
-
-export interface AccountBooking {
-  id: string;
-  tutorId: string;
-  tutorName: { ar: string; en: string } | null;
-  tutorWhatsapp: string | null;
-  type: 'INDIVIDUAL' | 'GROUP';
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
-  pricePerStudent: { iqd: number; usd: number };
-  groupSize?: number;
-  maxGroupSize?: number;
-}
-
-function toAccountBooking(view: BookingView): AccountBooking {
-  return {
-    id: view.bookingId,
-    tutorId: view.tutorId,
-    tutorName: view.tutorName,
-    tutorWhatsapp: view.tutorWhatsapp,
-    type: view.type,
-    date: view.date,
-    startTime: view.startTime,
-    endTime: view.endTime,
-    status: view.status,
-    pricePerStudent: view.pricePerStudent,
-    groupSize: view.groupSize,
-    maxGroupSize: view.maxGroupSize,
-  };
-}
-
-export interface AccountInquiry {
-  id: string;
-  institutionId: string;
-  institutionName: { ar: string; en: string } | null;
-  institutionSlug: string | null;
-  institutionWhatsapp: string | null;
-  message: string;
-  status: 'NEW' | 'CONTACTED' | 'CLOSED';
-  createdAt: string;
-}
-
-export interface AccountJobApplication {
-  id: string;
-  jobId: string;
-  jobTitle: { ar: string; en: string } | null;
-  institutionId: string | null;
-  institutionName: { ar: string; en: string } | null;
-  institutionWhatsapp: string | null;
-  status: 'SUBMITTED' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'HIRED';
-  createdAt: string;
-}
-
-export interface AccountAdmissionApplication {
-  id: string;
-  institutionId: string;
-  institutionName: { ar: string; en: string } | null;
-  institutionSlug: string | null;
-  programId: string;
-  programName: { ar: string; en: string };
-  status: AdmissionApplicationStatus;
-  message: string | null;
-  decisionNote: string | null;
-  createdAt: string;
-  decidedAt: string | null;
-}
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from './Account.i18n';
 
 export default function AccountPage() {
-  const { t } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
   const [bookings, setBookings] = useState<AccountBooking[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -166,7 +99,7 @@ export default function AccountPage() {
         setSubjects(subs);
         setStudentLevels(levels);
       } catch {
-        setError(t('تعذر تحميل الحجوزات', 'Failed to load bookings'));
+        setError(t('loadBookingsFailed'));
       } finally {
         setLoading(false);
       }
@@ -184,7 +117,7 @@ export default function AccountPage() {
     const unsubBookings = onSnapshot(
       query(collection(db, 'bookingViews'), where('studentId', '==', uid)),
       (snap) => setBookings(snap.docs.map((d) => toAccountBooking(d.data() as BookingView))),
-      () => setError(t('تعذر تحميل الحجوزات', 'Failed to load bookings'))
+      () => setError(t('loadBookingsFailed'))
     );
     const unsubThreads = onSnapshot(
       query(collection(db, 'threads'), where('participantStudentIds', 'array-contains', uid)),
@@ -204,13 +137,13 @@ export default function AccountPage() {
   };
 
   const handleWithdrawApplication = async (applicationId: string) => {
-    if (!confirm(t('هل أنت متأكد من سحب هذا الطلب؟', 'Are you sure you want to withdraw this application?'))) return;
+    if (!confirm(t('confirmWithdraw'))) return;
     setWithdrawingId(applicationId);
     try {
       const res = await fetch(`/api/account/admission-applications/${applicationId}/withdraw`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || t('تعذر سحب الطلب', 'Failed to withdraw application'));
+        setError(data.error || t('withdrawFailed'));
         return;
       }
       setAdmissionApplications((prev) => prev?.map((a) => (a.id === applicationId ? { ...a, status: 'WITHDRAWN' } : a)) || null);
@@ -240,22 +173,22 @@ export default function AccountPage() {
         studentLevelId: profileLevelId,
         subjectIds: profileSubjectIds,
       });
-      setProfileMessage(t('تم حفظ الملف الشخصي', 'Profile saved'));
+      setProfileMessage(t('profileSaved'));
     } catch {
-      setProfileMessage(t('تعذر حفظ الملف الشخصي', 'Failed to save profile'));
+      setProfileMessage(t('profileSaveFailed'));
     } finally {
       setSavingProfile(false);
     }
   };
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm(t('هل أنت متأكد من إلغاء هذا الحجز؟', 'Are you sure you want to cancel this booking?'))) return;
+    if (!confirm(t('confirmCancelBooking'))) return;
     setCancellingId(bookingId);
     try {
       const res = await fetch(`/api/account/bookings/${bookingId}/cancel`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || t('تعذر إلغاء الحجز', 'Failed to cancel booking'));
+        setError(data.error || t('cancelBookingFailed'));
         return;
       }
       setBookings((prev) => prev?.map((b) => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b)) || null);
@@ -345,14 +278,14 @@ export default function AccountPage() {
   };
 
   if (loading) {
-    return <div className="text-sm text-slate-500">{t('جاري التحميل...', 'Loading...')}</div>;
+    return <div className="text-sm text-slate-500">{t('loadingThread')}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('حجوزاتي واستفساراتي', 'My Bookings & Inquiries')}</h1>
-        <p className="text-xs text-slate-500 mt-1">{t('جميع حجوزاتك واستفساراتك ومراسلاتك مع الأساتذة والمؤسسات في مكان واحد.', 'All your bookings, inquiries, and conversations with tutors and institutions in one place.')}</p>
+        <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('pageTitle')}</h1>
+        <p className="text-xs text-slate-500 mt-1">{t('pageIntro')}</p>
       </div>
 
       <NotificationsToggle />
@@ -390,7 +323,7 @@ export default function AccountPage() {
 
       <div>
         <h2 className="text-lg font-extrabold text-[#0B192C]">
-          {t('حجوزاتي', 'My Bookings')}
+          {t('myBookings')}
           {bookings && bookings.filter((b) => isThreadUnread(b.id)).length > 0 && (
             <span className="ms-1 text-amber-500">({bookings.filter((b) => isThreadUnread(b.id)).length})</span>
           )}
@@ -415,8 +348,8 @@ export default function AccountPage() {
       )}
 
       <div className="pt-4">
-        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('طلبات القبول', 'Admission Applications')}</h2>
-        <p className="text-xs text-slate-500 mt-1">{t('طلبات التقديم على البرامج الأكاديمية وحالتها.', 'Your applications to academic programs and their status.')}</p>
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('admissionTitle')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('admissionIntro')}</p>
       </div>
 
       {admissionApplications && (
@@ -428,8 +361,8 @@ export default function AccountPage() {
       )}
 
       <div className="pt-4">
-        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('طلبات التوظيف الخاصة بي', 'My Job Applications')}</h2>
-        <p className="text-xs text-slate-500 mt-1">{t('طلبات التوظيف التي قدّمتها وحالتها.', 'Job applications you submitted and their status.')}</p>
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('jobsTitle')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('jobsIntro')}</p>
       </div>
 
       {jobApplications && (
@@ -437,8 +370,8 @@ export default function AccountPage() {
       )}
 
       <div className="pt-4">
-        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('استفساراتي', 'My Inquiries')}</h2>
-        <p className="text-xs text-slate-500 mt-1">{t('استفساراتك المرسلة إلى المؤسسات التعليمية.', 'Inquiries you sent to institutions.')}</p>
+        <h2 className="text-lg font-extrabold text-[#0B192C]">{t('inquiriesTitle')}</h2>
+        <p className="text-xs text-slate-500 mt-1">{t('inquiriesIntro')}</p>
       </div>
 
       {inquiries && (

@@ -5,15 +5,18 @@ import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { AdmissionApplicationStatus } from '@/core/types/admission';
 import { Building2, FileX } from 'lucide-react';
-import type { AccountAdmissionApplication } from '../page';
+import type { AccountAdmissionApplication } from '../accountTypes';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
-const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
-  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted' },
-  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
-  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
-  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
-  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
-  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
+const ADMISSION_STATUS_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string; ku: string }> = {
+  SUBMITTED: { ar: 'تم الإرسال', en: 'Submitted', ku: 'نێردرا' },
+  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review', ku: 'لە ژێر پێداچوونەوەدایە' },
+  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted', ku: 'لە لیستی چاوەڕوانیدایە' },
+  ACCEPTED: { ar: 'مقبول', en: 'Accepted', ku: 'پەسەندکراو' },
+  REJECTED: { ar: 'مرفوض', en: 'Rejected', ku: 'ڕەتکراوە' },
+  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn', ku: 'کشێنراوەتەوە' },
 };
 
 const ADMISSION_STATUS_STYLES: Record<AdmissionApplicationStatus, string> = {
@@ -36,13 +39,14 @@ export default function AdmissionApplicationsSection({
   withdrawingId: string | null;
   onWithdraw: (applicationId: string) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   if (admissionApplications.length === 0) {
     return (
       <div className="text-center text-sm text-slate-400 py-12">
-        {t('لا توجد طلبات قبول بعد.', 'No admission applications yet.')}{' '}
-        <Link href="/explore" className="text-emerald-700 font-bold hover:underline">{t('تصفّح المؤسسات', 'Browse institutions')}</Link>
+        {t('noAdmissions')}{' '}
+        <Link href="/explore" className="text-emerald-700 font-bold hover:underline">{t('browseInstitutions')}</Link>
       </div>
     );
   }
@@ -57,19 +61,19 @@ export default function AdmissionApplicationsSection({
                 <Building2 className="w-4 h-4 text-purple-600" />
                 {app.institutionSlug ? (
                   <Link href={`/institutions/${app.institutionSlug}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
-                    {app.institutionName ? (language === 'en' ? app.institutionName.en : app.institutionName.ar) : app.institutionId}
+                    {app.institutionName ? pickLocalized(app.institutionName, language) : app.institutionId}
                   </Link>
                 ) : (
                   <span className="font-bold text-sm text-slate-900">
-                    {app.institutionName ? (language === 'en' ? app.institutionName.en : app.institutionName.ar) : app.institutionId}
+                    {app.institutionName ? pickLocalized(app.institutionName, language) : app.institutionId}
                   </span>
                 )}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ADMISSION_STATUS_STYLES[app.status]}`}>
-                  {language === 'en' ? ADMISSION_STATUS_LABELS[app.status].en : ADMISSION_STATUS_LABELS[app.status].ar}
+                  {pickLocalized(ADMISSION_STATUS_LABELS[app.status], language)}
                 </span>
               </div>
               <div className="text-xs text-slate-600 font-bold">
-                {language === 'en' ? app.programName.en : app.programName.ar}
+                {pickLocalized(app.programName, language)}
               </div>
               {app.decisionNote && (
                 <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 mt-1">{app.decisionNote}</p>
@@ -83,7 +87,7 @@ export default function AdmissionApplicationsSection({
                 className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold disabled:opacity-60"
               >
                 <FileX className="w-3.5 h-3.5" />
-                <span>{t('سحب الطلب', 'Withdraw')}</span>
+                <span>{t('withdraw')}</span>
               </button>
             )}
           </div>

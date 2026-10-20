@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { pickLocalized } from '@/lib/localized';
 import { getInstitutionById } from '@/core/services/institutionService';
 import { getInstitutionAdmissionApplications } from '@/core/services/admissionService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
@@ -14,16 +16,17 @@ import {
   ArrowRight, Phone, Mail, FileText, AlertCircle, ArrowUpDown,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { APPLICANTS_COPY } from '../../InstitutionApplicants.i18n';
 
 const STAGES: AdmissionApplicationStatus[] = ['SUBMITTED', 'UNDER_REVIEW', 'WAITLISTED', 'ACCEPTED', 'REJECTED'];
 
-const STAGE_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string }> = {
-  SUBMITTED: { ar: 'جديد', en: 'New' },
-  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review' },
-  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted' },
-  ACCEPTED: { ar: 'مقبول', en: 'Accepted' },
-  REJECTED: { ar: 'مرفوض', en: 'Rejected' },
-  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn' },
+const STAGE_LABELS: Record<AdmissionApplicationStatus, { ar: string; en: string; ku: string }> = {
+  SUBMITTED: { ar: 'جديد', en: 'New', ku: 'نوێ' },
+  UNDER_REVIEW: { ar: 'قيد المراجعة', en: 'Under Review', ku: 'لە ژێر پێداچوونەوەدایە' },
+  WAITLISTED: { ar: 'قائمة الانتظار', en: 'Waitlisted', ku: 'لیستی چاوەڕوانی' },
+  ACCEPTED: { ar: 'مقبول', en: 'Accepted', ku: 'وەرگیراو' },
+  REJECTED: { ar: 'مرفوض', en: 'Rejected', ku: 'ڕەتکراوە' },
+  WITHDRAWN: { ar: 'مسحوب', en: 'Withdrawn', ku: 'کشاوەتەوە' },
 };
 
 const STAGE_STYLES: Record<AdmissionApplicationStatus, string> = {
@@ -39,7 +42,8 @@ type SortKey = 'newest' | 'oldest' | 'name';
 
 export default function ProgramApplicantsPage({ params }: { params: Promise<{ programId: string }> }) {
   const { programId } = use(params);
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(APPLICANTS_COPY);
 
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [program, setProgram] = useState<InstitutionProgram | null>(null);
@@ -74,7 +78,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
 
         const prog = inst?.programs?.find((p) => p.id === programId) || null;
         if (!inst || !prog) {
-          setError(t('هذا البرنامج غير موجود أو لا تملك صلاحية الوصول إليه', 'This program was not found or you do not have access to it'));
+          setError(t('programNotFound'));
           return;
         }
 
@@ -98,7 +102,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
         });
         setDocumentUrlsByApp(urlMap);
       } catch {
-        setError(t('تعذر تحميل بيانات المتقدمين', 'Failed to load applicant data'));
+        setError(t('loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -118,7 +122,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setDecisionError((prev) => ({ ...prev, [applicationId]: data.error || t('تعذر تحديث الطلب', 'Failed to update application') }));
+        setDecisionError((prev) => ({ ...prev, [applicationId]: data.error || t('updateFailed') }));
         return;
       }
       setApplications((prev) => prev.map((a) => (a.id === applicationId ? data.application : a)));
@@ -141,7 +145,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
   };
 
   if (loading) {
-    return <div className="text-sm text-slate-400 font-bold py-12 text-center">{t('جاري التحميل...', 'Loading...')}</div>;
+    return <div className="text-sm text-slate-400 font-bold py-12 text-center">{t('loading')}</div>;
   }
 
   if (error || !institution || !program) {
@@ -165,13 +169,13 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
       <div>
         <Link href="/institution/dashboard" className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 mb-2">
           <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-          <span>{t('العودة للوحة التحكم', 'Back to dashboard')}</span>
+          <span>{t('backToDashboard')}</span>
         </Link>
-        <h1 className="text-xl font-extrabold text-[#0B192C]">{language === 'en' ? program.name.en : program.name.ar}</h1>
+        <h1 className="text-xl font-extrabold text-[#0B192C]">{pickLocalized(program.name, language)}</h1>
         <p className="text-xs text-slate-500 mt-1">
-          {applications.length} {t('طلب تقديم', 'applications')}
+          {t('applicationsCount', { n: applications.length })}
           {program.capacity != null && (
-            <span> • {program.acceptedCount || 0} / {program.capacity} {t('مقعد مقبول', 'seats accepted')}</span>
+            <span> • {t('seatsAccepted', { accepted: program.acceptedCount || 0, capacity: program.capacity })}</span>
           )}
         </p>
       </div>
@@ -183,27 +187,27 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
             onChange={(e) => setStatusFilter(e.target.value as AdmissionApplicationStatus | 'all')}
             className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
           >
-            <option value="all">{t('كافة الحالات', 'All Statuses')}</option>
+            <option value="all">{t('allStatuses')}</option>
             {STAGES.map((s) => (
-              <option key={s} value={s}>{language === 'en' ? STAGE_LABELS[s].en : STAGE_LABELS[s].ar}</option>
+              <option key={s} value={s}>{pickLocalized(STAGE_LABELS[s], language)}</option>
             ))}
           </select>
           <span className="text-xs text-slate-500 font-bold">
-            {t('النتائج:', 'Results:')} <span className="text-slate-900 font-black">{sorted.length}</span>
+            {t('results')} <span className="text-slate-900 font-black">{sorted.length}</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
           <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-500 font-semibold">{t('الترتيب:', 'Sort:')}</span>
+          <span className="text-slate-500 font-semibold">{t('sort')}</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
             className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 text-xs"
           >
-            <option value="newest">{t('الأحدث', 'Newest')}</option>
-            <option value="oldest">{t('الأقدم', 'Oldest')}</option>
-            <option value="name">{t('الاسم', 'Name')}</option>
+            <option value="newest">{t('newest')}</option>
+            <option value="oldest">{t('oldest')}</option>
+            <option value="name">{t('name')}</option>
           </select>
         </div>
       </div>
@@ -213,17 +217,17 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
           <table className="w-full text-xs text-start">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th className="p-3 text-start">{t('المتقدم', 'Applicant')}</th>
-                <th className="p-3 text-start">{t('المستمسكات', 'Documents')}</th>
-                <th className="p-3 text-start">{t('الحالة', 'Status')}</th>
-                <th className="p-3 text-start">{t('تاريخ التقديم', 'Applied')}</th>
-                <th className="p-3 text-end">{t('التفاصيل', 'Details')}</th>
+                <th className="p-3 text-start">{t('applicant')}</th>
+                <th className="p-3 text-start">{t('documents')}</th>
+                <th className="p-3 text-start">{t('status')}</th>
+                <th className="p-3 text-start">{t('applied')}</th>
+                <th className="p-3 text-end">{t('details')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-400">{t('لا يوجد متقدمون بهذه الحالة', 'No applicants match this filter')}</td>
+                  <td colSpan={5} className="p-8 text-center text-slate-400">{t('noMatch')}</td>
                 </tr>
               ) : (
                 sorted.map((app) => (
@@ -254,7 +258,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                                 className="flex items-center gap-1.5 text-blue-700 hover:underline font-bold w-fit"
                               >
                                 <FileText className="w-3.5 h-3.5" />
-                                <span>{documentUrlsByApp[app.id]?.[i] ? t(`مستند ${i + 1}`, `Document ${i + 1}`) : t('جاري التحميل...', 'Loading...')}</span>
+                                <span>{documentUrlsByApp[app.id]?.[i] ? t('documentN', { n: i + 1 }) : t('loading')}</span>
                               </a>
                             ))}
                           </div>
@@ -265,7 +269,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                       <td className="p-3">
                         {app.status === 'WITHDRAWN' ? (
                           <span className={`text-[11px] px-2 py-1 rounded-full font-bold ${STAGE_STYLES.WITHDRAWN}`}>
-                            {language === 'en' ? STAGE_LABELS.WITHDRAWN.en : STAGE_LABELS.WITHDRAWN.ar}
+                            {pickLocalized(STAGE_LABELS.WITHDRAWN, language)}
                           </span>
                         ) : (
                           <select
@@ -275,7 +279,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                             className={`text-[11px] px-2 py-1 rounded-full font-bold border-0 cursor-pointer disabled:opacity-60 ${STAGE_STYLES[app.status]}`}
                           >
                             {STAGES.map((s) => (
-                              <option key={s} value={s}>{language === 'en' ? STAGE_LABELS[s].en : STAGE_LABELS[s].ar}</option>
+                              <option key={s} value={s}>{pickLocalized(STAGE_LABELS[s], language)}</option>
                             ))}
                           </select>
                         )}
@@ -287,7 +291,7 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                           onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
                           className="text-blue-700 hover:underline font-bold"
                         >
-                          {expandedId === app.id ? t('إخفاء', 'Hide') : t('عرض', 'Show')}
+                          {expandedId === app.id ? t('hide') : t('show')}
                         </button>
                       </td>
                     </tr>
@@ -296,21 +300,21 @@ export default function ProgramApplicantsPage({ params }: { params: Promise<{ pr
                         <td colSpan={5} className="p-4 bg-slate-50 space-y-3">
                           {app.message && (
                             <div>
-                              <h4 className="font-bold text-slate-700 mb-1">{t('رسالة المتقدم', 'Applicant Statement')}</h4>
+                              <h4 className="font-bold text-slate-700 mb-1">{t('applicantStatement')}</h4>
                               <p className="text-slate-600 whitespace-pre-line">{app.message}</p>
                             </div>
                           )}
                           <div>
-                            <h4 className="font-bold text-slate-700 mb-1">{t('ملاحظة القرار (تظهر للطالب)', "Decision Note (visible to the student)")}</h4>
+                            <h4 className="font-bold text-slate-700 mb-1">{t('decisionNote')}</h4>
                             <textarea
                               rows={3}
                               value={notesDrafts[app.id] || ''}
                               onChange={(e) => setNotesDrafts((prev) => ({ ...prev, [app.id]: e.target.value }))}
                               onBlur={() => handleSaveNotes(app.id)}
-                              placeholder={t('اكتب ملاحظة للطالب حول هذا القرار...', 'Write a note to the student about this decision...')}
+                              placeholder={t('decisionNotePlaceholder')}
                               className="w-full px-3 py-2 border border-slate-200 rounded-lg resize-none bg-white"
                             />
-                            {decidingId === app.id && <span className="text-slate-400">{t('جاري الحفظ...', 'Saving...')}</span>}
+                            {decidingId === app.id && <span className="text-slate-400">{t('saving')}</span>}
                           </div>
                         </td>
                       </tr>

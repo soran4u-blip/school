@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { useLoadOnMount } from '@/lib/useLoadOnMount';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { getRecentErrorLogs, deleteErrorLog } from '@/core/services/errorLogService';
 import { ErrorLog } from '@/core/types/errorLog';
 import { Bug, Trash2, Monitor, Server, TriangleAlert, Flame } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { ERRORS_COPY } from './Errors.i18n';
 
 export default function AdminErrorsPage() {
-  const { t } = useLanguage();
+  const t = useT(ERRORS_COPY);
   const [logs, setLogs] = useState<ErrorLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export default function AdminErrorsPage() {
   const filtered = sourceFilter === 'all' ? logs : logs.filter((l) => l.source === sourceFilter);
 
   if (loading) {
-    return <div className="text-sm text-slate-400 font-bold py-12 text-center">{t('جاري التحميل...', 'Loading...')}</div>;
+    return <div className="text-sm text-slate-400 font-bold py-12 text-center">{t('loading')}</div>;
   }
 
   return (
@@ -42,10 +43,10 @@ export default function AdminErrorsPage() {
         <div>
           <h1 className="text-xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <Bug className="w-5 h-5" />
-            {t('أخطاء النظام', 'System Errors')}
+            {t('title')}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t('آخر 200 خطأ من العميل والخادم (مجمّعة حسب التكرار) — لا حاجة لخدمة مراقبة خارجية.', 'The last 200 client- and server-side errors, deduplicated by recurrence — no third-party monitoring service required.')}
+            {t('subtitle')}
           </p>
         </div>
         <select
@@ -53,15 +54,15 @@ export default function AdminErrorsPage() {
           onChange={(e) => setSourceFilter(e.target.value as 'all' | 'client' | 'server')}
           className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-medium text-slate-700"
         >
-          <option value="all">{t('الكل', 'All')}</option>
-          <option value="client">{t('العميل', 'Client')}</option>
-          <option value="server">{t('الخادم', 'Server')}</option>
+          <option value="all">{t('all')}</option>
+          <option value="client">{t('client')}</option>
+          <option value="server">{t('server')}</option>
         </select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center text-sm text-slate-400">
-          {t('لا توجد أخطاء مسجلة', 'No errors logged')}
+          {t('empty')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -95,7 +96,7 @@ export default function AdminErrorsPage() {
               </div>
               {expandedId === log.id && (
                 <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-1.5 text-[11px] text-slate-600">
-                  <div><span className="font-bold">{t('أول ظهور:', 'First seen:')}</span> {log.createdAt.slice(0, 19).replace('T', ' ')}</div>
+                  <div><span className="font-bold">{t('firstSeen')}</span> {log.createdAt.slice(0, 19).replace('T', ' ')}</div>
                   {log.url && <div><span className="font-bold">URL:</span> <span className="font-mono">{log.url}</span></div>}
                   {log.userAgent && <div><span className="font-bold">User Agent:</span> {log.userAgent}</div>}
                   {log.role && <div><span className="font-bold">Role:</span> {log.role}</div>}

@@ -4,6 +4,9 @@ import React from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { TaxonomyItem } from '@/core/types/masterData';
 import { GraduationCap, Save } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 // The account page's "My Student Profile" card: school, grade/level, and subjects of interest.
 // The parent owns all form state and the save handler.
@@ -32,42 +35,43 @@ export default function StudentProfileCard({
   profileMessage: string;
   onSave: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
       <div className="flex items-center gap-2">
         <GraduationCap className="w-4 h-4 text-emerald-700" />
-        <h2 className="text-sm font-extrabold text-[#0B192C]">{t('ملفي الدراسي', 'My Student Profile')}</h2>
+        <h2 className="text-sm font-extrabold text-[#0B192C]">{t('profileTitle')}</h2>
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('المدرسة', 'School')}</label>
+        <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('school')}</label>
         <input
           type="text"
           value={profileSchool}
           onChange={(e) => setProfileSchool(e.target.value)}
-          placeholder={t('اسم مدرستك أو جامعتك', 'Your school or university')}
+          placeholder={t('schoolPlaceholder')}
           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('الصف الدراسي', 'Grade / Level')}</label>
+        <label className="block text-xs font-bold text-slate-700 mb-1.5">{t('gradeLevel')}</label>
         <select
           value={profileLevelId}
           onChange={(e) => setProfileLevelId(e.target.value)}
           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
-          <option value="">{t('اختر الصف الدراسي', 'Select your grade / level')}</option>
+          <option value="">{t('selectGrade')}</option>
           {studentLevels.map((lvl) => (
-            <option key={lvl.id} value={lvl.id}>{language === 'en' ? lvl.name.en : lvl.name.ar}</option>
+            <option key={lvl.id} value={lvl.id}>{pickLocalized(lvl.name, language)}</option>
           ))}
         </select>
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-700 mb-2">{t('المواد التي تهمك', 'Subjects of Interest')}</label>
+        <label className="block text-xs font-bold text-slate-700 mb-2">{t('subjectsOfInterest')}</label>
         <div className="flex flex-wrap gap-2">
           {subjects.map((sub) => {
             const checked = profileSubjectIds.includes(sub.id);
@@ -88,12 +92,12 @@ export default function StudentProfileCard({
                     setProfileSubjectIds(Array.from(ids));
                   }}
                 />
-                {language === 'en' ? sub.name.en : sub.name.ar}
+                {pickLocalized(sub.name, language)}
               </label>
             );
           })}
           {subjects.length === 0 && (
-            <span className="text-[11px] text-slate-400">{t('لا توجد مواد دراسية بعد', 'No subjects available yet')}</span>
+            <span className="text-[11px] text-slate-400">{t('noSubjects')}</span>
           )}
         </div>
       </div>
@@ -108,7 +112,7 @@ export default function StudentProfileCard({
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B192C] hover:bg-[#1E3E62] text-white text-xs font-bold disabled:opacity-60"
       >
         <Save className="w-3.5 h-3.5" />
-        {t('حفظ الملف الشخصي', 'Save Profile')}
+        {t('saveProfile')}
       </button>
     </div>
   );

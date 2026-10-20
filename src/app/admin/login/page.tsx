@@ -35,7 +35,7 @@ function LoginForm() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         await signOut(auth);
-        setError(data.error || t('فشل تسجيل الدخول', 'Login failed'));
+        setError(data.error || t('فشل تسجيل الدخول', 'Login failed', 'چوونەژوورەوە سەرکەوتوو نەبوو'));
         return;
       }
 
@@ -43,7 +43,7 @@ function LoginForm() {
       router.push(redirect);
       router.refresh();
     } catch {
-      setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Invalid email or password'));
+      setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Invalid email or password', 'ئیمەیڵ یان وشەی نهێنی هەڵەیە'));
     } finally {
       setLoading(false);
     }
@@ -59,14 +59,14 @@ function LoginForm() {
           <h1 className="font-extrabold text-xl text-[#0B192C]">Eduraq Admin</h1>
           <p className="text-xs text-amber-600 font-semibold flex items-center gap-1 mt-1">
             <ShieldAlert className="w-3 h-3" />
-            {t('لوحة تحكم السوبر أدمن', 'Superadmin Suite')}
+            {t('لوحة تحكم السوبر أدمن', 'Superadmin Suite', 'پانێڵی سوپەر ئەدمین')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
-              {t('البريد الإلكتروني', 'Email')}
+              {t('البريد الإلكتروني', 'Email', 'ئیمەیڵ')}
             </label>
             <input
               type="email"
@@ -79,7 +79,7 @@ function LoginForm() {
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
-              {t('كلمة المرور', 'Password')}
+              {t('كلمة المرور', 'Password', 'وشەی نهێنی')}
             </label>
             <input
               type="password"
@@ -103,7 +103,7 @@ function LoginForm() {
             className="w-full py-2.5 rounded-xl bg-[#0B192C] hover:bg-[#1E3E62] text-white text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t('تسجيل الدخول', 'Sign In')}
+            {t('تسجيل الدخول', 'Sign In', 'چوونەژوورەوە')}
           </button>
         </form>
       </div>

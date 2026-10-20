@@ -3,15 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
 import { UserCircle2, LogOut, Home } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from './Account.i18n';
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
@@ -34,7 +35,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             </div>
             <div>
               <span className="font-extrabold text-sm">Eduraq</span>
-              <p className="text-[11px] text-emerald-300 font-semibold">{t('حسابي', 'My Account')}</p>
+              <p className="text-[11px] text-emerald-300 font-semibold">{t('myAccount')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -43,14 +44,14 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
             >
               <Home className="w-3.5 h-3.5" />
-              <span>{t('الموقع الرئيسي', 'Site')}</span>
+              <span>{t('site')}</span>
             </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-200 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t('تسجيل الخروج', 'Log Out')}</span>
+              <span>{t('logOut')}</span>
             </button>
           </div>
         </div>

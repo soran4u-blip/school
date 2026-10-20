@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { ThreadMessage } from '@/core/types/message';
 import { Send } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 // The expandable message thread shown under a booking or an inquiry card — identical markup in
 // both places in the original page, parameterized here by the messages/draft/sending state for
@@ -23,15 +24,15 @@ export default function MessageThread({
   onSend: () => void;
   sending: boolean;
 }) {
-  const { t } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   return (
     <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
       <div className="max-h-56 overflow-y-auto space-y-2">
         {loading ? (
-          <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
+          <p className="text-xs text-slate-400 text-center py-2">{t('loadingThread')}</p>
         ) : (messages?.length || 0) === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+          <p className="text-xs text-slate-400 text-center py-2">{t('noMessages')}</p>
         ) : (
           messages!.map((msg) => (
             <div key={msg.id} className={`flex ${msg.senderRole === 'student' ? 'justify-end' : 'justify-start'}`}>
@@ -50,14 +51,14 @@ export default function MessageThread({
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSend(); }}
-          placeholder={t('اكتب رسالة...', 'Write a message...')}
+          placeholder={t('writeMessage')}
           className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
         />
         <button
           onClick={onSend}
           disabled={sending || !draft.trim()}
           className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-          title={t('إرسال', 'Send')}
+          title={t('send')}
         >
           <Send className="w-4 h-4" />
         </button>

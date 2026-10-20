@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { Send } from 'lucide-react';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { MessageThreads } from '@/lib/useMessageThreads';
+import { useT } from '@/lib/useT';
+import { MESSAGE_THREAD_COPY } from './SharedPanels.i18n';
 
 // The expanded message thread under an inquiry (institution side) or a booking (tutor side):
 // scrollable bubbles plus a composer. Both dashboards rendered this identically apart from which
@@ -19,7 +20,7 @@ export default function MessageThreadPanel({
   // Messages from this role are the owner's own, and sit on the trailing side.
   ownRole: string;
 }) {
-  const { t } = useLanguage();
+  const t = useT(MESSAGE_THREAD_COPY);
   const messages = threads.messages[threadId];
   const draft = threads.draftFor(threadId);
 
@@ -27,9 +28,9 @@ export default function MessageThreadPanel({
     <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
       <div className="max-h-56 overflow-y-auto space-y-2">
         {threads.loadingId === threadId ? (
-          <p className="text-xs text-slate-400 text-center py-2">{t('جاري التحميل...', 'Loading...')}</p>
+          <p className="text-xs text-slate-400 text-center py-2">{t('loading')}</p>
         ) : (messages?.length || 0) === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-2">{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+          <p className="text-xs text-slate-400 text-center py-2">{t('noMessages')}</p>
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.senderRole === ownRole ? 'justify-end' : 'justify-start'}`}>
@@ -52,14 +53,14 @@ export default function MessageThreadPanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter') threads.send(threadId);
           }}
-          placeholder={t('اكتب رسالة...', 'Write a message...')}
+          placeholder={t('writeMessage')}
           className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
         />
         <button
           onClick={() => threads.send(threadId)}
           disabled={threads.sendingId === threadId || !draft.trim()}
           className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-          title={t('إرسال', 'Send')}
+          title={t('send')}
         >
           <Send className="w-4 h-4" />
         </button>

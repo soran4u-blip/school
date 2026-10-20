@@ -7,6 +7,8 @@ import { Booking } from '@/core/types/booking';
 import MessageThreadPanel from '@/components/shared/MessageThreadPanel';
 import { MessageThreads } from '@/lib/useMessageThreads';
 import { formatDate } from '@/lib/utils';
+import { useT } from '@/lib/useT';
+import { TUTOR_DASHBOARD_COPY } from '../TutorDashboard.i18n';
 
 // One booking's full detail + actions (confirm/complete/no-show/cancel, message thread toggle) —
 // shared by the By Student accordion and the By Date calendar's detail modal, so both stay in
@@ -30,7 +32,8 @@ export default function BookingCard({
   showDate?: boolean;
   showStudent?: boolean;
 }) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(TUTOR_DASHBOARD_COPY);
   const formattedDate = formatDate(booking.date, language, { year: 'numeric' });
 
   return (
@@ -41,12 +44,12 @@ export default function BookingCard({
             {booking.type === 'GROUP' ? (
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
                 <Users className="w-3 h-3" />
-                {t(`مجموعة (${booking.participants.length}/${booking.maxGroupSize})`, `Group (${booking.participants.length}/${booking.maxGroupSize})`)}
+                {t('group', { n: booking.participants.length, max: booking.maxGroupSize ?? '' })}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">
                 <User className="w-3 h-3" />
-                {t('فردي', '1-on-1')}
+                {t('oneOnOne')}
               </span>
             )}
 
@@ -73,11 +76,11 @@ export default function BookingCard({
                   : 'bg-amber-50 text-amber-700 border border-amber-200/60 animate-pulse'
               }`}
             >
-              {booking.status === 'PENDING' ? t('قيد الانتظار', 'Pending') :
-               booking.status === 'CONFIRMED' ? t('مؤكد', 'Confirmed') :
-               booking.status === 'COMPLETED' ? t('مكتمل', 'Completed') :
-               booking.status === 'CANCELLED' ? t('ملغي', 'Cancelled') :
-               booking.status === 'NO_SHOW' ? t('لم يحضر', 'No Show') : booking.status}
+              {booking.status === 'PENDING' ? t('statusPending') :
+               booking.status === 'CONFIRMED' ? t('statusConfirmed') :
+               booking.status === 'COMPLETED' ? t('statusCompleted') :
+               booking.status === 'CANCELLED' ? t('statusCancelled') :
+               booking.status === 'NO_SHOW' ? t('statusNoShow') : booking.status}
             </span>
           </div>
 
@@ -107,7 +110,7 @@ export default function BookingCard({
                 ? 'bg-[#0B192C] text-white shadow-xs'
                 : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
             }`}
-            title={t('مراسلة بخصوص هذا الموعد', 'Message about this session')}
+            title={t('messageAboutSession')}
           >
             <MessageCircle className="w-4 h-4" />
             {isThreadUnread(booking.id) && (
@@ -119,7 +122,7 @@ export default function BookingCard({
             <button
               onClick={() => handleBookingStatus(booking, 'CONFIRMED')}
               className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition-colors"
-              title={t('تأكيد هذا الموعد', 'Confirm this session')}
+              title={t('confirmSession')}
             >
               <Check className="w-4 h-4" />
             </button>
@@ -130,14 +133,14 @@ export default function BookingCard({
               <button
                 onClick={() => handleBookingStatus(booking, 'COMPLETED')}
                 className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition-colors"
-                title={t('اكتملت الجلسة', 'Mark Completed')}
+                title={t('markCompleted')}
               >
                 <ListChecks className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleBookingStatus(booking, 'NO_SHOW')}
                 className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
-                title={t('لم يحضر الطالب', 'Mark No-show')}
+                title={t('markNoShow')}
               >
                 <UserX className="w-4 h-4" />
               </button>
@@ -150,10 +153,7 @@ export default function BookingCard({
                 if (
                   booking.status === 'CONFIRMED' &&
                   !confirm(
-                    t(
-                      'هذا الحجز مؤكد بالفعل. هل تريد إلغاءه فعلاً؟',
-                      'This booking is already confirmed. Cancel it anyway?'
-                    )
+                    t('confirmCancelConfirmed')
                   )
                 ) {
                   return;
@@ -161,7 +161,7 @@ export default function BookingCard({
                 handleBookingStatus(booking, 'CANCELLED');
               }}
               className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition-colors"
-              title={t('إلغاء الموعد', 'Cancel Session')}
+              title={t('cancelSession')}
             >
               <X className="w-4 h-4" />
             </button>

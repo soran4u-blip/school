@@ -7,6 +7,9 @@ import { Governorate, Category } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import BilingualTextField from '@/components/shared/BilingualTextField';
 import BilingualTextarea from '@/components/shared/BilingualTextarea';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_FORM_COPY } from '../InstitutionForm.i18n';
+import { pickLocalized } from '@/lib/localized';
 
 // The add/edit institution form's identity, media, description, and address fields: ID/slug,
 // bilingual name, category/governorate selects, logo/cover uploads, bilingual description, and
@@ -24,14 +27,15 @@ export default function IdentityMediaFields({
   categories: Category[];
   governorates: Governorate[];
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_FORM_COPY);
 
   return (
     <>
       {/* Identity */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('معرّف المؤسسة (ID)', 'Institution ID')} *</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('institutionId')} *</label>
           <input
             type="text"
             disabled={!!editId}
@@ -43,20 +47,20 @@ export default function IdentityMediaFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الرابط المختصر (Slug)', 'Slug')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('slug')}</label>
           <input
             type="text"
             value={form.slug || ''}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            placeholder={t('اتركه فارغاً لاستخدام المعرف', 'Leave empty to use ID')}
+            placeholder={t('leaveEmptyId')}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
           />
         </div>
       </div>
 
       <BilingualTextField
-        labelAr={`${t('الاسم بالعربية', 'Name (Arabic)')} *`}
-        labelEn={`${t('الاسم بالإنجليزية', 'Name (English)')} *`}
+        labelAr={`${t('nameAr')} *`}
+        labelEn={`${t('nameEn')} *`}
         valueAr={form.name?.ar || ''}
         valueEn={form.name?.en || ''}
         onChangeAr={(v) => setForm({ ...form, name: { ...form.name!, ar: v } })}
@@ -65,8 +69,8 @@ export default function IdentityMediaFields({
       />
 
       <BilingualTextField
-        labelAr={t('الشعار المختصر بالعربية', 'Tagline (Arabic)')}
-        labelEn={t('الشعار المختصر بالإنجليزية', 'Tagline (English)')}
+        labelAr={t('taglineAr')}
+        labelEn={t('taglineEn')}
         valueAr={form.tagline?.ar || ''}
         valueEn={form.tagline?.en || ''}
         onChangeAr={(v) => setForm({ ...form, tagline: { ...form.tagline!, ar: v } })}
@@ -75,30 +79,30 @@ export default function IdentityMediaFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الفئة', 'Category')} *</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('category')} *</label>
           <select
             value={form.categoryId || ''}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             required
           >
-            <option value="">{t('اختر الفئة', 'Select category')}</option>
+            <option value="">{t('selectCategory')}</option>
             {categories.map(c => (
-              <option key={c.id} value={c.id}>{language === 'en' ? c.name.en : c.name.ar}</option>
+              <option key={c.id} value={c.id}>{pickLocalized(c.name, language)}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('المحافظة', 'Governorate')} *</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('governorate')} *</label>
           <select
             value={form.governorateId || ''}
             onChange={(e) => setForm({ ...form, governorateId: e.target.value })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             required
           >
-            <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
+            <option value="">{t('selectGovernorate')}</option>
             {governorates.map(g => (
-              <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+              <option key={g.id} value={g.id}>{pickLocalized(g.name, language)}</option>
             ))}
           </select>
         </div>
@@ -107,13 +111,13 @@ export default function IdentityMediaFields({
       {/* Media */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <ImageUploadField
-          label={t('شعار المؤسسة', 'Institution Logo')}
+          label={t('logo')}
           value={form.logoUrl || ''}
           onChange={(url) => setForm({ ...form, logoUrl: url })}
           pathPrefix={`institutions/${form.id || 'draft'}`}
         />
         <ImageUploadField
-          label={t('صورة الغلاف', 'Cover Image')}
+          label={t('cover')}
           value={form.coverImageUrl || ''}
           onChange={(url) => setForm({ ...form, coverImageUrl: url })}
           pathPrefix={`institutions/${form.id || 'draft'}`}
@@ -122,8 +126,8 @@ export default function IdentityMediaFields({
 
       {/* Descriptions */}
       <BilingualTextarea
-        labelAr={t('الوصف بالعربية', 'Description (Arabic)')}
-        labelEn={t('الوصف بالإنجليزية', 'Description (English)')}
+        labelAr={t('descriptionAr')}
+        labelEn={t('descriptionEn')}
         valueAr={form.description?.ar || ''}
         valueEn={form.description?.en || ''}
         onChangeAr={(v) => setForm({ ...form, description: { ...form.description!, ar: v } })}
@@ -131,7 +135,7 @@ export default function IdentityMediaFields({
       />
 
       <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1">{t('العنوان بالعربية', 'Address (Arabic)')}</label>
+        <label className="block text-xs font-bold text-slate-700 mb-1">{t('addressAr')}</label>
         <input
           type="text"
           value={form.address?.ar || ''}

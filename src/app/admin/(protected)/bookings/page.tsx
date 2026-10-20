@@ -6,10 +6,14 @@ import { getAllBookings } from '@/core/services/bookingService';
 import { getTutors } from '@/core/services/tutorService';
 import { Booking } from '@/core/types/booking';
 import { Tutor } from '@/core/types/tutor';
+import { pickLocalized } from '@/lib/localized';
 import { Calendar, Users, User, Phone, AlertCircle } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { BOOKINGS_COPY } from './Bookings.i18n';
 
 export default function AdminBookingsPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(BOOKINGS_COPY);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [filterTutor, setFilterTutor] = useState('all');
@@ -28,7 +32,7 @@ export default function AdminBookingsPage() {
         setBookings(allBookings);
         setTutors(tutorList);
       } catch {
-        setError(t('تعذر تحميل البيانات. تأكد من تسجيل الدخول كسوبر أدمن.', 'Failed to load data. Make sure you are signed in as superadmin.'));
+        setError(t('loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -37,8 +41,8 @@ export default function AdminBookingsPage() {
   }, [t]);
 
   const tutorName = (id: string) => {
-    const tutor = tutors.find((t) => t.id === id);
-    return tutor ? (language === 'en' ? tutor.fullName.en : tutor.fullName.ar) : id;
+    const tutor = tutors.find((x) => x.id === id);
+    return tutor ? pickLocalized(tutor.fullName, language) : id;
   };
 
   const filtered = filterTutor === 'all' ? bookings : bookings.filter((b) => b.tutorId === filterTutor);
@@ -48,10 +52,10 @@ export default function AdminBookingsPage() {
       <div>
         <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
           <Calendar className="w-6 h-6 text-blue-600" />
-          <span>{t('كافة الحجوزات', 'All Bookings')}</span>
+          <span>{t('title')}</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          {t('نظرة شاملة على حجوزات كل الأساتذة الخصوصيين في المنصة.', 'A platform-wide view across every tutor\'s bookings.')}
+          {t('subtitle')}
         </p>
       </div>
 
@@ -68,21 +72,21 @@ export default function AdminBookingsPage() {
           onChange={(e) => setFilterTutor(e.target.value)}
           className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
         >
-          <option value="all">{t('كافة الأساتذة', 'All Tutors')}</option>
-          {tutors.map((t) => (
-            <option key={t.id} value={t.id}>{language === 'en' ? t.fullName.en : t.fullName.ar}</option>
+          <option value="all">{t('allTutors')}</option>
+          {tutors.map((tutor) => (
+            <option key={tutor.id} value={tutor.id}>{pickLocalized(tutor.fullName, language)}</option>
           ))}
         </select>
         <span className="text-xs text-slate-500 font-bold">
-          {t('النتائج:', 'Results:')} <span className="text-slate-900 font-black">{filtered.length}</span>
+          {t('results')} <span className="text-slate-900 font-black">{filtered.length}</span>
         </span>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
         {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400">{t('جاري التحميل...', 'Loading...')}</div>
+          <div className="p-8 text-center text-xs text-slate-400">{t('loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد حجوزات بعد', 'No bookings yet')}</div>
+          <div className="p-8 text-center text-xs text-slate-400">{t('empty')}</div>
         ) : (
           filtered.map((b) => (
             <div key={b.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -100,8 +104,8 @@ export default function AdminBookingsPage() {
                   </span>
                 </div>
                 <div className="text-xs text-slate-600">
-                  {b.type === 'GROUP' ? t(`مجموعة (${b.participants.length}/${b.maxGroupSize})`, `Group (${b.participants.length}/${b.maxGroupSize})`) : t('فردي', 'Individual')}
-                  {' • '}<span className="font-bold font-mono">{b.pricePerStudent.iqd.toLocaleString()} IQD/{t('طالب', 'student')}</span>
+                  {b.type === 'GROUP' ? t('group', { count: b.participants.length, max: b.maxGroupSize }) : t('individual')}
+                  {' • '}<span className="font-bold font-mono">{b.pricePerStudent.iqd.toLocaleString()} IQD/{t('student')}</span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   {b.participants.map((p, i) => (

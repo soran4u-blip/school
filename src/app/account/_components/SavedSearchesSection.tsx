@@ -2,9 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { SavedSearch } from '@/core/types/savedSearch';
 import { Bookmark, X } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 // The account page's saved-searches list — only rendered when the student has at least one.
 export default function SavedSearchesSection({
@@ -16,13 +17,13 @@ export default function SavedSearchesSection({
   deletingSearchId: string | null;
   onDelete: (id: string) => void;
 }) {
-  const { t } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
       <h2 className="text-sm font-extrabold text-[#0B192C] flex items-center gap-2">
         <Bookmark className="w-4 h-4 text-blue-600" />
-        {t('عمليات البحث المحفوظة', 'Saved Searches')}
+        {t('savedSearches')}
       </h2>
       <div className="space-y-2">
         {savedSearches.map((s) => (

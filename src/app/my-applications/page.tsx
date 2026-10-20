@@ -5,6 +5,9 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { pickLocalized } from '@/lib/localized';
+import { MY_APPLICATIONS_COPY } from './MyApplications.i18n';
 import { Search, Briefcase, MessageSquare } from 'lucide-react';
 
 interface LookupApplication {
@@ -27,7 +30,8 @@ const STATUS_STYLES: Record<LookupApplication['status'], string> = {
 };
 
 export default function MyApplicationsPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(MY_APPLICATIONS_COPY);
   const [phone, setPhone] = useState('');
   const [applications, setApplications] = useState<LookupApplication[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,12 +46,12 @@ export default function MyApplicationsPage() {
       const res = await fetch(`/api/job-applications/lookup?phone=${encodeURIComponent(phone.trim())}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || t('تعذر البحث', 'Failed to look up your applications'));
+        setError(data.error || t('lookupFailed'));
         return;
       }
       setApplications(data.applications);
     } catch {
-      setError(t('تعذر البحث', 'Failed to look up your applications'));
+      setError(t('lookupFailed'));
     } finally {
       setLoading(false);
     }
@@ -59,15 +63,15 @@ export default function MyApplicationsPage() {
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('طلبات التوظيف الخاصة بي', 'My Job Applications')}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('أدخل رقم هاتفك لعرض حالة طلبات التوظيف الخاصة بك.', 'Enter your phone number to view the status of your job applications.')}</p>
+          <h1 className="text-2xl font-extrabold text-[#0B192C]">{t('title')}</h1>
+          <p className="text-sm text-slate-500 mt-1">{t('intro')}</p>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2 mb-6">
           <input
             type="text"
             required
-            placeholder={t('رقم الهاتف', 'Phone number')}
+            placeholder={t('phone')}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="flex-1 px-4 py-2.5 text-sm border border-[#E8E6DE] rounded-xl font-mono bg-white"
@@ -78,7 +82,7 @@ export default function MyApplicationsPage() {
             className="flex items-center gap-2 px-5 py-2.5 bg-[#123D35] hover:bg-[#28675A] text-white rounded-xl text-sm font-bold disabled:opacity-60"
           >
             <Search className="w-4 h-4" />
-            {t('بحث', 'Search')}
+            {t('search')}
           </button>
         </form>
 
@@ -88,7 +92,7 @@ export default function MyApplicationsPage() {
 
         {applications && (
           applications.length === 0 ? (
-            <div className="text-center text-sm text-slate-400 py-12">{t('لا توجد طلبات بهذا الرقم', 'No applications found for this number')}</div>
+            <div className="text-center text-sm text-slate-400 py-12">{t('empty')}</div>
           ) : (
             <div className="space-y-3">
               {applications.map((a) => (
@@ -98,14 +102,14 @@ export default function MyApplicationsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Briefcase className="w-4 h-4 text-blue-600" />
                         <Link href={`/jobs/${a.jobId}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
-                          {a.jobTitle ? (language === 'en' ? a.jobTitle.en : a.jobTitle.ar) : a.jobId}
+                          {a.jobTitle ? (pickLocalized(a.jobTitle, language)) : a.jobId}
                         </Link>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[a.status]}`}>
                           {a.status}
                         </span>
                       </div>
                       <div className="text-xs text-slate-500 font-semibold">
-                        {a.institutionName ? (language === 'en' ? a.institutionName.en : a.institutionName.ar) : a.institutionId}
+                        {a.institutionName ? (pickLocalized(a.institutionName, language)) : a.institutionId}
                       </div>
                     </div>
 
@@ -115,7 +119,7 @@ export default function MyApplicationsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                        title={t('واتساب', 'WhatsApp')}
+                        title={t('whatsapp')}
                       >
                         <MessageSquare className="w-4 h-4" />
                       </a>

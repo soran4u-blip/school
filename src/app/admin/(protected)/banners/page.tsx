@@ -9,6 +9,9 @@ import { isBannerActive } from '@/lib/bannerLogic';
 import BilingualTextField from '@/components/shared/BilingualTextField';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { Megaphone, Plus, Edit, Trash2, Save, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { BANNERS_COPY } from './Banners.i18n';
 
 const EMPTY_FORM: Partial<CMSBanner> = {
   id: '',
@@ -25,7 +28,8 @@ const EMPTY_FORM: Partial<CMSBanner> = {
 };
 
 export default function AdminBannersPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(BANNERS_COPY);
   const [banners, setBanners] = useState<CMSBanner[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -61,11 +65,11 @@ export default function AdminBannersPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.id || !form.title?.ar || !form.title?.en || !form.subtitle?.ar || !form.subtitle?.en) {
-      setMessage({ text: t('يرجى ملء الحقول الإلزامية', 'Please fill required fields'), type: 'error' });
+      setMessage({ text: t('fillRequired'), type: 'error' });
       return;
     }
     if (form.startDate && form.endDate && form.startDate > form.endDate) {
-      setMessage({ text: t('يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء', 'The start date must be before the end date'), type: 'error' });
+      setMessage({ text: t('dateOrder'), type: 'error' });
       return;
     }
 
@@ -86,24 +90,24 @@ export default function AdminBannersPage() {
     setSaving(true);
     try {
       await saveBanner(banner);
-      setMessage({ text: t('تم حفظ الإعلان بنجاح', 'Banner saved successfully'), type: 'success' });
+      setMessage({ text: t('saved'), type: 'success' });
       closeForm();
       await loadData();
     } catch {
-      setMessage({ text: t('تعذر حفظ الإعلان', 'Could not save the banner'), type: 'error' });
+      setMessage({ text: t('saveFailed'), type: 'error' });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (banner: CMSBanner) => {
-    if (!confirm(t(`هل أنت متأكد من حذف هذا الإعلان؟`, `Delete this banner? This cannot be undone.`))) return;
+    if (!confirm(t('confirmDelete'))) return;
     try {
       await deleteBanner(banner.id);
-      setMessage({ text: t('تم حذف الإعلان', 'Banner deleted'), type: 'success' });
+      setMessage({ text: t('deleted'), type: 'success' });
       await loadData();
     } catch {
-      setMessage({ text: t('تعذر حذف الإعلان', 'Could not delete the banner'), type: 'error' });
+      setMessage({ text: t('deleteFailed'), type: 'error' });
     }
   };
 
@@ -113,13 +117,10 @@ export default function AdminBannersPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <Megaphone className="w-6 h-6 text-amber-600" />
-            <span>{t('إدارة الإعلانات', 'Ad Banners')}</span>
+            <span>{t('title')}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t(
-              'حملات إعلانية تدور في الشريط الإعلاني بالصفحة الرئيسية، حسب تاريخ البدء والانتهاء والوزن النسبي.',
-              'Campaigns that rotate through the homepage ad slot, scoped by start/end date and relative weight.'
-            )}
+            {t('intro')}
           </p>
         </div>
         <button
@@ -127,7 +128,7 @@ export default function AdminBannersPage() {
           className="flex items-center gap-2 px-4 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:bg-[#1E3E62] transition-colors shadow-xs self-start"
         >
           <Plus className="w-4 h-4 text-[#F1C40F]" />
-          <span>{t('+ إضافة إعلان جديد', '+ Add New Banner')}</span>
+          <span>{t('addNew')}</span>
         </button>
       </div>
 
@@ -147,7 +148,7 @@ export default function AdminBannersPage() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 className="font-bold text-sm text-slate-900">
-              {isAdding ? t('إضافة إعلان جديد', 'Add Banner') : t('تعديل الإعلان', 'Edit Banner')}
+              {isAdding ? t('formAdd') : t('formEdit')}
             </h2>
             <button onClick={closeForm} className="text-slate-400 hover:text-slate-700">
               <X className="w-4 h-4" />
@@ -156,7 +157,7 @@ export default function AdminBannersPage() {
 
           <form onSubmit={handleSave} className="space-y-4">
             <ImageUploadField
-              label={t('صورة الإعلان (سيتم اقتصاصها لأبعاد 970×250 على الحاسوب و 300×250 على الجوال)', 'Banner image (cropped to 970×250 desktop / 300×250 mobile)')}
+              label={t('imageLabel')}
               value={form.imageUrl || ''}
               onChange={(url) => setForm({ ...form, imageUrl: url })}
               pathPrefix={`cms_banners/${form.id}`}
@@ -192,7 +193,7 @@ export default function AdminBannersPage() {
             />
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">{t('رابط الإعلان', 'Destination link')}</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">{t('destLink')}</label>
               <input
                 type="url"
                 dir="ltr"
@@ -205,7 +206,7 @@ export default function AdminBannersPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('تاريخ البدء', 'Start date')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('startDate')}</label>
                 <input
                   type="date"
                   value={form.startDate || ''}
@@ -214,7 +215,7 @@ export default function AdminBannersPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('تاريخ الانتهاء', 'End date')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('endDate')}</label>
                 <input
                   type="date"
                   value={form.endDate || ''}
@@ -223,7 +224,7 @@ export default function AdminBannersPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الوزن النسبي', 'Weight')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('weight')}</label>
                 <input
                   type="number"
                   min={1}
@@ -240,21 +241,18 @@ export default function AdminBannersPage() {
                     onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
                     className="rounded text-blue-600 focus:ring-blue-500"
                   />
-                  <span>{t('مفعّل', 'Active')}</span>
+                  <span>{t('active')}</span>
                 </label>
               </div>
             </div>
 
             <p className="text-[11px] text-slate-400">
-              {t(
-                'لا حدّ زمنياً إن تُرك الحقل فارغاً. الوزن يحدد احتمال ظهور هذا الإعلان مقارنة بالإعلانات الأخرى النشطة حالياً.',
-                'Leave a date blank for no bound on that side. Weight sets how often this shows relative to other currently-eligible banners.'
-              )}
+              {t('hint')}
             </p>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button type="button" onClick={closeForm} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">
-                {t('إلغاء', 'Cancel')}
+                {t('cancel')}
               </button>
               <button
                 type="submit"
@@ -262,7 +260,7 @@ export default function AdminBannersPage() {
                 className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60"
               >
                 <Save className="w-3.5 h-3.5" />
-                <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ الإعلان', 'Save Banner')}</span>
+                <span>{saving ? t('saving') : t('saveBanner')}</span>
               </button>
             </div>
           </form>
@@ -273,18 +271,18 @@ export default function AdminBannersPage() {
         <table className="w-full text-xs text-start">
           <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
             <tr>
-              <th className="p-3 text-start">{t('الإعلان', 'Banner')}</th>
-              <th className="p-3 text-center">{t('المدة', 'Date range')}</th>
-              <th className="p-3 text-center">{t('الوزن', 'Weight')}</th>
-              <th className="p-3 text-center">{t('الحالة', 'Status')}</th>
-              <th className="p-3 text-end">{t('إجراءات', 'Actions')}</th>
+              <th className="p-3 text-start">{t('colBanner')}</th>
+              <th className="p-3 text-center">{t('colRange')}</th>
+              <th className="p-3 text-center">{t('colWeight')}</th>
+              <th className="p-3 text-center">{t('colStatus')}</th>
+              <th className="p-3 text-end">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {banners.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-slate-400">
-                  {t('لا توجد إعلانات بعد', 'No banners yet')}
+                  {t('none')}
                 </td>
               </tr>
             )}
@@ -293,8 +291,8 @@ export default function AdminBannersPage() {
               return (
                 <tr key={banner.id} className="hover:bg-slate-50/50">
                   <td className="p-3">
-                    <div className="font-bold text-slate-900">{language === 'en' ? banner.title.en : banner.title.ar}</div>
-                    <div className="text-[11px] text-slate-500 line-clamp-1">{language === 'en' ? banner.subtitle.en : banner.subtitle.ar}</div>
+                    <div className="font-bold text-slate-900">{pickLocalized(banner.title, language)}</div>
+                    <div className="text-[11px] text-slate-500 line-clamp-1">{pickLocalized(banner.subtitle, language)}</div>
                   </td>
                   <td className="p-3 text-center font-mono text-[11px] text-slate-600">
                     {banner.startDate || '—'} → {banner.endDate || '—'}
@@ -304,7 +302,7 @@ export default function AdminBannersPage() {
                     <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
                       activeToday ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
                     }`}>
-                      {activeToday ? t('نشط اليوم', 'Active today') : (banner.isActive ? t('غير مجدول اليوم', 'Not scheduled today') : t('متوقف', 'Paused'))}
+                      {activeToday ? t('activeToday') : (banner.isActive ? t('notScheduled') : t('paused'))}
                     </span>
                   </td>
                   <td className="p-3 text-end">

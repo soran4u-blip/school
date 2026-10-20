@@ -1,0 +1,37 @@
+import type { CopyDict } from '@/lib/useT';
+
+// Strings for the admin ad-banners page. Sorani is a draft pending native review
+// (see docs/ku-review-notes.md).
+export const BANNERS_COPY = {
+  fillRequired: { ar: 'يرجى ملء الحقول الإلزامية', en: 'Please fill required fields', ku: 'تکایە خانە پێویستەکان پڕبکەرەوە' },
+  dateOrder: { ar: 'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء', en: 'The start date must be before the end date', ku: 'پێویستە بەرواری دەستپێک پێش بەرواری کۆتایی بێت' },
+  saved: { ar: 'تم حفظ الإعلان بنجاح', en: 'Banner saved successfully', ku: 'ڕیکلامەکە بە سەرکەوتوویی پاشەکەوت کرا' },
+  saveFailed: { ar: 'تعذر حفظ الإعلان', en: 'Could not save the banner', ku: 'نەتوانرا ڕیکلامەکە پاشەکەوت بکرێت' },
+  confirmDelete: { ar: 'هل أنت متأكد من حذف هذا الإعلان؟', en: 'Delete this banner? This cannot be undone.', ku: 'دڵنیایت لە سڕینەوەی ئەم ڕیکلامە؟ ناتوانرێت پاشگەز ببیتەوە.' },
+  deleted: { ar: 'تم حذف الإعلان', en: 'Banner deleted', ku: 'ڕیکلامەکە سڕایەوە' },
+  deleteFailed: { ar: 'تعذر حذف الإعلان', en: 'Could not delete the banner', ku: 'نەتوانرا ڕیکلامەکە بسڕدرێتەوە' },
+  title: { ar: 'إدارة الإعلانات', en: 'Ad Banners', ku: 'بەڕێوەبردنی ڕیکلامەکان' },
+  intro: { ar: 'حملات إعلانية تدور في الشريط الإعلاني بالصفحة الرئيسية، حسب تاريخ البدء والانتهاء والوزن النسبي.', en: 'Campaigns that rotate through the homepage ad slot, scoped by start/end date and relative weight.', ku: 'هەڵمەتی ڕیکلامی کە لە شوێنی ڕیکلامی لاپەڕەی سەرەکی دەسوڕێنەوە، بەپێی بەرواری دەستپێک و کۆتایی و کێشی لێکەوتەیی.' },
+  addNew: { ar: '+ إضافة إعلان جديد', en: '+ Add New Banner', ku: '+ زیادکردنی ڕیکلامی نوێ' },
+  formAdd: { ar: 'إضافة إعلان جديد', en: 'Add Banner', ku: 'زیادکردنی ڕیکلام' },
+  formEdit: { ar: 'تعديل الإعلان', en: 'Edit Banner', ku: 'دەستکاریکردنی ڕیکلام' },
+  imageLabel: { ar: 'صورة الإعلان (سيتم اقتصاصها لأبعاد 970×250 على الحاسوب و 300×250 على الجوال)', en: 'Banner image (cropped to 970×250 desktop / 300×250 mobile)', ku: 'وێنەی ڕیکلام (لە کۆمپیوتەر بە قەبارەی 970×250 و لە مۆبایل 300×250 دەبڕدرێت)' },
+  destLink: { ar: 'رابط الإعلان', en: 'Destination link', ku: 'بەستەری ڕیکلام' },
+  startDate: { ar: 'تاريخ البدء', en: 'Start date', ku: 'بەرواری دەستپێک' },
+  endDate: { ar: 'تاريخ الانتهاء', en: 'End date', ku: 'بەرواری کۆتایی' },
+  weight: { ar: 'الوزن النسبي', en: 'Weight', ku: 'کێشی لێکەوتەیی' },
+  active: { ar: 'مفعّل', en: 'Active', ku: 'چالاک' },
+  hint: { ar: 'لا حدّ زمنياً إن تُرك الحقل فارغاً. الوزن يحدد احتمال ظهور هذا الإعلان مقارنة بالإعلانات الأخرى النشطة حالياً.', en: 'Leave a date blank for no bound on that side. Weight sets how often this shows relative to other currently-eligible banners.', ku: 'ئەگەر بەروار بەتاڵ بێت سنووری کاتی نییە. کێش دیاری دەکات ئەم ڕیکلامە چەند جار دەردەکەوێت بەراورد بە ڕیکلامە چالاکەکانی تر.' },
+  cancel: { ar: 'إلغاء', en: 'Cancel', ku: 'هەڵوەشاندنەوە' },
+  saving: { ar: 'جاري الحفظ...', en: 'Saving...', ku: 'پاشەکەوت دەکرێت...' },
+  saveBanner: { ar: 'حفظ الإعلان', en: 'Save Banner', ku: 'پاشەکەوتکردنی ڕیکلام' },
+  colBanner: { ar: 'الإعلان', en: 'Banner', ku: 'ڕیکلام' },
+  colRange: { ar: 'المدة', en: 'Date range', ku: 'ماوە' },
+  colWeight: { ar: 'الوزن', en: 'Weight', ku: 'کێش' },
+  colStatus: { ar: 'الحالة', en: 'Status', ku: 'دۆخ' },
+  colActions: { ar: 'إجراءات', en: 'Actions', ku: 'کردارەکان' },
+  none: { ar: 'لا توجد إعلانات بعد', en: 'No banners yet', ku: 'هێشتا هیچ ڕیکلامێک نییە' },
+  activeToday: { ar: 'نشط اليوم', en: 'Active today', ku: 'ئەمڕۆ چالاکە' },
+  notScheduled: { ar: 'غير مجدول اليوم', en: 'Not scheduled today', ku: 'ئەمڕۆ خشتە نەکراوە' },
+  paused: { ar: 'متوقف', en: 'Paused', ku: 'ڕاگیراوە' },
+} satisfies CopyDict;

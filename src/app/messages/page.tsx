@@ -21,6 +21,8 @@ import { localeHref } from '@/lib/locale';
 import { useInbox, InboxItem } from '@/lib/useInbox';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { useT } from '@/lib/useT';
+import { MESSAGES_COPY } from './Messages.i18n';
 
 function formatMessageTime(isoString: string): string {
   try {
@@ -32,7 +34,8 @@ function formatMessageTime(isoString: string): string {
 }
 
 export default function MessagesPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(MESSAGES_COPY);
   const searchParams = useSearchParams();
   const initialConvId = searchParams.get('conversationId');
 
@@ -95,10 +98,10 @@ export default function MessagesPage() {
         <main className="flex-1 flex items-center justify-center px-4 py-16">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <MessageCircle className="mx-auto mb-4 h-12 w-12 text-blue-600" />
-            <h1 className="text-xl font-extrabold text-slate-900">{t('سجّل الدخول لعرض رسائلك', 'Sign in to view your messages')}</h1>
-            <p className="mt-2 text-sm text-slate-500">{t('ستجد هنا محادثات الحجوزات والاستفسارات والتواصل المباشر.', 'Your bookings, inquiries, and direct conversations will appear here.')}</p>
+            <h1 className="text-xl font-extrabold text-slate-900">{t('signInTitle')}</h1>
+            <p className="mt-2 text-sm text-slate-500">{t('signInBody')}</p>
             <Link href={`${localeHref('/login', language)}?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-xl bg-[#0B192C] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1E3E62]">
-              {t('تسجيل الدخول', 'Sign in')}
+              {t('signIn')}
             </Link>
           </div>
         </main>
@@ -112,7 +115,7 @@ export default function MessagesPage() {
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
           <Calendar className="w-2.5 h-2.5" />
-          {t('حجز', 'Booking')}
+          {t('booking')}
         </span>
       );
     }
@@ -120,7 +123,7 @@ export default function MessagesPage() {
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
           <GraduationCap className="w-2.5 h-2.5" />
-          {t('استفسار', 'Inquiry')}
+          {t('inquiry')}
         </span>
       );
     }
@@ -129,28 +132,28 @@ export default function MessagesPage() {
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
             <User className="w-2.5 h-2.5" />
-            {t('أستاذ', 'Tutor')}
+            {t('tutor')}
           </span>
         );
       case 'institution':
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
             <GraduationCap className="w-2.5 h-2.5" />
-            {t('مؤسسة', 'Institution')}
+            {t('institution')}
           </span>
         );
       case 'employer':
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
             <Briefcase className="w-2.5 h-2.5" />
-            {t('صاحب عمل', 'Employer')}
+            {t('employer')}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
             <User className="w-2.5 h-2.5" />
-            {t('طالب', 'Student')}
+            {t('student')}
           </span>
         );
     }
@@ -170,9 +173,9 @@ export default function MessagesPage() {
           >
             <div className="p-4 border-b border-slate-100 space-y-3">
               <div className="flex items-center justify-between">
-                <h1 className="font-extrabold text-lg text-slate-900">{t('الرسائل', 'Messages')}</h1>
+                <h1 className="font-extrabold text-lg text-slate-900">{t('messages')}</h1>
                 <span className="text-xs text-slate-400 font-mono">
-                  {items.length} {t('محادثة', 'chats')}
+                  {items.length} {t('chats')}
                 </span>
               </div>
 
@@ -182,7 +185,7 @@ export default function MessagesPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('بحث عن محادثة...', 'Search messages...')}
+                  placeholder={t('searchChats')}
                   className="w-full ps-9 pe-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
@@ -192,17 +195,14 @@ export default function MessagesPage() {
               {loading ? (
                 <div className="p-8 text-center text-xs text-slate-400">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-300" />
-                  {t('جاري تحميل المحادثات...', 'Loading conversations...')}
+                  {t('loadingChats')}
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-400 space-y-2">
                   <MessageCircle className="w-8 h-8 mx-auto text-slate-300" />
-                  <p>{t('لا توجد محادثات حتى الآن', 'No conversations yet')}</p>
+                  <p>{t('noChats')}</p>
                   <p className="text-[11px] text-slate-400">
-                    {t(
-                      'يمكنك بدء محادثة من صفحة الأستاذ أو طلبات الحجز',
-                      'Start chatting from a tutor profile or booking card'
-                    )}
+                    {t('startChatHint')}
                   </p>
                 </div>
               ) : (
@@ -223,7 +223,7 @@ export default function MessagesPage() {
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between gap-1">
                           <span className="font-bold text-xs text-slate-900 truncate">
-                            {item.name || t('مستخدم', 'User')}
+                            {item.name || t('user')}
                           </span>
                           {item.lastMessageAt && (
                             <span className="text-[10px] text-slate-400 font-mono shrink-0">
@@ -236,7 +236,7 @@ export default function MessagesPage() {
 
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-xs text-slate-500 truncate max-w-[180px]">
-                            {item.lastMessageText || t('محادثة جديدة', 'New conversation')}
+                            {item.lastMessageText || t('newConversation')}
                           </p>
                           {item.unreadCount > 0 && (
                             <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-blue-600 rounded-full flex items-center justify-center shrink-0">
@@ -262,7 +262,7 @@ export default function MessagesPage() {
                       onClick={() => setActiveKey(null)}
                       className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-200 md:hidden"
                     >
-                      {language === 'ar' ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
+                      {language !== 'en' ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
                     </button>
 
                     <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0">
@@ -299,14 +299,14 @@ export default function MessagesPage() {
                   {messagesLoading ? (
                     <div className="p-8 text-center text-xs text-slate-400">
                       <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-slate-300" />
-                      {t('تحميل الرسائل...', 'Loading messages...')}
+                      {t('loadingMessages')}
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="p-12 text-center text-xs text-slate-400 space-y-1">
                       <MessageCircle className="w-8 h-8 mx-auto text-slate-300" />
-                      <p>{t('لا توجد رسائل بعد', 'No messages yet')}</p>
+                      <p>{t('noMessages')}</p>
                       <p className="text-[11px]">
-                        {t('أرسل أول رسالة لبدء المحادثة', 'Send a message to start the conversation')}
+                        {t('sendFirst')}
                       </p>
                     </div>
                   ) : (
@@ -342,14 +342,14 @@ export default function MessagesPage() {
                     type="text"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    placeholder={t('اكتب رسالة...', 'Type a message...')}
+                    placeholder={t('typeMessage')}
                     className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                   <button
                     type="submit"
                     disabled={!draft.trim() || sending}
                     className="p-2.5 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl shadow-xs transition-all disabled:opacity-40"
-                    title={t('إرسال', 'Send')}
+                    title={t('send')}
                   >
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
@@ -361,13 +361,10 @@ export default function MessagesPage() {
                   <MessageCircle className="w-8 h-8" />
                 </div>
                 <h3 className="font-bold text-base text-slate-800">
-                  {t('مركز المحادثات والرسائل', 'Messages Center')}
+                  {t('centerTitle')}
                 </h3>
                 <p className="text-xs text-slate-500 max-w-sm">
-                  {t(
-                    'اختر محادثة من القائمة الجانبية لبدء التواصل الفوري مع الطلاب أو الأساتذة',
-                    'Select a conversation from the sidebar to chat in real-time with students or tutors'
-                  )}
+                  {t('centerHint')}
                 </p>
               </div>
             )}

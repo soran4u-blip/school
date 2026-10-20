@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution, InstitutionAdmissions, InstitutionAccreditation } from '@/core/types/institution';
 import { Plus, Trash2 } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_FORM_COPY } from '../InstitutionForm.i18n';
 
 function admissionsValue(form: Partial<Institution>): InstitutionAdmissions {
   return form.admissions || {};
@@ -20,7 +21,7 @@ export default function AdmissionsAndAccreditationFields({
   form: Partial<Institution>;
   setForm: (form: Partial<Institution>) => void;
 }) {
-  const { t } = useLanguage();
+  const t = useT(INSTITUTION_FORM_COPY);
   const admissions = admissionsValue(form);
   const accreditation = accreditationValue(form);
   const documents = admissions.requiredDocuments || [];
@@ -53,25 +54,22 @@ export default function AdmissionsAndAccreditationFields({
     <div className="space-y-5 border-t border-slate-100 pt-5">
       <div>
         <h2 className="text-sm font-extrabold text-[#0B192C]">
-          {t('بيانات القبول والاعتماد', 'Admissions & Accreditation Details')}
+          {t('admissionsTitle')}
         </h2>
         <p className="text-[11px] text-slate-500 mt-1">
-          {t(
-            'هذه البيانات تظهر للعائلات في الملف العام. أضف المعلومات المؤكدة فقط؛ لا تستخدم نصوصاً عامة أو تقديرات.',
-            'These details appear on the public profile. Add verified information only; avoid generic claims or estimates.'
-          )}
+          {t('admissionsHint')}
         </p>
       </div>
 
       <div className="space-y-3">
         <label className="block text-xs font-bold text-slate-700">
-          {t('ملخص القبول (عربي / إنجليزي)', 'Admissions overview (Arabic / English)')}
+          {t('admissionsOverview')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <textarea
             value={admissions.overview?.ar || ''}
             onChange={(e) => updateAdmissions({ overview: { ...admissions.overview, ar: e.target.value, en: admissions.overview?.en || '' } })}
-            placeholder={t('مثال: يبدأ التسجيل في شهر أيلول...', 'Example: Applications open in September...')}
+            placeholder={t('admissionsExample')}
             rows={3}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
           />
@@ -88,7 +86,7 @@ export default function AdmissionsAndAccreditationFields({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <label className="block text-xs font-bold text-slate-700">
-            {t('المستمسكات المطلوبة', 'Required documents')}
+            {t('requiredDocuments')}
           </label>
           <button
             type="button"
@@ -96,13 +94,13 @@ export default function AdmissionsAndAccreditationFields({
             className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>{t('إضافة مستند', 'Add document')}</span>
+            <span>{t('addDocument')}</span>
           </button>
         </div>
 
         {documents.length === 0 ? (
           <p className="text-[11px] text-slate-400">
-            {t('لم تتم إضافة مستندات بعد', 'No required documents added yet')}
+            {t('noDocuments')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -112,21 +110,21 @@ export default function AdmissionsAndAccreditationFields({
                   type="text"
                   value={document.ar}
                   onChange={(e) => updateDocument(index, { ar: e.target.value })}
-                  placeholder={t('المستند بالعربية', 'Document in Arabic')}
+                  placeholder={t('documentAr')}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
                 />
                 <input
                   type="text"
                   value={document.en}
                   onChange={(e) => updateDocument(index, { en: e.target.value })}
-                  placeholder={t('المستند بالإنجليزية', 'Document in English')}
+                  placeholder={t('documentEn')}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
                 />
                 <button
                   type="button"
                   onClick={() => removeDocument(index)}
                   className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200"
-                  aria-label={t('حذف المستند', 'Remove document')}
+                  aria-label={t('removeDocument')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -138,7 +136,7 @@ export default function AdmissionsAndAccreditationFields({
 
       <div className="space-y-3">
         <label className="block text-xs font-bold text-slate-700">
-          {t('ملاحظات القبول (اختياري)', 'Admissions notes (optional)')}
+          {t('admissionsNotes')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <textarea
@@ -158,21 +156,21 @@ export default function AdmissionsAndAccreditationFields({
 
       <div className="space-y-3">
         <label className="block text-xs font-bold text-slate-700">
-          {t('جهة الاعتماد', 'Accrediting authority')}
+          {t('accreditingAuthority')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="text"
             value={accreditation.authority?.ar || ''}
             onChange={(e) => updateAccreditation({ authority: { ...accreditation.authority, ar: e.target.value, en: accreditation.authority?.en || '' } })}
-            placeholder={t('الجهة بالعربية', 'Authority in Arabic')}
+            placeholder={t('authorityAr')}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
           />
           <input
             type="text"
             value={accreditation.authority?.en || ''}
             onChange={(e) => updateAccreditation({ authority: { ...accreditation.authority, ar: accreditation.authority?.ar || '', en: e.target.value } })}
-            placeholder={t('الجهة بالإنجليزية', 'Authority in English')}
+            placeholder={t('authorityEn')}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
           />
         </div>
@@ -180,21 +178,21 @@ export default function AdmissionsAndAccreditationFields({
           <textarea
             value={accreditation.details?.ar || ''}
             onChange={(e) => updateAccreditation({ details: { ...accreditation.details, ar: e.target.value, en: accreditation.details?.en || '' } })}
-            placeholder={t('تفاصيل الاعتماد بالعربية', 'Accreditation details in Arabic')}
+            placeholder={t('accreditationAr')}
             rows={3}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
           />
           <textarea
             value={accreditation.details?.en || ''}
             onChange={(e) => updateAccreditation({ details: { ...accreditation.details, ar: accreditation.details?.ar || '', en: e.target.value } })}
-            placeholder={t('تفاصيل الاعتماد بالإنجليزية', 'Accreditation details in English')}
+            placeholder={t('accreditationEn')}
             rows={3}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg"
           />
         </div>
         <div className="max-w-xs">
           <label className="block text-xs font-bold text-slate-700 mb-1">
-            {t('تاريخ آخر تحقق', 'Last verified date')}
+            {t('lastVerified')}
           </label>
           <input
             type="date"
@@ -206,7 +204,7 @@ export default function AdmissionsAndAccreditationFields({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              {t('رابط مصدر الدليل', 'Evidence source URL')}
+              {t('evidenceUrl')}
             </label>
             <input
               type="url"
@@ -218,7 +216,7 @@ export default function AdmissionsAndAccreditationFields({
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              {t('تاريخ انتهاء الدليل (اختياري)', 'Evidence expiry (optional)')}
+              {t('evidenceExpiry')}
             </label>
             <input
               type="date"

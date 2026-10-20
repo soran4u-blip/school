@@ -6,7 +6,10 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { ThreadMessage } from '@/core/types/message';
 import { Calendar, MessageCircle, MessageSquare, Users, User, X } from 'lucide-react';
 import MessageThread from './MessageThread';
-import type { AccountBooking } from '../page';
+import type { AccountBooking } from '../accountTypes';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 // The account page's "My Bookings" list — each card shows the booking summary, quick actions
 // (message tutor, WhatsApp, cancel), and an expandable message thread. The parent owns all
@@ -38,13 +41,14 @@ export default function BookingsSection({
   handleCancelBooking: (bookingId: string) => void;
   isThreadUnread: (bookingId: string) => boolean;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   if (bookings.length === 0) {
     return (
       <div className="text-center text-sm text-slate-400 py-12">
-        {t('لا توجد حجوزات بعد.', 'No bookings yet.')}{' '}
-        <Link href="/tutors" className="text-emerald-700 font-bold hover:underline">{t('تصفّح الأساتذة', 'Browse tutors')}</Link>
+        {t('noBookings')}{' '}
+        <Link href="/tutors" className="text-emerald-700 font-bold hover:underline">{t('browseTutors')}</Link>
       </div>
     );
   }
@@ -58,7 +62,7 @@ export default function BookingsSection({
               <div className="flex items-center gap-2 flex-wrap">
                 {b.type === 'GROUP' ? <Users className="w-4 h-4 text-blue-600" /> : <User className="w-4 h-4 text-purple-600" />}
                 <Link href={`/tutors/${b.tutorId}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
-                  {b.tutorName ? (language === 'en' ? b.tutorName.en : b.tutorName.ar) : b.tutorId}
+                  {b.tutorName ? pickLocalized(b.tutorName, language) : b.tutorId}
                 </Link>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   b.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700' :
@@ -73,8 +77,8 @@ export default function BookingsSection({
                 <span>{b.date} • {b.startTime}–{b.endTime}</span>
               </div>
               <div className="text-xs text-slate-600 font-bold">
-                {b.type === 'GROUP' ? t(`مجموعة (${b.groupSize}/${b.maxGroupSize})`, `Group (${b.groupSize}/${b.maxGroupSize})`) : t('فردي', 'Individual')}
-                {' • '}{b.pricePerStudent.iqd.toLocaleString()} {t('د.ع.', 'IQD')}
+                {b.type === 'GROUP' ? t('groupSession', { size: b.groupSize ?? '', max: b.maxGroupSize ?? '' }) : t('individual')}
+                {' • '}{b.pricePerStudent.iqd.toLocaleString()} {t('currencyIqd')}
               </div>
             </div>
 
@@ -82,7 +86,7 @@ export default function BookingsSection({
               <button
                 onClick={() => toggleThread(b.id)}
                 className={`relative p-2 rounded-lg ${expandedThreadId === b.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
-                title={t('مراسلة الأستاذ', 'Message tutor')}
+                title={t('messageTutor')}
               >
                 <MessageCircle className="w-4 h-4" />
                 {isThreadUnread(b.id) && (
@@ -95,7 +99,7 @@ export default function BookingsSection({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                  title={t('واتساب', 'WhatsApp')}
+                  title={t('whatsapp')}
                 >
                   <MessageSquare className="w-4 h-4" />
                 </a>
@@ -105,7 +109,7 @@ export default function BookingsSection({
                   onClick={() => handleCancelBooking(b.id)}
                   disabled={cancellingId === b.id}
                   className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg disabled:opacity-60"
-                  title={t('إلغاء الحجز', 'Cancel booking')}
+                  title={t('cancelBooking')}
                 >
                   <X className="w-4 h-4" />
                 </button>

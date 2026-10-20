@@ -3,7 +3,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getCategories, getTaxonomies } from '@/core/services/masterDataService';
 import { getInstitutionById, getInstitutionVerificationDocuments, saveAdminInstitution } from '@/core/services/institutionService';
 import { Institution, InstitutionProgram } from '@/core/types/institution';
@@ -13,6 +12,8 @@ import IdentityMediaFields from './_components/IdentityMediaFields';
 import ContactDetailsTuitionFields from './_components/ContactDetailsTuitionFields';
 import ProgramsAndStatusFields from './_components/ProgramsAndStatusFields';
 import AdmissionsAndAccreditationFields from './_components/AdmissionsAndAccreditationFields';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_FORM_COPY } from './InstitutionForm.i18n';
 
 function emptyProgram(): InstitutionProgram {
   return {
@@ -72,7 +73,7 @@ function InstitutionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
-  const { t } = useLanguage();
+  const t = useT(INSTITUTION_FORM_COPY);
 
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -120,7 +121,7 @@ function InstitutionForm() {
     e.preventDefault();
 
     if (!form.id || !form.name?.ar || !form.name?.en || !form.categoryId || !form.governorateId) {
-      setMessage({ text: t('يرجى ملء الحقول الإلزامية (المعرف، الاسم، الفئة، المحافظة)', 'Please fill required fields (ID, name, category, governorate)'), type: 'error' });
+      setMessage({ text: t('requiredFields'), type: 'error' });
       return;
     }
 
@@ -194,10 +195,10 @@ function InstitutionForm() {
 
     try {
       await saveAdminInstitution(institution);
-      setMessage({ text: t('تم حفظ المؤسسة بنجاح', 'Institution saved successfully'), type: 'success' });
+      setMessage({ text: t('saved'), type: 'success' });
       setTimeout(() => router.push('/admin/institutions'), 900);
     } catch {
-      setMessage({ text: t('حدث خطأ أثناء الحفظ', 'Failed to save institution'), type: 'error' });
+      setMessage({ text: t('saveFailed'), type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -209,12 +210,12 @@ function InstitutionForm() {
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <Building2 className="w-6 h-6 text-purple-600" />
-            <span>{editId ? t('تعديل بيانات المؤسسة', 'Edit Institution') : t('إضافة مؤسسة تعليمية جديدة', 'Add New Institution')}</span>
+            <span>{editId ? t('editTitle') : t('addTitle')}</span>
           </h1>
         </div>
         <Link href="/admin/institutions" className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800">
           <ArrowRight className="w-4 h-4" />
-          <span>{t('العودة للقائمة', 'Back to list')}</span>
+          <span>{t('backToList')}</span>
         </Link>
       </div>
 
@@ -266,7 +267,7 @@ function InstitutionForm() {
             className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ المؤسسة', 'Save Institution')}</span>
+            <span>{saving ? t('saving') : t('save')}</span>
           </button>
         </div>
       </form>

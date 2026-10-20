@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { pickLocalized } from '@/lib/localized';
 import { Institution } from '@/core/types/institution';
 import { Governorate, Category, TaxonomyItem } from '@/core/types/masterData';
 import ImageUploadField from '@/components/shared/ImageUploadField';
@@ -12,6 +14,7 @@ import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
 import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
 import { getInstitutionCompletenessFromGuardrails } from '@/lib/publishingGuardrails';
 import { Building2, Save, ShieldCheck } from 'lucide-react';
+import { INSTITUTION_COPY } from '../Institution.i18n';
 
 // The institution dashboard's Profile tab: basic details form, accreditation documents, and the
 // shared account-management footer (publish/pause, change password, danger zone).
@@ -70,25 +73,26 @@ export default function ProfileTab({
   deleteError: string;
   handleDeleteAccount: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_COPY);
 
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-purple-600" />
-          <h2 className="font-bold text-sm text-slate-900">{t('البيانات الأساسية', 'Basic Details')}</h2>
+          <h2 className="font-bold text-sm text-slate-900">{t('basicDetails')}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ImageUploadField
-            label={t('شعار المؤسسة', 'Institution Logo')}
+            label={t('logo')}
             value={institution.logoUrl || ''}
             onChange={(url) => setInstitution({ ...institution, logoUrl: url })}
             pathPrefix={`institutions/${institution.id}`}
           />
           <ImageUploadField
-            label={t('صورة الغلاف', 'Cover Image')}
+            label={t('coverImage')}
             value={institution.coverImageUrl || ''}
             onChange={(url) => setInstitution({ ...institution, coverImageUrl: url })}
             pathPrefix={`institutions/${institution.id}`}
@@ -96,8 +100,8 @@ export default function ProfileTab({
         </div>
 
         <BilingualTextField
-          labelAr={t('الاسم بالعربية', 'Name (Arabic)')}
-          labelEn={t('الاسم بالإنجليزية', 'Name (English)')}
+          labelAr={t('nameAr')}
+          labelEn={t('nameEn')}
           valueAr={institution.name?.ar || ''}
           valueEn={institution.name?.en || ''}
           onChangeAr={(v) => setInstitution({ ...institution, name: { ...institution.name, ar: v } })}
@@ -105,8 +109,8 @@ export default function ProfileTab({
         />
 
         <BilingualTextField
-          labelAr={t('الشعار التعريفي بالعربية', 'Tagline (Arabic)')}
-          labelEn={t('الشعار التعريفي بالإنجليزية', 'Tagline (English)')}
+          labelAr={t('taglineAr')}
+          labelEn={t('taglineEn')}
           valueAr={institution.tagline?.ar || ''}
           valueEn={institution.tagline?.en || ''}
           onChangeAr={(v) => setInstitution({ ...institution, tagline: { ...institution.tagline, ar: v } })}
@@ -114,8 +118,8 @@ export default function ProfileTab({
         />
 
         <BilingualTextarea
-          labelAr={t('الوصف بالعربية', 'Description (Arabic)')}
-          labelEn={t('الوصف بالإنجليزية', 'Description (English)')}
+          labelAr={t('descriptionAr')}
+          labelEn={t('descriptionEn')}
           valueAr={institution.description?.ar || ''}
           valueEn={institution.description?.en || ''}
           onChangeAr={(v) => setInstitution({ ...institution, description: { ...institution.description, ar: v } })}
@@ -126,8 +130,8 @@ export default function ProfileTab({
             visitor's language — but the form only ever exposed the Arabic one, so the English
             address could never be filled in. */}
         <BilingualTextField
-          labelAr={t('العنوان بالعربية', 'Address (Arabic)')}
-          labelEn={t('العنوان بالإنجليزية', 'Address (English)')}
+          labelAr={t('addressAr')}
+          labelEn={t('addressEn')}
           valueAr={institution.address?.ar || ''}
           valueEn={institution.address?.en || ''}
           onChangeAr={(v) => setInstitution({ ...institution, address: { ...institution.address, ar: v } })}
@@ -136,28 +140,28 @@ export default function ProfileTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('الفئة', 'Category')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('category')}</label>
             <select
               value={institution.categoryId || ''}
               onChange={(e) => setInstitution({ ...institution, categoryId: e.target.value })}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             >
-              <option value="">{t('اختر الفئة', 'Select category')}</option>
+              <option value="">{t('selectCategory')}</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{language === 'en' ? c.name.en : c.name.ar}</option>
+                <option key={c.id} value={c.id}>{pickLocalized(c.name, language)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('المحافظة', 'Governorate')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('governorate')}</label>
             <select
               value={institution.governorateId || ''}
               onChange={(e) => setInstitution({ ...institution, governorateId: e.target.value })}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             >
-              <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
+              <option value="">{t('selectGovernorate')}</option>
               {governorates.map((g) => (
-                <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+                <option key={g.id} value={g.id}>{pickLocalized(g.name, language)}</option>
               ))}
             </select>
           </div>
@@ -165,7 +169,7 @@ export default function ProfileTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('phone')}</label>
             <input
               type="text"
               dir="ltr"
@@ -175,7 +179,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('whatsapp')}</label>
             <input
               type="text"
               dir="ltr"
@@ -186,7 +190,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('البريد الإلكتروني', 'Email')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('email')}</label>
             <input
               type="email"
               value={institution.contact?.email || ''}
@@ -195,7 +199,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('الموقع الإلكتروني', 'Website')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('website')}</label>
             <input
               type="text"
               dir="ltr"
@@ -209,8 +213,8 @@ export default function ProfileTab({
         {/* Working hours show on the public contact card but had no field here at all, so no
             institution could ever set them. */}
         <BilingualTextField
-          labelAr={t('ساعات الدوام بالعربية', 'Working Hours (Arabic)')}
-          labelEn={t('ساعات الدوام بالإنجليزية', 'Working Hours (English)')}
+          labelAr={t('hoursAr')}
+          labelEn={t('hoursEn')}
           valueAr={institution.contact?.workingHours?.ar || ''}
           valueEn={institution.contact?.workingHours?.en || ''}
           onChangeAr={(v) => setInstitution({ ...institution, contact: { ...institution.contact, workingHours: { ar: v, en: institution.contact?.workingHours?.en || '' } } })}
@@ -221,7 +225,7 @@ export default function ProfileTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنة التأسيس', 'Established Year')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('establishedYear')}</label>
             <input
               type="number"
               value={institution.establishedYear || ''}
@@ -230,22 +234,22 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('نظام الطلاب', 'Gender Policy')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('genderPolicy')}</label>
             <select
               value={institution.genderPolicy || 'CO_ED'}
               onChange={(e) => setInstitution({ ...institution, genderPolicy: e.target.value as Institution['genderPolicy'] })}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             >
-              <option value="CO_ED">{t('مختلط', 'Co-Educational')}</option>
-              <option value="BOYS_ONLY">{t('طلاب فقط', 'Boys Only')}</option>
-              <option value="GIRLS_ONLY">{t('طالبات فقط', 'Girls Only')}</option>
+              <option value="CO_ED">{t('coEd')}</option>
+              <option value="BOYS_ONLY">{t('boysOnly')}</option>
+              <option value="GIRLS_ONLY">{t('girlsOnly')}</option>
             </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('الحد الأدنى للقسط', 'Tuition Min')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('tuitionMin')}</label>
             <input
               type="number"
               value={institution.tuition?.min ?? 0}
@@ -254,7 +258,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('الحد الأعلى للقسط', 'Tuition Max')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('tuitionMax')}</label>
             <input
               type="number"
               value={institution.tuition?.max ?? 0}
@@ -263,7 +267,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('العملة', 'Currency')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('currency')}</label>
             <select
               value={institution.tuition?.currency || 'USD'}
               onChange={(e) => setInstitution({ ...institution, tuition: { ...institution.tuition, currency: e.target.value as 'IQD' | 'USD' } })}
@@ -274,28 +278,28 @@ export default function ProfileTab({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('الدورية', 'Period')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('period')}</label>
             <select
               value={institution.tuition?.period || 'YEAR'}
               onChange={(e) => setInstitution({ ...institution, tuition: { ...institution.tuition, period: e.target.value as 'YEAR' | 'SEMESTER' | 'COURSE' } })}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             >
-              <option value="YEAR">{t('سنوي', 'Yearly')}</option>
-              <option value="SEMESTER">{t('فصلي', 'Semester')}</option>
-              <option value="COURSE">{t('دورة', 'Course')}</option>
+              <option value="YEAR">{t('periodYear')}</option>
+              <option value="SEMESTER">{t('periodSemester')}</option>
+              <option value="COURSE">{t('periodCourse')}</option>
             </select>
           </div>
         </div>
 
         <ChipMultiSelect
-          label={t('الاعتمادات والمناهج', 'Accreditations & Curricula')}
-          options={taxonomies.map((tax) => ({ id: tax.id, label: language === 'en' ? tax.name.en : tax.name.ar }))}
+          label={t('accreditationsCurricula')}
+          options={taxonomies.map((tax) => ({ id: tax.id, label: pickLocalized(tax.name, language) }))}
           selected={institution.taxonomyIds || []}
           onChange={(ids) => setInstitution({ ...institution, taxonomyIds: ids })}
         />
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('المرافق (مفصولة بفاصلة)', 'Facilities (comma-separated)')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('facilities')}</label>
           <input
             type="text"
             value={facilitiesText}
@@ -309,10 +313,10 @@ export default function ProfileTab({
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <h2 className="font-bold text-sm text-slate-900">{t('وثائق الاعتماد', 'Accreditation Documents')}</h2>
+          <h2 className="font-bold text-sm text-slate-900">{t('accreditationDocs')}</h2>
         </div>
         <p className="text-[11px] text-slate-400">
-          {t('ارفع وثائق الاعتماد الرسمية لمساعدة الإدارة على توثيق مؤسستك — هذه الوثائق خاصة ولا تظهر للعامة.', "Upload official accreditation documents to help the admin verify your institution — these documents are private and never shown publicly.")}
+          {t('accreditationHelp')}
         </p>
         <DocumentUploadField
           label=""
@@ -329,27 +333,21 @@ export default function ProfileTab({
           className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
         >
           <Save className="w-3.5 h-3.5" />
-          <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ التغييرات', 'Save Changes')}</span>
+          <span>{saving ? t('saving') : t('saveChanges')}</span>
         </button>
       </div>
 
       <AccountSettingsSection
         status={institution.status}
         completeness={getInstitutionCompletenessFromGuardrails(institution)}
-        publishHeading={t('نشر الملف في الدليل العام', 'Publish to the Directory')}
-        publishDescription={t(
-          'ملفك غير منشور بعد ولا يظهر لزوار الموقع. أكمل المعلومات التالية ليراجعها فريقنا.',
-          "Your profile isn't published yet and can't be seen by visitors. Complete the following and our team will review it."
-        )}
-        publishCompleteMessage={t(
-          'ملفك مكتمل وبانتظار مراجعة الإدارة. سيظهر في الدليل العام فور الموافقة عليه.',
-          'Your profile is complete and waiting for admin review. It goes live in the public directory once approved.'
-        )}
-        visibilityHeading={t('ظهور الملف للعامة', 'Directory Visibility')}
-        activeDescription={t('ملف مؤسستك ظاهر حالياً في الدليل العام.', "Your institution's profile is currently visible in the public directory.")}
-        pausedDescription={t('ملف مؤسستك متوقف مؤقتاً ولن يظهر في الدليل العام.', "Your institution's profile is paused and hidden from the public directory.")}
-        pauseLabel={t('إيقاف الملف مؤقتاً', 'Pause Profile')}
-        resumeLabel={t('تفعيل الملف مجدداً', 'Resume Profile')}
+        publishHeading={t('publishHeading')}
+        publishDescription={t('publishDescription')}
+        publishCompleteMessage={t('publishComplete')}
+        visibilityHeading={t('visibilityHeading')}
+        activeDescription={t('activeDescription')}
+        pausedDescription={t('pausedDescription')}
+        pauseLabel={t('pauseLabel')}
+        resumeLabel={t('resumeLabel')}
         onTogglePause={handleTogglePause}
         pausing={pausing}
         currentPassword={currentPassword}
@@ -359,8 +357,8 @@ export default function ProfileTab({
         changingPassword={changingPassword}
         passwordMessage={passwordMessage}
         onChangePassword={handleChangePassword}
-        dangerZoneDescription={t('حذف حساب مؤسستك نهائياً — سيُخفى الملف عن العامة. لا يمكن التراجع عن هذا الإجراء.', "Permanently delete your institution's account — the profile disappears from the directory. This cannot be undone.")}
-        deleteButtonLabel={t('حذف الحساب نهائياً', 'Delete Account')}
+        dangerZoneDescription={t('dangerZone')}
+        deleteButtonLabel={t('deleteAccount')}
         deletePassword={deletePassword}
         setDeletePassword={setDeletePassword}
         deletingAccount={deletingAccount}

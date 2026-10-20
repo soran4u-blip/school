@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useLoadOnMount } from '@/lib/useLoadOnMount';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { LOCATIONS_COPY } from './Locations.i18n';
 import { getGovernorates, getCities, saveGovernorate, saveCity, deleteGovernorate } from '@/core/services/masterDataService';
 import { Governorate, City } from '@/core/types/masterData';
 import {
@@ -16,7 +17,7 @@ import GovernorateForm from './_components/GovernorateForm';
 import CitiesPanel from './_components/CitiesPanel';
 
 export default function AdminLocationsPage() {
-  const { t } = useLanguage();
+  const t = useT(LOCATIONS_COPY);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [selectedGov, setSelectedGov] = useState<Governorate | null>(null);
   const [cities, setCities] = useState<City[]>([]);
@@ -68,7 +69,7 @@ export default function AdminLocationsPage() {
   const handleSaveGovernorate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!govForm.id || !govForm.name?.ar || !govForm.name?.en) {
-      setMessage({ text: t('يرجى ملء جميع الحقول المطلوبة', 'Please fill all required fields'), type: 'error' });
+      setMessage({ text: t('fillRequired'), type: 'error' });
       return;
     }
 
@@ -90,7 +91,7 @@ export default function AdminLocationsPage() {
 
     await saveGovernorate(newGov);
     setMessage({
-      text: t('تم حفظ المحافظة بنجاح في قاعدة البيانات', 'Governorate saved successfully to master database'),
+      text: t('govSaved'),
       type: 'success'
     });
     setIsAddingGov(false);
@@ -102,7 +103,7 @@ export default function AdminLocationsPage() {
   const handleSaveCity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGov || !cityForm.id || !cityForm.name?.ar || !cityForm.name?.en) {
-      setMessage({ text: t('يرجى إدخال اسم وقضاء المدينة', 'Please fill city details'), type: 'error' });
+      setMessage({ text: t('cityFillDetails'), type: 'error' });
       return;
     }
 
@@ -119,16 +120,16 @@ export default function AdminLocationsPage() {
     };
 
     await saveCity(newCity);
-    setMessage({ text: t('تم حفظ المدينة/المنطقة بنجاح', 'City saved successfully'), type: 'success' });
+    setMessage({ text: t('citySaved'), type: 'success' });
     setIsAddingCity(false);
     const updated = await getCities(selectedGov.id, false);
     setCities(updated);
   };
 
   const handleDeleteGov = async (id: string) => {
-    if (confirm(t('هل أنت متأكد من حذف هذه المحافظة؟', 'Are you sure you want to delete this governorate?'))) {
+    if (confirm(t('confirmDeleteGov'))) {
       await deleteGovernorate(id);
-      setMessage({ text: t('تم حذف المحافظة بنجاح', 'Governorate deleted'), type: 'success' });
+      setMessage({ text: t('govDeleted'), type: 'success' });
       await loadData();
     }
   };
@@ -161,13 +162,10 @@ export default function AdminLocationsPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <MapPin className="w-6 h-6 text-blue-600" />
-            <span>{t('إدارة المحافظات والمدن في العراق', 'Iraqi Governorates & Cities Manager')}</span>
+            <span>{t('title')}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t(
-              'تحكم بنسبة 100% في كافة محافظات العراق الـ 18، إضافة وتعديل المدن والأقضية وتفعيلها فورياً.',
-              '100% dynamic control over all 18 governorates, municipal cities, and regions in Iraq.'
-            )}
+            {t('intro')}
           </p>
         </div>
 
@@ -176,7 +174,7 @@ export default function AdminLocationsPage() {
           className="flex items-center gap-2 px-4 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:bg-[#1E3E62] transition-colors shadow-xs self-start"
         >
           <Plus className="w-4 h-4 text-[#F1C40F]" />
-          <span>{t('+ إضافة محافظة عراقية جديدة', '+ Add New Governorate')}</span>
+          <span>{t('addGov')}</span>
         </button>
       </div>
 

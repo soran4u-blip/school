@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/core/firebase/config';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { LOGIN_COPY } from './Login.i18n';
 import { UserCircle2, Loader2 } from 'lucide-react';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
@@ -19,7 +20,7 @@ const DASHBOARD_BY_ROLE: Record<string, string> = {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const t = useT(LOGIN_COPY);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,7 +50,7 @@ function LoginForm() {
       // This portal is for tutors/schools/students only — superadmin keeps its own hidden login.
       if (!res.ok || data.role === 'superadmin' || !DASHBOARD_BY_ROLE[data.role]) {
         await signOut(auth);
-        setError(data.error || t('هذا الحساب غير مصرح له بالدخول من هنا', 'This account is not authorized to sign in here'));
+        setError(data.error || t('notAuthorized'));
         return;
       }
 
@@ -57,7 +58,7 @@ function LoginForm() {
       router.push(redirect);
       router.refresh();
     } catch {
-      setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Invalid email or password'));
+      setError(t('invalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ function LoginForm() {
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      setError(t('أدخل بريدك الإلكتروني أولاً لإعادة تعيين كلمة المرور', 'Enter your email above first to reset your password'));
+      setError(t('enterEmailFirst'));
       return;
     }
     setError('');
@@ -73,10 +74,10 @@ function LoginForm() {
     setResetting(true);
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      setResetMessage(t('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'A password reset link has been sent to your email'));
+      setResetMessage(t('resetSent'));
     } catch {
       // Same message whether the account exists or not, to avoid leaking which emails are registered.
-      setResetMessage(t('إذا كان هذا البريد مسجلاً، فسيصلك رابط إعادة تعيين كلمة المرور', 'If that email is registered, a password reset link is on its way'));
+      setResetMessage(t('resetMaybeSent'));
     } finally {
       setResetting(false);
     }
@@ -95,11 +96,11 @@ function LoginForm() {
           </div>
           <h1 className="font-extrabold text-xl text-[#0B192C]">Eduraq</h1>
           <p className="text-xs text-emerald-700 font-semibold mt-1">
-            {t('تسجيل دخول الحساب', 'Account Sign In')}
+            {t('title')}
           </p>
           {bookingSignIn && (
             <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold leading-5 text-blue-800">
-              {t('سجّل الدخول للمتابعة من الموعد الذي اخترته.', 'Sign in to continue with the time you selected.')}
+              {t('bookingHint')}
             </p>
           )}
         </div>
@@ -107,7 +108,7 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
-              {t('البريد الإلكتروني', 'Email')}
+              {t('email')}
             </label>
             <input
               type="email"
@@ -120,7 +121,7 @@ function LoginForm() {
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1.5">
-              {t('كلمة المرور', 'Password')}
+              {t('password')}
             </label>
             <input
               type="password"
@@ -150,7 +151,7 @@ function LoginForm() {
             className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t('تسجيل الدخول', 'Sign In')}
+            {t('signIn')}
           </button>
 
           <button
@@ -159,16 +160,16 @@ function LoginForm() {
             disabled={resetting}
             className="w-full text-center text-xs font-semibold text-slate-500 hover:text-emerald-700 transition-colors disabled:opacity-60"
           >
-            {resetting ? t('جاري الإرسال...', 'Sending...') : t('نسيت كلمة المرور؟', 'Forgot password?')}
+            {resetting ? t('sending') : t('forgot')}
           </button>
 
           <p className="text-center text-xs text-slate-500">
-            {t('طالب جديد؟', 'New student?')}{' '}
+            {t('newStudent')}{' '}
             <Link
               href={redirectTarget ? `/account/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/account/signup'}
               className="font-bold text-emerald-700 hover:underline"
             >
-              {t('أنشئ حساباً مجانياً', 'Create a free account')}
+              {t('createAccount')}
             </Link>
           </p>
         </form>

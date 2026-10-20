@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { Bell, BellOff, BellRing } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { NOTIFICATIONS_TOGGLE_COPY } from './SharedPanels.i18n';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -14,7 +15,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 // Lets a logged-in student opt into web push (booking/admission decision updates) — native
 // browser Push API, no app install or third-party notification service required.
 export default function NotificationsToggle() {
-  const { t } = useLanguage();
+  const t = useT(NOTIFICATIONS_TOGGLE_COPY);
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -37,7 +38,7 @@ export default function NotificationsToggle() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        setError(t('يجب السماح بالإشعارات من إعدادات المتصفح', 'You need to allow notifications in your browser settings'));
+        setError(t('allowInBrowser'));
         return;
       }
       const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -56,7 +57,7 @@ export default function NotificationsToggle() {
       });
       setSubscribed(true);
     } catch {
-      setError(t('تعذر تفعيل الإشعارات', 'Failed to enable notifications'));
+      setError(t('enableFailed'));
     } finally {
       setBusy(false);
     }
@@ -88,11 +89,11 @@ export default function NotificationsToggle() {
       <div className="flex items-center gap-2.5">
         {subscribed ? <BellRing className="w-4 h-4 text-emerald-600" /> : <Bell className="w-4 h-4 text-slate-400" />}
         <div>
-          <p className="text-xs font-bold text-slate-800">{t('إشعارات المتصفح', 'Browser Notifications')}</p>
+          <p className="text-xs font-bold text-slate-800">{t('title')}</p>
           <p className="text-[11px] text-slate-500">
             {subscribed
-              ? t('ستصلك إشعارات عند تحديث حالة حجوزاتك وطلبات القبول', "You'll be notified about booking and admission status changes")
-              : t('فعّل الإشعارات لمتابعة حالة حجوزاتك وطلباتك فوراً', 'Enable notifications to hear about your bookings and applications right away')}
+              ? t('subscribedHint')
+              : t('unsubscribedHint')}
           </p>
           {error && <p className="text-[11px] text-rose-600 font-bold mt-1">{error}</p>}
         </div>
@@ -105,7 +106,7 @@ export default function NotificationsToggle() {
         }`}
       >
         {subscribed ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-        {subscribed ? t('إيقاف', 'Disable') : t('تفعيل', 'Enable')}
+        {subscribed ? t('disable') : t('enable')}
       </button>
     </div>
   );

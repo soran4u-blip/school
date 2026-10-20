@@ -15,8 +15,11 @@ import {
 import { useLanguage } from '@/core/context/LanguageContext';
 import { useNotifications } from '@/lib/useNotifications';
 import { NotificationItem } from '@/core/types/notification';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { NOTIFICATION_CENTER_COPY } from './SharedPanels.i18n';
 
-function formatRelativeTime(isoString: string, lang: string): string {
+function formatRelativeTime(isoString: string, t: ReturnType<typeof useT<keyof typeof NOTIFICATION_CENTER_COPY>>): string {
   try {
     const diffMs = Date.now() - new Date(isoString).getTime();
     const diffSec = Math.floor(diffMs / 1000);
@@ -24,10 +27,10 @@ function formatRelativeTime(isoString: string, lang: string): string {
     const diffHours = Math.floor(diffMin / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMin < 1) return lang === 'ar' ? 'الآن' : 'Just now';
-    if (diffMin < 60) return lang === 'ar' ? `منذ ${diffMin} دقيقة` : `${diffMin}m ago`;
-    if (diffHours < 24) return lang === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
-    if (diffDays < 7) return lang === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
+    if (diffMin < 1) return t('justNow');
+    if (diffMin < 60) return t('minAgo', { n: diffMin });
+    if (diffHours < 24) return t('hourAgo', { n: diffHours });
+    if (diffDays < 7) return t('dayAgo', { n: diffDays });
     return isoString.split('T')[0];
   } catch {
     return '';
@@ -35,7 +38,8 @@ function formatRelativeTime(isoString: string, lang: string): string {
 }
 
 export default function NotificationCenter() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(NOTIFICATION_CENTER_COPY);
   const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
@@ -96,8 +100,8 @@ export default function NotificationCenter() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none"
-        title={t('الإشعارات', 'Notifications')}
-        aria-label={t('الإشعارات', 'Notifications')}
+        title={t('notifications')}
+        aria-label={t('notifications')}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -113,10 +117,10 @@ export default function NotificationCenter() {
           {/* Header */}
           <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm text-slate-900">{t('الإشعارات', 'Notifications')}</h3>
+              <h3 className="font-bold text-sm text-slate-900">{t('notifications')}</h3>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 font-mono">
-                  {unreadCount} {t('جديدة', 'new')}
+                  {unreadCount} {t('newCount')}
                 </span>
               )}
             </div>
@@ -126,7 +130,7 @@ export default function NotificationCenter() {
                 className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                <span>{t('تحديد الكل كمقروء', 'Mark all read')}</span>
+                <span>{t('markAllRead')}</span>
               </button>
             )}
           </div>
@@ -141,7 +145,7 @@ export default function NotificationCenter() {
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {t('الكل', 'All')} ({notifications.length})
+              {t('all')} ({notifications.length})
             </button>
             <button
               onClick={() => setTab('unread')}
@@ -151,7 +155,7 @@ export default function NotificationCenter() {
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {t('غير المقروءة', 'Unread')} ({unreadCount})
+              {t('unread')} ({unreadCount})
             </button>
           </div>
 
@@ -160,12 +164,12 @@ export default function NotificationCenter() {
             {displayedNotifications.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-400">
                 <Bell className="w-6 h-6 mx-auto mb-1 text-slate-300" />
-                <p>{tab === 'unread' ? t('لا توجد إشعارات غير مقروءة', 'No unread notifications') : t('لا توجد إشعارات بعد', 'No notifications yet')}</p>
+                <p>{tab === 'unread' ? t('noUnread') : t('noneYet')}</p>
               </div>
             ) : (
               displayedNotifications.map((notif) => {
-                const titleText = (language === 'en' ? notif.title?.en : notif.title?.ar) || notif.title?.ar || notif.title?.en || '';
-                const bodyText = (language === 'en' ? notif.body?.en : notif.body?.ar) || notif.body?.ar || notif.body?.en || '';
+                const titleText = pickLocalized(notif.title, language);
+                const bodyText = pickLocalized(notif.body, language);
 
                 return (
                   <div
@@ -184,7 +188,7 @@ export default function NotificationCenter() {
                           {titleText}
                         </p>
                         <span className="text-[10px] text-slate-400 shrink-0 font-mono">
-                          {formatRelativeTime(notif.createdAt, language)}
+                          {formatRelativeTime(notif.createdAt, t)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">

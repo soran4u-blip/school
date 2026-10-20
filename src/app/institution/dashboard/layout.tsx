@@ -29,17 +29,17 @@ export default function InstitutionDashboardLayout({ children }: { children: Rea
             </div>
             <div>
               <span className="font-extrabold text-sm">Eduraq</span>
-              <p className="text-[11px] text-purple-300 font-semibold">{t('بوابة المؤسسة التعليمية', 'Institution Portal')}</p>
+              <p className="text-[11px] text-purple-300 font-semibold">{t('بوابة المؤسسة التعليمية', 'Institution Portal', 'دەروازەی دامەزراوەی پەروەردەیی')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/messages"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
-              title={t('الرسائل', 'Messages')}
+              title={t('الرسائل', 'Messages', 'نامەکان')}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('الرسائل', 'Messages')}</span>
+              <span className="hidden sm:inline">{t('الرسائل', 'Messages', 'نامەکان')}</span>
             </Link>
             <div className="bg-white rounded-xl text-slate-800">
               <NotificationCenter />
@@ -49,14 +49,14 @@ export default function InstitutionDashboardLayout({ children }: { children: Rea
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
             >
               <Home className="w-3.5 h-3.5" />
-              <span>{t('الموقع الرئيسي', 'Site')}</span>
+              <span>{t('الموقع الرئيسي', 'Site', 'ماڵپەڕی سەرەکی')}</span>
             </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-200 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t('تسجيل الخروج', 'Log Out')}</span>
+              <span>{t('تسجيل الخروج', 'Log Out', 'چوونەدەرەوە')}</span>
             </button>
           </div>
         </div>

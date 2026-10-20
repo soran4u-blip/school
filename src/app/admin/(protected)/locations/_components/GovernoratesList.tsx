@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { LOCATIONS_COPY } from '../Locations.i18n';
 import { Governorate } from '@/core/types/masterData';
 import { Edit, Trash2 } from 'lucide-react';
 
@@ -21,16 +22,16 @@ export default function GovernoratesList({
   onEdit: (gov: Governorate) => void;
   onDelete: (id: string) => void;
 }) {
-  const { t } = useLanguage();
+  const t = useT(LOCATIONS_COPY);
 
   return (
     <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col">
       <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-          {t('المحافظات المسجلة', 'Governorates List')} ({governorates.length})
+          {t('govList')} ({governorates.length})
         </span>
         <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-          {t('تحديث حي', 'Live Hydrated')}
+          {t('liveHydrated')}
         </span>
       </div>
 
@@ -55,7 +56,7 @@ export default function GovernoratesList({
                     <span className="text-xs text-slate-500 font-medium">({gov.name.en})</span>
                   </div>
                   <span className="text-[10px] text-slate-400 font-semibold uppercase">
-                    {gov.region} • {gov.institutionsCount || 0} {t('مؤسسة', 'institutions')}
+                    {gov.region} • {gov.institutionsCount || 0} {t('institutions')}
                   </span>
                 </div>
               </div>
@@ -67,7 +68,7 @@ export default function GovernoratesList({
                     onEdit(gov);
                   }}
                   className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-white transition-colors"
-                  title={t('تعديل', 'Edit')}
+                  title={t('edit')}
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </button>
@@ -77,7 +78,7 @@ export default function GovernoratesList({
                     onDelete(gov.id);
                   }}
                   className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-white transition-colors"
-                  title={t('حذف', 'Delete')}
+                  title={t('delete')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

@@ -23,9 +23,13 @@ import {
 import ListingStatusControl, { ListingStatus } from '@/components/shared/ListingStatusControl';
 import DeletedListingsPanel from '@/components/shared/DeletedListingsPanel';
 import { DELETED_LISTING_RETENTION_DAYS, isDeleted, isNotDeleted } from '@/lib/listingLifecycle';
+import { useT } from '@/lib/useT';
+import { ADMIN_INSTITUTIONS_COPY } from './Institutions.i18n';
+import { pickLocalized } from '@/lib/localized';
 
 export default function AdminInstitutionsPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ADMIN_INSTITUTIONS_COPY);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -54,7 +58,7 @@ export default function AdminInstitutionsPage() {
       await action();
       await loadData();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+      setError(e instanceof Error ? e.message : t('actionFailed'));
     }
   };
 
@@ -71,11 +75,8 @@ export default function AdminInstitutionsPage() {
     run(() => updateListing('institutions', inst.id, { isFeatured: !inst.isFeatured }));
 
   const handleDelete = async (inst: Institution) => {
-    const name = language === 'en' ? inst.name.en : inst.name.ar;
-    if (!confirm(t(
-      `حذف "${name}"؟ سيختفي من الدليل فوراً، ويمكن استعادته من قسم المحذوفات خلال ${DELETED_LISTING_RETENTION_DAYS} يوماً.`,
-      `Delete "${name}"? It leaves the directory immediately and can be restored from "Deleted" for ${DELETED_LISTING_RETENTION_DAYS} days.`
-    ))) {
+    const name = pickLocalized(inst.name, language);
+    if (!confirm(t('confirmDelete', { name, days: DELETED_LISTING_RETENTION_DAYS }))) {
       return;
     }
     await run(() => deleteListing('institutions', inst.id));
@@ -83,7 +84,7 @@ export default function AdminInstitutionsPage() {
 
   const deleted = institutions.filter(isDeleted).map((inst) => ({
     id: inst.id,
-    name: language === 'en' ? inst.name.en : inst.name.ar,
+    name: pickLocalized(inst.name, language),
     deletedAt: inst.deletedAt,
   }));
 
@@ -100,13 +101,10 @@ export default function AdminInstitutionsPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <Building2 className="w-6 h-6 text-purple-600" />
-            <span>{t('إدارة المؤسسات التعليمية المسجلة', 'Educational Institutions Directory')}</span>
+            <span>{t('title')}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t(
-              'اعتماد وتوثيق المدارس والجامعات والمعاهد، تفعيل الشارات الرسمية، وإدارة برامج القبول.',
-              'Verify institution credentials, toggle official badges, and manage listings.'
-            )}
+            {t('subtitle')}
           </p>
         </div>
 
@@ -116,14 +114,14 @@ export default function AdminInstitutionsPage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
-            <span>{t('عرض الدليل العام', 'View Public Directory')}</span>
+            <span>{t('viewPublic')}</span>
           </Link>
           <Link
             href="/admin/institutions/add"
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4 text-[#F1C40F]" />
-            <span>{t('إضافة مؤسسة', 'Add Institution')}</span>
+            <span>{t('addInstitution')}</span>
           </Link>
         </div>
 
@@ -140,9 +138,9 @@ export default function AdminInstitutionsPage() {
             onChange={(e) => setFilterCat(e.target.value)}
             className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
           >
-            <option value="all">{t('كافة الفئات', 'All Categories')}</option>
+            <option value="all">{t('allCategories')}</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{language === 'en' ? c.name.en : c.name.ar}</option>
+              <option key={c.id} value={c.id}>{pickLocalized(c.name, language)}</option>
             ))}
           </select>
 
@@ -151,15 +149,15 @@ export default function AdminInstitutionsPage() {
             onChange={(e) => setFilterGov(e.target.value)}
             className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
           >
-            <option value="all">{t('كافة المحافظات', 'All Governorates')}</option>
+            <option value="all">{t('allGovernorates')}</option>
             {governorates.map((g) => (
-              <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+              <option key={g.id} value={g.id}>{pickLocalized(g.name, language)}</option>
             ))}
           </select>
         </div>
 
         <span className="text-xs text-slate-500 font-bold">
-          {t('النتائج:', 'Results:')} <span className="text-slate-900 font-black">{filtered.length}</span>
+          {t('results')} <span className="text-slate-900 font-black">{filtered.length}</span>
         </span>
       </div>
 
@@ -168,13 +166,13 @@ export default function AdminInstitutionsPage() {
         <table className="w-full min-w-[900px] text-xs text-start">
           <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
             <tr>
-              <th className="p-3 text-start">{t('المؤسسة', 'Institution')}</th>
-              <th className="p-3 text-start">{t('الفئة والمحافظة', 'Category & Location')}</th>
-              <th className="p-3 text-center">{t('التقييم', 'Rating')}</th>
-              <th className="p-3 text-center">{t('الحالة', 'Status')}</th>
-              <th className="p-3 text-center">{t('التوثيق الرسمي', 'Verified Badge')}</th>
-              <th className="p-3 text-center">{t('مميز في الواجهة', 'Featured')}</th>
-              <th className="p-3 text-end">{t('إجراءات', 'Actions')}</th>
+              <th className="p-3 text-start">{t('colInstitution')}</th>
+              <th className="p-3 text-start">{t('colCategoryLocation')}</th>
+              <th className="p-3 text-center">{t('colRating')}</th>
+              <th className="p-3 text-center">{t('colStatus')}</th>
+              <th className="p-3 text-center">{t('colVerified')}</th>
+              <th className="p-3 text-center">{t('colFeatured')}</th>
+              <th className="p-3 text-end">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -194,16 +192,16 @@ export default function AdminInstitutionsPage() {
                         className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div>
-                        <div className="font-bold text-slate-900">{language === 'en' ? inst.name.en : inst.name.ar}</div>
+                        <div className="font-bold text-slate-900">{pickLocalized(inst.name, language)}</div>
                         <div className="text-[11px] text-slate-500">{language === 'en' ? inst.name.ar : inst.name.en}</div>
                       </div>
                     </div>
                   </td>
                   <td className="p-3">
-                    <div className="font-semibold text-slate-800">{cat ? (language === 'en' ? cat.name.en : cat.name.ar) : inst.categoryId}</div>
+                    <div className="font-semibold text-slate-800">{cat ? pickLocalized(cat.name, language) : inst.categoryId}</div>
                     <div className="text-[11px] text-slate-500 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{gov ? (language === 'en' ? gov.name.en : gov.name.ar) : inst.governorateId}</span>
+                      <span>{gov ? pickLocalized(gov.name, language) : inst.governorateId}</span>
                     </div>
                   </td>
                   <td className="p-3 text-center">
@@ -229,7 +227,7 @@ export default function AdminInstitutionsPage() {
                       }`}
                     >
                       <ShieldCheck className="w-3 h-3" />
-                      <span>{inst.isVerified ? t('معتمد رسمياً', 'Verified') : t('غير موثق', 'Unverified')}</span>
+                      <span>{inst.isVerified ? t('verified') : t('unverified')}</span>
                     </button>
                   </td>
                   <td className="p-3 text-center">
@@ -241,7 +239,7 @@ export default function AdminInstitutionsPage() {
                           : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                       }`}
                     >
-                      {inst.isFeatured ? '★ ' + t('مميز', 'Featured') : t('عادي', 'Standard')}
+                      {inst.isFeatured ? '★ ' + t('featured') : t('standard')}
                     </button>
                   </td>
                   <td className="p-3 text-end">
@@ -249,21 +247,21 @@ export default function AdminInstitutionsPage() {
                       <Link
                         href={`/admin/institutions/add?edit=${inst.id}`}
                         className="p-1.5 text-slate-500 hover:text-blue-700 inline-block"
-                        title={t('تعديل', 'Edit')}
+                        title={t('edit')}
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
                       <Link
                         href={`/institutions/${inst.slug}`}
                         className="p-1.5 text-blue-600 hover:text-blue-800 inline-block font-bold"
-                        title={t('عرض الصفحة العامة', 'View Public Profile')}
+                        title={t('viewProfile')}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Link>
                       <button
                         onClick={() => handleDelete(inst)}
                         className="p-1.5 text-slate-500 hover:text-rose-700"
-                        title={t('حذف', 'Delete')}
+                        title={t('delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

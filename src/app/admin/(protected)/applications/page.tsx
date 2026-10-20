@@ -9,12 +9,16 @@ import { Application } from '@/core/types/application';
 import { Governorate } from '@/core/types/masterData';
 import { FileCheck2, Check, X, Phone, Mail, AlertCircle, Copy } from 'lucide-react';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { pickLocalized } from '@/lib/localized';
 import { errorMessage } from '@/lib/errors';
+import { useT } from '@/lib/useT';
+import { APPLICATIONS_COPY } from './Applications.i18n';
 
 const HISTORY_PAGE_SIZE = 25;
 
 export default function AdminApplicationsPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(APPLICATIONS_COPY);
   const [pending, setPending] = useState<Application[]>([]);
   const [history, setHistory] = useState<Application[]>([]);
   const [historyCursor, setHistoryCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -44,7 +48,7 @@ export default function AdminApplicationsPage() {
       setHasMoreHistory(historyPage.hasMore);
       setGovernorates(govs);
     } catch {
-      setError(t('تعذر تحميل البيانات. تأكد من تسجيل الدخول كسوبر أدمن.', 'Failed to load data. Make sure you are signed in as superadmin.'));
+      setError(t('loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -67,7 +71,7 @@ export default function AdminApplicationsPage() {
 
   const governorateName = (id: string) => {
     const gov = governorates.find((g) => g.id === id);
-    return gov ? (language === 'en' ? gov.name.en : gov.name.ar) : id;
+    return gov ? pickLocalized(gov.name, language) : id;
   };
 
   const handleApprove = async (app: Application) => {
@@ -82,14 +86,14 @@ export default function AdminApplicationsPage() {
       }
       await loadData();
     } catch (err: unknown) {
-      setError(errorMessage(err, t('تعذرت الموافقة على الطلب', 'Failed to approve application')));
+      setError(errorMessage(err, t('approveFailed')));
     } finally {
       setBusyId(null);
     }
   };
 
   const handleReject = async (app: Application) => {
-    const reason = window.prompt(t('سبب الرفض (اختياري)', 'Rejection reason (optional)')) || undefined;
+    const reason = window.prompt(t('rejectReasonPrompt')) || undefined;
     setBusyId(app.id);
     try {
       await rejectApplication(app.id, reason);
@@ -108,10 +112,10 @@ export default function AdminApplicationsPage() {
       <div>
         <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
           <FileCheck2 className="w-6 h-6 text-blue-600" />
-          <span>{t('طلبات الانضمام', 'Join Applications')}</span>
+          <span>{t('title')}</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          {t('راجع طلبات الانضمام من الأساتذة والمؤسسات. الموافقة على أستاذ تنشئ له حساب دخول تلقائياً.', 'Review applications from prospective tutors and institutions. Approving a tutor automatically provisions their login.')}
+          {t('subtitle')}
         </p>
       </div>
 
@@ -125,7 +129,7 @@ export default function AdminApplicationsPage() {
       {resetLink && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
           <p className="text-xs font-bold text-emerald-800">
-            {t(`تم إنشاء الحساب لـ ${resetLink.email}. شارك رابط تعيين كلمة المرور معه:`, `Account created for ${resetLink.email}. Share this password-setup link with them:`)}
+            {t('accountCreated', { email: resetLink.email })}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -137,22 +141,22 @@ export default function AdminApplicationsPage() {
             <button
               onClick={() => navigator.clipboard.writeText(resetLink.link)}
               className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-              title={t('نسخ', 'Copy')}
+              title={t('copy')}
             >
               <Copy className="w-4 h-4" />
             </button>
           </div>
           <button onClick={() => setResetLink(null)} className="text-xs font-bold text-emerald-700 hover:underline">
-            {t('إغلاق', 'Dismiss')}
+            {t('dismiss')}
           </button>
         </div>
       )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
         {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400">{t('جاري التحميل...', 'Loading...')}</div>
+          <div className="p-8 text-center text-xs text-slate-400">{t('loading')}</div>
         ) : pending.length === 0 && resolved.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد طلبات بعد', 'No applications yet')}</div>
+          <div className="p-8 text-center text-xs text-slate-400">{t('empty')}</div>
         ) : (
           [...pending, ...resolved].map((app) => (
             <div key={app.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -162,7 +166,7 @@ export default function AdminApplicationsPage() {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     app.type === 'TUTOR' ? 'bg-blue-50 text-blue-700' : app.type === 'INSTITUTION' ? 'bg-purple-50 text-purple-700' : 'bg-orange-50 text-orange-700'
                   }`}>
-                    {app.type === 'TUTOR' ? t('أستاذ', 'Tutor') : app.type === 'INSTITUTION' ? t('مؤسسة', 'Institution') : t('شركة/منظمة', 'Company/NGO')}
+                    {app.type === 'TUTOR' ? t('typeTutor') : app.type === 'INSTITUTION' ? t('typeInstitution') : t('typeEmployer')}
                   </span>
                   <span className="text-[10px] text-slate-400">{governorateName(app.governorateId)}</span>
                   <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -170,19 +174,19 @@ export default function AdminApplicationsPage() {
                     app.status === 'REJECTED' ? 'bg-rose-50 text-rose-700' :
                     app.status === 'APPROVING' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700'
                   }`}>
-                    {app.status === 'APPROVING' ? t('قيد المعالجة - أعد المحاولة', 'Stuck mid-approval — retry') : app.status}
+                    {app.status === 'APPROVING' ? t('approvingStuck') : app.status}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-slate-500">
                   <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{app.email}</span>
                   <span className="flex items-center gap-1" dir="ltr"><Phone className="w-3 h-3" />{app.phone}</span>
                   {app.type === 'TUTOR' && app.yearsOfExperience !== undefined && (
-                    <span>{t(`${app.yearsOfExperience} سنوات خبرة`, `${app.yearsOfExperience} yrs experience`)}</span>
+                    <span>{t('yearsExperience', { n: app.yearsOfExperience })}</span>
                   )}
                 </div>
                 {app.message && <p className="text-xs text-slate-600">{app.message}</p>}
                 {app.rejectionReason && (
-                  <p className="text-[11px] text-rose-600 font-semibold">{t('سبب الرفض: ', 'Reason: ')}{app.rejectionReason}</p>
+                  <p className="text-[11px] text-rose-600 font-semibold">{t('reason')}{app.rejectionReason}</p>
                 )}
               </div>
 
@@ -192,7 +196,7 @@ export default function AdminApplicationsPage() {
                     disabled={busyId === app.id}
                     onClick={() => handleApprove(app)}
                     className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg disabled:opacity-50"
-                    title={app.status === 'APPROVING' ? t('إعادة المحاولة', 'Retry') : t('قبول', 'Approve')}
+                    title={app.status === 'APPROVING' ? t('retry') : t('approve')}
                   >
                     <Check className="w-4 h-4" />
                   </button>
@@ -201,7 +205,7 @@ export default function AdminApplicationsPage() {
                       disabled={busyId === app.id}
                       onClick={() => handleReject(app)}
                       className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg disabled:opacity-50"
-                      title={t('رفض', 'Reject')}
+                      title={t('reject')}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -220,7 +224,7 @@ export default function AdminApplicationsPage() {
             disabled={loadingMore}
             className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
           >
-            {loadingMore ? t('جاري التحميل...', 'Loading...') : t('تحميل المزيد', 'Load more')}
+            {loadingMore ? t('loading') : t('loadMore')}
           </button>
         </div>
       )}

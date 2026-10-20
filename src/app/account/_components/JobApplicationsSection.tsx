@@ -4,7 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { Briefcase, MessageSquare } from 'lucide-react';
-import type { AccountJobApplication } from '../page';
+import type { AccountJobApplication } from '../accountTypes';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 const STATUS_STYLES: Record<AccountJobApplication['status'], string> = {
   SUBMITTED: 'bg-blue-50 text-blue-700',
@@ -18,13 +21,14 @@ const STATUS_STYLES: Record<AccountJobApplication['status'], string> = {
 // InquiriesSection, but read-only (no thread/cancel actions; job applications aren't messaged
 // through the account page the way bookings and inquiries are).
 export default function JobApplicationsSection({ applications }: { applications: AccountJobApplication[] }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   if (applications.length === 0) {
     return (
       <div className="text-center text-sm text-slate-400 py-12">
-        {t('لا توجد طلبات توظيف بعد.', 'No job applications yet.')}{' '}
-        <Link href="/jobs" className="text-emerald-700 font-bold hover:underline">{t('تصفّح الوظائف', 'Browse jobs')}</Link>
+        {t('noJobApplications')}{' '}
+        <Link href="/jobs" className="text-emerald-700 font-bold hover:underline">{t('browseJobs')}</Link>
       </div>
     );
   }
@@ -38,14 +42,14 @@ export default function JobApplicationsSection({ applications }: { applications:
               <div className="flex items-center gap-2 flex-wrap">
                 <Briefcase className="w-4 h-4 text-blue-600" />
                 <Link href={`/jobs/${a.jobId}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
-                  {a.jobTitle ? (language === 'en' ? a.jobTitle.en : a.jobTitle.ar) : a.jobId}
+                  {a.jobTitle ? pickLocalized(a.jobTitle, language) : a.jobId}
                 </Link>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[a.status]}`}>
                   {a.status}
                 </span>
               </div>
               <div className="text-xs text-slate-500 font-semibold">
-                {a.institutionName ? (language === 'en' ? a.institutionName.en : a.institutionName.ar) : a.institutionId}
+                {a.institutionName ? pickLocalized(a.institutionName, language) : a.institutionId}
               </div>
             </div>
 
@@ -55,7 +59,7 @@ export default function JobApplicationsSection({ applications }: { applications:
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                title={t('واتساب', 'WhatsApp')}
+                title={t('whatsapp')}
               >
                 <MessageSquare className="w-4 h-4" />
               </a>

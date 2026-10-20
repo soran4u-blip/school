@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { ADMIN_LAYOUT_COPY } from './AdminLayout.i18n';
 import { auth } from '@/core/firebase/config';
 import { onIdTokenChanged } from 'firebase/auth';
 import { AdminRole, hasPermission, permissionForPath, isAdminRole } from '@/core/permissions';
@@ -35,13 +36,14 @@ import {
   Megaphone,
   Menu,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import NotificationCenter from '@/components/shared/NotificationCenter';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { language, t } = useLanguage();
+  const t = useT(ADMIN_LAYOUT_COPY);
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
   // The role decides which sections are shown. This is presentation only — proxy.ts refuses the
   // request and firestore.rules refuses the write regardless of what the sidebar renders.
@@ -90,92 +92,92 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login');
   };
 
-  const navItems = [
+  const navItems: { href: string; labelKey: keyof typeof ADMIN_LAYOUT_COPY; icon: LucideIcon; exact?: boolean; badge?: string }[] = [
     {
       href: '/admin',
-      label: { ar: 'لوحة المؤشرات', en: 'Dashboard' },
+      labelKey: 'navDashboard',
       icon: LayoutDashboard,
       exact: true,
     },
     {
       href: '/admin/analytics',
-      label: { ar: 'التحليلات', en: 'Analytics' },
+      labelKey: 'navAnalytics',
       icon: BarChart3,
     },
     {
       href: '/admin/locations',
-      label: { ar: 'المحافظات والمدن', en: 'Governorates & Cities' },
+      labelKey: 'navLocations',
       icon: MapPin,
       badge: 'Zero Hardcoding',
     },
     {
       href: '/admin/categories',
-      label: { ar: 'الفئات والأنواع', en: 'Categories & Types' },
+      labelKey: 'navCategories',
       icon: FolderTree,
     },
     {
       href: '/admin/taxonomies',
-      label: { ar: 'الاعتمادات والمناهج', en: 'Accreditations & Taxonomies' },
+      labelKey: 'navTaxonomies',
       icon: Tags,
     },
     {
       href: '/admin/banners',
-      label: { ar: 'الإعلانات', en: 'Ad Banners' },
+      labelKey: 'navBanners',
       icon: Megaphone,
     },
     {
       href: '/admin/institutions',
-      label: { ar: 'إدارة المؤسسات التعليمية', en: 'Institutions Directory' },
+      labelKey: 'navInstitutions',
       icon: Building2,
     },
     {
       href: '/admin/tutors',
-      label: { ar: 'إدارة الأساتذة الخصوصيين', en: 'Private Tutors' },
+      labelKey: 'navTutors',
       icon: UserCheck,
     },
     {
       href: '/admin/bookings',
-      label: { ar: 'كافة الحجوزات', en: 'All Bookings' },
+      labelKey: 'navBookings',
       icon: Calendar,
     },
     {
       href: '/admin/jobs',
-      label: { ar: 'الوظائف الشاغرة', en: 'Job Postings' },
+      labelKey: 'navJobs',
       icon: Briefcase,
     },
     {
       href: '/admin/employers',
-      label: { ar: 'الشركات والمنظمات', en: 'Companies & NGOs' },
+      labelKey: 'navEmployers',
       icon: Briefcase,
     },
     {
       href: '/admin/applications',
-      label: { ar: 'طلبات الانضمام', en: 'Join Applications' },
+      labelKey: 'navApplications',
       icon: FileCheck2,
     },
     {
       href: '/admin/reviews',
-      label: { ar: 'التقييمات والاستفسارات', en: 'Reviews & Inquiries' },
+      labelKey: 'navReviews',
       icon: MessageSquareText,
     },
     {
       href: '/admin/community',
-      label: { ar: 'مجتمع الأهالي', en: 'Community' },
+      labelKey: 'navCommunity',
       icon: Users,
     },
     {
       href: '/admin/audit',
-      label: { ar: 'سجل الإجراءات', en: 'Audit Log' },
+      labelKey: 'navAudit',
       icon: ScrollText,
     },
     {
       href: '/admin/errors',
-      label: { ar: 'أخطاء النظام', en: 'System Errors' },
+      labelKey: 'navErrors',
       icon: Bug,
     },
     {
       href: '/admin/settings',
-      label: { ar: 'إعدادات النظام واللافتات', en: 'System Settings & CMS' },
+      labelKey: 'navSettings',
       icon: Settings,
     },
   ];
@@ -184,7 +186,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex bg-slate-100 text-slate-900">
       {/* Admin Sidebar */}
       {mobileNavOpen && (
-        <button aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" />
+        <button aria-label={t('closeNav')} onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" />
       )}
       <aside className={`fixed inset-y-0 end-0 z-50 flex w-72 flex-col border-e border-slate-800 bg-[#0B192C] text-white shadow-xl transition-transform duration-200 lg:relative lg:z-auto lg:translate-x-0 lg:shadow-xl ${mobileNavOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Top Branding */}
@@ -200,13 +202,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
                 <ShieldAlert className="w-3 h-3" />
                 {role === 'moderator'
-                  ? t('صلاحيات الإشراف', 'Moderator access')
+                  ? t('moderatorAccess')
                   : role === 'editor'
-                    ? t('صلاحيات التحرير', 'Editor access')
-                    : t('لوحة تحكم السوبر أدمن', 'Superadmin Suite')}
+                    ? t('editorAccess')
+                    : t('superadminSuite')}
               </p>
             </div>
-            <button type="button" aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileNavOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 lg:hidden">
+            <button type="button" aria-label={t('closeNav')} onClick={() => setMobileNavOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 lg:hidden">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -235,7 +237,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <div className="flex items-center gap-3">
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#F1C40F]' : 'text-slate-400'}`} />
-                  <span>{language === 'en' ? item.label.en : item.label.ar}</span>
+                  <span>{t(item.labelKey)}</span>
                 </div>
                 {item.badge && (
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
@@ -259,14 +261,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors"
           >
             <Home className="w-4 h-4" />
-            <span>{t('العودة للموقع الرئيسي', 'Back to Public Website')}</span>
+            <span>{t('backToSite')}</span>
           </Link>
           <button
             onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-200 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span>{t('تسجيل الخروج', 'Log Out')}</span>
+            <span>{t('logout')}</span>
           </button>
         </div>
       </aside>
@@ -276,27 +278,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Top Admin Bar */}
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2 text-sm text-slate-500">
-            <button type="button" aria-label={t('فتح القائمة', 'Open navigation')} onClick={() => setMobileNavOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
+            <button type="button" aria-label={t('openNav')} onClick={() => setMobileNavOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
               <Menu className="h-5 w-5" />
             </button>
-            <span className="font-semibold text-slate-800">{t('إدارة النظام', 'Administration')}</span>
+            <span className="font-semibold text-slate-800">{t('administration')}</span>
             <span>/</span>
             <span className="text-slate-600 font-medium">
-              {pathname === '/admin' ? t('نظرة عامة', 'Overview') : pathname.split('/').pop()}
+              {pathname === '/admin' ? t('overview') : pathname.split('/').pop()}
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/messages"
               className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-              title={t('الرسائل', 'Messages')}
+              title={t('messages')}
             >
               <MessageCircle className="w-5 h-5" />
             </Link>
             <NotificationCenter />
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              {t('قاعدة البيانات متصلة وجاهزة', 'Firebase Live Connected')}
+              {t('dbLive')}
             </span>
           </div>
         </header>

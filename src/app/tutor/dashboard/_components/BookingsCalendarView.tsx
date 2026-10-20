@@ -8,19 +8,22 @@ import { dayOfWeekFromDate, addDaysToDateString } from '@/lib/bookingLogic';
 import { MessageThreads } from '@/lib/useMessageThreads';
 import { formatDate } from '@/lib/utils';
 import BookingCard from './BookingCard';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { TUTOR_DASHBOARD_COPY } from '../TutorDashboard.i18n';
 
 // Sunday-start weekday labels — matches this app's existing dayOfWeek convention (0 = Sunday,
 // same as dayOfWeekFromDate and the DAY_LABELS arrays already duplicated in
 // TutorProfile.tsx/AvailabilityTab.tsx for the same reason: no shared constants module for this
 // yet, so each file that needs it defines its own, consistent with that existing pattern.
-const WEEKDAY_LABELS: { ar: string; en: string }[] = [
-  { ar: 'الأحد', en: 'Sun' },
-  { ar: 'الاثنين', en: 'Mon' },
-  { ar: 'الثلاثاء', en: 'Tue' },
-  { ar: 'الأربعاء', en: 'Wed' },
-  { ar: 'الخميس', en: 'Thu' },
-  { ar: 'الجمعة', en: 'Fri' },
-  { ar: 'السبت', en: 'Sat' },
+const WEEKDAY_LABELS: { ar: string; en: string; ku: string }[] = [
+  { ar: 'الأحد', en: 'Sun', ku: 'یەکشەممە' },
+  { ar: 'الاثنين', en: 'Mon', ku: 'دووشەممە' },
+  { ar: 'الثلاثاء', en: 'Tue', ku: 'سێشەممە' },
+  { ar: 'الأربعاء', en: 'Wed', ku: 'چوارشەممە' },
+  { ar: 'الخميس', en: 'Thu', ku: 'پێنجشەممە' },
+  { ar: 'الجمعة', en: 'Fri', ku: 'هەینی' },
+  { ar: 'السبت', en: 'Sat', ku: 'شەممە' },
 ];
 
 interface SeriesInfo {
@@ -44,7 +47,8 @@ export default function BookingsCalendarView({
   threads: MessageThreads;
   isThreadUnread: (bookingId: string) => boolean;
 }) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(TUTOR_DASHBOARD_COPY);
   const [weekOffset, setWeekOffset] = useState(0);
 
   const weekStart = useMemo(
@@ -89,15 +93,12 @@ export default function BookingsCalendarView({
   };
 
   const seriesLabel = (info: SeriesInfo) =>
-    t(
-      `جزء من سلسلة أسبوعية — الجلسة ${info.index} من ${info.total}، تنتهي ${info.lastDate}`,
-      `Weekly series — session ${info.index} of ${info.total}, ends ${info.lastDate}`
-    );
+    t('seriesLabel', { index: info.index, total: info.total, last: info.lastDate });
 
   const formatDayHeader = (dateStr: string) => {
     const dow = dayOfWeekFromDate(dateStr);
     const fullDate = formatDate(dateStr, language, { weekday: undefined, month: 'long', year: 'numeric' });
-    return { weekday: language === 'ar' ? WEEKDAY_LABELS[dow].ar : WEEKDAY_LABELS[dow].en, fullDate };
+    return { weekday: pickLocalized(WEEKDAY_LABELS[dow], language), fullDate };
   };
 
   const formatWeekRange = () => {
@@ -116,17 +117,17 @@ export default function BookingsCalendarView({
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
             className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-            title={t('الأسبوع السابق', 'Previous week')}
+            title={t('prevWeek')}
           >
-            {language === 'ar' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {language !== 'en' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
           <span className="font-bold text-sm text-slate-900 min-w-[9rem] text-center">{formatWeekRange()}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
             className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-            title={t('الأسبوع القادم', 'Next week')}
+            title={t('nextWeek')}
           >
-            {language === 'ar' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            {language !== 'en' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
 
@@ -135,7 +136,7 @@ export default function BookingsCalendarView({
             onClick={() => setWeekOffset(0)}
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
           >
-            {t('هذا الأسبوع', 'This Week')}
+            {t('thisWeek')}
           </button>
         )}
       </div>
@@ -164,7 +165,7 @@ export default function BookingsCalendarView({
                   <CalendarDays className={`w-4 h-4 ${isToday ? 'text-white/75' : 'text-slate-400'}`} />
                   <div>
                     <p className="font-extrabold text-sm">
-                      {isToday ? t('اليوم', 'Today') : isTomorrow ? t('غداً', 'Tomorrow') : weekday}
+                      {isToday ? t('today') : isTomorrow ? t('tomorrow') : weekday}
                     </p>
                     <p className={`text-xs ${isToday ? 'text-white/75' : 'text-slate-500'}`}>{fullDate}</p>
                   </div>
@@ -172,7 +173,7 @@ export default function BookingsCalendarView({
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full w-fit ${
                   isToday ? 'bg-white/15 text-white' : 'bg-white text-slate-600 border border-slate-200'
                 }`}>
-                  {dayBookings.length} {dayBookings.length === 1 ? t('موعد', 'session') : t('مواعيد', 'sessions')}
+                  {dayBookings.length} {dayBookings.length === 1 ? t('sessionOne') : t('sessionMany')}
                 </span>
               </div>
               <div className="p-3 space-y-2">
@@ -182,7 +183,7 @@ export default function BookingsCalendarView({
                     <div key={booking.id} className="relative">
                       {info && (
                         <span className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-1.5 py-0.5" title={seriesLabel(info)}>
-                          <Repeat className="w-3 h-3" /> {t(`${info.index}/${info.total}`, `${info.index}/${info.total}`)}
+                          <Repeat className="w-3 h-3" /> {info.index}/{info.total}
                         </span>
                       )}
                       <BookingCard
@@ -204,7 +205,7 @@ export default function BookingsCalendarView({
 
       {weekTotal === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-xs">
-          <p className="text-xs text-slate-400">{t('لا توجد حجوزات هذا الأسبوع', 'No sessions this week')}</p>
+          <p className="text-xs text-slate-400">{t('noSessionsWeek')}</p>
         </div>
       )}
 

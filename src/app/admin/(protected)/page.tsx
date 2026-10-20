@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { getGovernorates, getCategories } from '@/core/services/masterDataService';
 import { getInstitutions } from '@/core/services/institutionService';
 import { getTutors } from '@/core/services/tutorService';
@@ -15,9 +14,11 @@ import {
   CheckCircle2, 
   ShieldCheck 
 } from 'lucide-react';
+import { useT } from '@/lib/useT';
+import { ADMIN_HOME_COPY } from './AdminHome.i18n';
 
 export default function AdminDashboardPage() {
-  const { t } = useLanguage();
+  const t = useT(ADMIN_HOME_COPY);
   const [stats, setStats] = useState({
     governoratesCount: 0,
     categoriesCount: 0,
@@ -54,13 +55,10 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C]">
-            {t('لوحة تحكم السوبر أدمن - إدارة دليل العراق', 'Superadmin Dashboard - Eduraq Master Control')}
+            {t('title')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            {t(
-              'إدارة مركزية كاملة لكافة المحافظات، المدن، الفئات، والتصنيفات بدقة ودون أي كود ثابت (Zero Hardcoding).',
-              'Full real-time control over all Iraqi governorates, cities, categories, and taxonomies without hardcoded data.'
-            )}
+            {t('subtitle')}
           </p>
         </div>
 
@@ -70,14 +68,14 @@ export default function AdminDashboardPage() {
             className="flex items-center gap-2 px-4 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:bg-[#1E3E62] transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4 text-[#F1C40F]" />
-            <span>{t('إضافة محافظة أو مدينة', 'Add Location')}</span>
+            <span>{t('addLocation')}</span>
           </Link>
           <Link
             href="/admin/institutions"
             className="flex items-center gap-2 px-4 py-2 bg-[#F1C40F] text-[#0B192C] rounded-xl text-xs font-bold hover:bg-[#D4AC0D] transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>{t('إضافة مؤسسة جديدة', 'Add Institution')}</span>
+            <span>{t('addInstitution')}</span>
           </Link>
         </div>
       </div>
@@ -86,53 +84,53 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('المحافظات المسجلة', 'Governorates')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('governorates')}</span>
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <MapPin className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-slate-900">{stats.governoratesCount}</span>
-            <span className="text-xs text-emerald-600 font-semibold ms-2">100% {t('مغطاة في العراق', 'Iraq Covered')}</span>
+            <span className="text-xs text-emerald-600 font-semibold ms-2">100% {t('iraqCovered')}</span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('الفئات التعليمية', 'Categories')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('categories')}</span>
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <FolderTree className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-slate-900">{stats.categoriesCount}</span>
-            <span className="text-xs text-slate-500 font-semibold ms-2">{t('ديناميكية بالكامل', 'Dynamic')}</span>
+            <span className="text-xs text-slate-500 font-semibold ms-2">{t('dynamic')}</span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('المؤسسات المسجلة', 'Institutions')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('institutions')}</span>
             <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-slate-900">{stats.institutionsCount}</span>
-            <span className="text-xs text-slate-500 font-semibold ms-2">{stats.activeInstitutionsCount} {t('نشطة', 'active')} · {stats.verifiedInstitutionsCount} {t('موثقة', 'verified')}</span>
+            <span className="text-xs text-slate-500 font-semibold ms-2">{stats.activeInstitutionsCount} {t('active')} · {stats.verifiedInstitutionsCount} {t('verified')}</span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('الأساتذة الخصوصيون', 'Private Tutors')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('privateTutors')}</span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <UserCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-slate-900">{stats.tutorsCount}</span>
-            <span className="text-xs text-slate-500 font-semibold ms-2">{t('مدرّس معتمد', 'Vetted Tutors')}</span>
+            <span className="text-xs text-slate-500 font-semibold ms-2">{t('vettedTutors')}</span>
           </div>
         </div>
       </div>
@@ -142,16 +140,13 @@ export default function AdminDashboardPage() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{t('نظام إدارة البيانات الحصري بدون كود ثابت', 'Zero-Hardcoding Architecture Active')}</span>
+            <span>{t('zeroHardcoding')}</span>
           </div>
           <h2 className="text-lg font-bold">
-            {t('تحكم كامل في جميع مدخلات الدليل من مكان واحد', 'Total Control Over Every Input, City, and Category')}
+            {t('totalControl')}
           </h2>
           <p className="text-xs text-slate-300 max-w-xl">
-            {t(
-              'يمكنك إضافة أي محافظة عراقية جديدة، قضاء أو ناحية، فئة تعليمية، اعتماد وزاري، أو منهاج دراسي مباشرة من لوحة التحكم، وستظهر فوراً لجميع المستخدمين في الفلاتر وقوائم البحث.',
-              'Add any new Iraqi governorate, district, category, accreditation, or curriculum directly from the dashboard. Changes reflect immediately in live search facets.'
-            )}
+            {t('bannerBody')}
           </p>
         </div>
 
@@ -159,7 +154,7 @@ export default function AdminDashboardPage() {
           href="/admin/locations"
           className="px-5 py-2.5 bg-white text-[#0B192C] hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors shrink-0"
         >
-          {t('إدارة البيانات الآن', 'Manage Master Data')}
+          {t('manageData')}
         </Link>
       </div>
 
@@ -173,10 +168,10 @@ export default function AdminDashboardPage() {
             <MapPin className="w-5 h-5" />
           </div>
           <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-            {t('المحافظات والمدن والأقضية', 'Governorates & Cities')}
+            {t('govCities')}
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            {t('إضافة وتعديل وترتيب 18 محافظة وكافة المدن والمناطق في العراق.', 'Manage 18 governorates, municipal cities, and districts.')}
+            {t('govCitiesHint')}
           </p>
         </Link>
 
@@ -188,10 +183,10 @@ export default function AdminDashboardPage() {
             <FolderTree className="w-5 h-5" />
           </div>
           <h3 className="font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
-            {t('الفئات والتصنيفات الفرعية', 'Categories & Subcategories')}
+            {t('catSub')}
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            {t('تخصيص الفئات (جامعات، مدارس، معاهد، منظمات) مع أيقوناتها.', 'Configure educational categories, badges, and sub-types.')}
+            {t('catSubHint')}
           </p>
         </Link>
 
@@ -203,10 +198,10 @@ export default function AdminDashboardPage() {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <h3 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-            {t('الاعتمادات الوزارية والمناهج', 'Accreditations & Curricula')}
+            {t('accCurricula')}
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            {t('إدارة اعتمادات وزارتي التربية والتعليم العالي والمناهج الدولية.', 'Define Ministry accreditations, curricula, and exam subjects.')}
+            {t('accCurriculaHint')}
           </p>
         </Link>
       </div>

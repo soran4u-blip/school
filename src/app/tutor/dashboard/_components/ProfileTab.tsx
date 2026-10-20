@@ -13,6 +13,11 @@ import AccountSettingsSection from '@/components/shared/AccountSettingsSection';
 import { getTutorCompleteness } from '@/lib/utils';
 import { TutorVerificationRequest } from '@/core/types/tutor';
 import { Save, ShieldCheck, ShieldQuestion, UserCog } from 'lucide-react';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { TUTOR_DASHBOARD_COPY } from '../TutorDashboard.i18n';
+
+const DELIVERY_MODE_KEY = { ONLINE: 'modeOnline', IN_PERSON: 'modeInPerson', HYBRID: 'modeHybrid' } as const;
 
 // The tutor dashboard's Profile tab: personal details form, verification documents, and the
 // shared account-management footer (publish/pause, change password, danger zone).
@@ -75,19 +80,20 @@ export default function ProfileTab({
   deleteError: string;
   handleDeleteAccount: () => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(TUTOR_DASHBOARD_COPY);
 
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex items-center gap-2">
           <UserCog className="w-4 h-4 text-emerald-600" />
-          <h2 className="font-bold text-sm text-slate-900">{t('البيانات الشخصية', 'Personal Details')}</h2>
+          <h2 className="font-bold text-sm text-slate-900">{t('personalDetails')}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ImageUploadField
-            label={t('الصورة الشخصية', 'Photo')}
+            label={t('photo')}
             value={tutor.photoUrl || ''}
             onChange={(url) => {
               // Firestore rejects an explicit `undefined` field value, so drop the stale focal
@@ -109,8 +115,8 @@ export default function ProfileTab({
         )}
 
         <BilingualTextField
-          labelAr={t('الاسم الكامل بالعربية', 'Full Name (Arabic)')}
-          labelEn={t('الاسم الكامل بالإنجليزية', 'Full Name (English)')}
+          labelAr={t('fullNameAr')}
+          labelEn={t('fullNameEn')}
           valueAr={tutor.fullName?.ar || ''}
           valueEn={tutor.fullName?.en || ''}
           onChangeAr={(v) => setTutor({ ...tutor, fullName: { ...tutor.fullName, ar: v } })}
@@ -118,8 +124,8 @@ export default function ProfileTab({
         />
 
         <BilingualTextField
-          labelAr={t('اللقب المهني بالعربية', 'Title (Arabic)')}
-          labelEn={t('اللقب المهني بالإنجليزية', 'Title (English)')}
+          labelAr={t('titleAr')}
+          labelEn={t('titleEn')}
           valueAr={tutor.title?.ar || ''}
           valueEn={tutor.title?.en || ''}
           onChangeAr={(v) => setTutor({ ...tutor, title: { ...tutor.title, ar: v } })}
@@ -130,31 +136,31 @@ export default function ProfileTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية بالعربية', 'Bio (Arabic)')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('bioAr')}</label>
             <textarea rows={4} value={tutor.bio?.ar || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: e.target.value, en: tutor.bio?.en || '' } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('نبذة تعريفية بالإنجليزية', 'Bio (English)')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('bioEn')}</label>
             <textarea rows={4} dir="ltr" value={tutor.bio?.en || ''} onChange={(e) => setTutor({ ...tutor, bio: { ar: tutor.bio?.ar || '', en: e.target.value } })} className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('المحافظة', 'Governorate')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('governorate')}</label>
             <select
               value={tutor.governorateId || ''}
               onChange={(e) => setTutor({ ...tutor, governorateId: e.target.value })}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
             >
-              <option value="">{t('اختر المحافظة', 'Select governorate')}</option>
+              <option value="">{t('selectGovernorate')}</option>
               {governorates.map((g) => (
-                <option key={g.id} value={g.id}>{language === 'en' ? g.name.en : g.name.ar}</option>
+                <option key={g.id} value={g.id}>{pickLocalized(g.name, language)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنوات الخبرة', 'Years of Experience')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('yearsExperience')}</label>
             <input
               type="number"
               min={0}
@@ -164,7 +170,7 @@ export default function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('whatsappNumber')}</label>
             <input
               type="text"
               dir="ltr"
@@ -177,7 +183,7 @@ export default function ProfileTab({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('phone')}</label>
           <input
             type="text"
             dir="ltr"
@@ -196,24 +202,24 @@ export default function ProfileTab({
               if (!navigator.geolocation) return;
               navigator.geolocation.getCurrentPosition(
                 (pos) => setTutor({ ...tutor, coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude } }),
-                () => alert(t('تعذر الوصول إلى الموقع', 'Could not access your location'))
+                () => alert(t('locationFailed'))
               );
             }}
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
           >
-            {t('استخدام موقعي الحالي', 'Use My Current Location')}
+            {t('useMyLocation')}
           </button>
           <span className="text-xs text-slate-500">
             {tutor.coordinates
-              ? t('تم تحديد الموقع — سيظهر في نتائج "القريب مني"', 'Location set — you\'ll appear in "Near Me" search results')
-              : t('لم يتم تحديد الموقع — الظهور حسب المحافظة فقط', 'Not set — only governorate-level matching for now')}
+              ? t('locationSet')
+              : t('locationNotSet')}
           </span>
         </div>
 
         {/* Delivery Mode */}
         <ChipMultiSelect
-          label={t('طريقة التدريس', 'Delivery Mode')}
-          options={(['ONLINE', 'IN_PERSON', 'HYBRID'] as const).map((mode) => ({ id: mode, label: mode.replace('_', ' ') }))}
+          label={t('deliveryMode')}
+          options={(['ONLINE', 'IN_PERSON', 'HYBRID'] as const).map((mode) => ({ id: mode, label: t(DELIVERY_MODE_KEY[mode]) }))}
           selected={tutor.deliveryMode || []}
           onChange={(ids) => setTutor({ ...tutor, deliveryMode: ids as Tutor['deliveryMode'] })}
           activeClassName="bg-emerald-600 text-white border-emerald-600"
@@ -221,30 +227,30 @@ export default function ProfileTab({
 
         {/* Subjects */}
         <ChipMultiSelect
-          label={t('المواد الدراسية', 'Subjects')}
-          options={subjects.map((sub) => ({ id: sub.id, label: language === 'en' ? sub.name.en : sub.name.ar }))}
+          label={t('subjects')}
+          options={subjects.map((sub) => ({ id: sub.id, label: pickLocalized(sub.name, language) }))}
           selected={tutor.subjectIds || []}
           onChange={(ids) => setTutor({ ...tutor, subjectIds: ids })}
-          emptyMessage={t('لا توجد مواد دراسية بعد', 'No subjects available yet')}
+          emptyMessage={t('noSubjects')}
         />
 
         {/* Student Levels / Grades */}
         <ChipMultiSelect
-          label={t('الصفوف الدراسية', 'Grades / Student Levels')}
-          options={studentLevels.map((lvl) => ({ id: lvl.id, label: language === 'en' ? lvl.name.en : lvl.name.ar }))}
+          label={t('grades')}
+          options={studentLevels.map((lvl) => ({ id: lvl.id, label: pickLocalized(lvl.name, language) }))}
           selected={tutor.studentLevelIds || []}
           onChange={(ids) => setTutor({ ...tutor, studentLevelIds: ids })}
-          emptyMessage={t('لا توجد صفوف دراسية بعد', 'No grades available yet')}
+          emptyMessage={t('noGrades')}
         />
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <h2 className="font-bold text-sm text-slate-900">{t('وثائق التوثيق', 'Verification Documents')}</h2>
+          <h2 className="font-bold text-sm text-slate-900">{t('verificationDocs')}</h2>
         </div>
         <p className="text-[11px] text-slate-400">
-          {t('ارفع صورة هويتك أو شهاداتك لمساعدة الإدارة على توثيق ملفك — هذه الوثائق خاصة ولا تظهر للعامة.', 'Upload your ID or certificates to help the admin verify your profile — these documents are private and never shown publicly.')}
+          {t('verificationHelp')}
         </p>
         <DocumentUploadField
           label=""
@@ -256,18 +262,18 @@ export default function ProfileTab({
         {verificationStatus === 'PENDING' && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
             <ShieldQuestion className="w-4 h-4 shrink-0" />
-            <span>{t('طلبك قيد المراجعة من قبل الإدارة. سنعلمك فور اتخاذ قرار.', "Your request is awaiting admin review. We'll notify you once a decision is made.")}</span>
+            <span>{t('verificationPending')}</span>
           </div>
         )}
         {verificationStatus === 'APPROVED' && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
             <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span>{t('تم توثيق ملفك. شكراً لك!', 'Your profile is verified. Thank you!')}</span>
+            <span>{t('verificationDone')}</span>
           </div>
         )}
         {verificationStatus === 'REJECTED' && (
           <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold space-y-1">
-            <span>{t('لم تتم الموافقة على طلبك السابق.', 'Your previous request was not approved.')}</span>
+            <span>{t('verificationRejected')}</span>
             {verificationRejectionReason && <p className="font-normal">{verificationRejectionReason}</p>}
           </div>
         )}
@@ -281,7 +287,7 @@ export default function ProfileTab({
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold disabled:opacity-50"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{submittingVerification ? t('جاري الإرسال...', 'Submitting...') : t('إرسال للمراجعة', 'Submit for Review')}</span>
+              <span>{submittingVerification ? t('submitting') : t('submitForReview')}</span>
             </button>
           </div>
         )}
@@ -294,27 +300,21 @@ export default function ProfileTab({
           className="flex items-center gap-2 px-5 py-2.5 bg-[#0B192C] text-white rounded-lg text-xs font-bold hover:bg-[#1E3E62] shadow-xs disabled:opacity-60"
         >
           <Save className="w-3.5 h-3.5" />
-          <span>{saving ? t('جاري الحفظ...', 'Saving...') : t('حفظ التغييرات', 'Save Changes')}</span>
+          <span>{saving ? t('saving') : t('saveChanges')}</span>
         </button>
       </div>
 
       <AccountSettingsSection
         status={tutor.status}
         completeness={getTutorCompleteness(tutor)}
-        publishHeading={t('نشر ملفك في الدليل العام', 'Publish to the Directory')}
-        publishDescription={t(
-          'ملفك غير منشور بعد ولا يظهر للطلاب. أكمل المعلومات التالية ليراجعها فريقنا.',
-          "Your profile isn't published yet and can't be seen by students. Complete the following and our team will review it."
-        )}
-        publishCompleteMessage={t(
-          'ملفك مكتمل وبانتظار مراجعة الإدارة. سيظهر للطلاب فور الموافقة عليه.',
-          'Your profile is complete and waiting for admin review. It becomes visible to students once approved.'
-        )}
-        visibilityHeading={t('ظهور الملف للطلاب', 'Profile Visibility')}
-        activeDescription={t('ملفك ظاهر حالياً في الدليل العام ويمكن للطلاب حجز مواعيد جديدة.', 'Your profile is currently visible in the public directory and students can book new sessions.')}
-        pausedDescription={t('ملفك متوقف مؤقتاً ولن يظهر للطلاب حتى تُفعّله مجدداً.', 'Your profile is paused and hidden from students until you resume it.')}
-        pauseLabel={t('إيقاف الملف مؤقتاً', 'Pause My Profile')}
-        resumeLabel={t('تفعيل الملف مجدداً', 'Resume My Profile')}
+        publishHeading={t('publishHeading')}
+        publishDescription={t('publishDescription')}
+        publishCompleteMessage={t('publishComplete')}
+        visibilityHeading={t('visibilityHeading')}
+        activeDescription={t('activeDescription')}
+        pausedDescription={t('pausedDescription')}
+        pauseLabel={t('pauseLabel')}
+        resumeLabel={t('resumeLabel')}
         onTogglePause={handleTogglePause}
         pausing={pausing}
         currentPassword={currentPassword}
@@ -324,8 +324,8 @@ export default function ProfileTab({
         changingPassword={changingPassword}
         passwordMessage={passwordMessage}
         onChangePassword={handleChangePassword}
-        dangerZoneDescription={t('حذف حسابك نهائياً — سيُخفى ملفك عن الطلاب وتُلغى حجوزاتك القادمة. لا يمكن التراجع عن هذا الإجراء.', 'Permanently delete your account — your profile disappears from the directory and any upcoming bookings are cancelled. This cannot be undone.')}
-        deleteButtonLabel={t('حذف حسابي نهائياً', 'Delete My Account')}
+        dangerZoneDescription={t('dangerDescription')}
+        deleteButtonLabel={t('deleteAccount')}
         deletePassword={deletePassword}
         setDeletePassword={setDeletePassword}
         deletingAccount={deletingAccount}

@@ -27,6 +27,9 @@ import {
   Clock,
   RefreshCw,
 } from 'lucide-react';
+import { intlLocale } from '@/lib/locales';
+import { useT } from '@/lib/useT';
+import { ANALYTICS_COPY } from './Analytics.i18n';
 
 const NAVY = '#0B192C';
 const NAVY2 = '#1E3E62';
@@ -41,7 +44,8 @@ const CARD = 'bg-white rounded-2xl border border-slate-200 shadow-xs p-5';
 // on a schedule rather than derived here. This component does no data fetching beyond asking for
 // a fresh snapshot when the admin presses Refresh.
 export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSnapshot }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ANALYTICS_COPY);
   const router = useRouter();
   const [recomputing, setRecomputing] = useState(false);
   const [error, setError] = useState('');
@@ -51,13 +55,13 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
     ...row,
     fill: row.status === 'HIRED' ? EMERALD : row.status === 'REJECTED' ? RED : NAVY2,
   }));
-  const COMMUNITY_LABELS: Record<string, { ar: string; en: string; fill: string }> = {
-    PENDING: { ar: 'قيد المراجعة', en: 'Pending', fill: GOLD },
-    APPROVED: { ar: 'منشور', en: 'Approved', fill: EMERALD },
-    REJECTED: { ar: 'مرفوض', en: 'Rejected', fill: RED },
+  const COMMUNITY_LABELS: Record<string, { key: 'statusPending' | 'statusApproved' | 'statusRejected'; fill: string }> = {
+    PENDING: { key: 'statusPending', fill: GOLD },
+    APPROVED: { key: 'statusApproved', fill: EMERALD },
+    REJECTED: { key: 'statusRejected', fill: RED },
   };
   const community = snapshot.communityBreakdown.map((row) => ({
-    name: t(COMMUNITY_LABELS[row.status]?.ar || row.status, COMMUNITY_LABELS[row.status]?.en || row.status),
+    name: COMMUNITY_LABELS[row.status] ? t(COMMUNITY_LABELS[row.status].key) : row.status,
     value: row.count,
     fill: COMMUNITY_LABELS[row.status]?.fill || SLATE,
   }));
@@ -71,13 +75,13 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
       if (!res.ok || !body.success) throw new Error(body.error || 'Recompute failed');
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('تعذر تحديث التحليلات', 'Could not refresh analytics'));
+      setError(e instanceof Error ? e.message : t('refreshFailed'));
     } finally {
       setRecomputing(false);
     }
   };
 
-  const computedAt = new Date(snapshot.computedAt).toLocaleString(language === 'en' ? 'en-GB' : 'ar', {
+  const computedAt = new Date(snapshot.computedAt).toLocaleString(language === 'en' ? 'en-GB' : intlLocale(language), {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
@@ -86,16 +90,16 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
     <div className="space-y-8 max-w-6xl">
       <div>
         <h1 className="text-2xl font-extrabold" style={{ color: NAVY }}>
-          {t('التحليلات', 'Analytics')}
+          {t('title')}
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          {t('نظرة عامة على أداء المنصة عبر جميع الأقسام.', 'Platform-wide health across every section.')}
+          {t('subtitle')}
         </p>
       </div>
 
       <div className="flex items-center justify-between gap-4 flex-wrap -mt-4">
         <p className="text-xs text-slate-400">
-          {t('آخر حساب:', 'Last computed:')} {computedAt}
+          {t('lastComputed')} {computedAt}
         </p>
         <button
           onClick={handleRecompute}
@@ -103,7 +107,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-60"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${recomputing ? 'animate-spin' : ''}`} />
-          <span>{recomputing ? t('جاري الحساب...', 'Recomputing...') : t('إعادة الحساب', 'Recompute')}</span>
+          <span>{recomputing ? t('recomputing') : t('recompute')}</span>
         </button>
       </div>
 
@@ -115,7 +119,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className={CARD}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('القوائم النشطة', 'Active Listings')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('activeListings')}</span>
             <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <Building2 className="w-5 h-5" />
             </div>
@@ -124,7 +128,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
         </div>
         <div className={CARD}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('الوظائف النشطة', 'Active Jobs')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('activeJobs')}</span>
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Briefcase className="w-5 h-5" />
             </div>
@@ -133,7 +137,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
         </div>
         <div className={CARD}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('معدل التوظيف', 'Hire Rate')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('hireRate')}</span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />
             </div>
@@ -142,7 +146,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
         </div>
         <div className={CARD}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('بانتظار المراجعة', 'Pending Review')}</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('pendingReview')}</span>
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <Clock className="w-5 h-5" />
             </div>
@@ -153,8 +157,8 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
 
       {/* Signups over time */}
       <div className={CARD}>
-        <h2 className="font-bold text-slate-900 mb-1">{t('التسجيلات الجديدة (آخر 12 أسبوعًا)', 'New Signups (last 12 weeks)')}</h2>
-        <p className="text-xs text-slate-500 mb-4">{t('المؤسسات، الأساتذة، والشركات/المنظمات المعتمدة أسبوعيًا.', 'Approved institutions, tutors, and employers by week.')}</p>
+        <h2 className="font-bold text-slate-900 mb-1">{t('signupsTitle')}</h2>
+        <p className="text-xs text-slate-500 mb-4">{t('signupsHint')}</p>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={snapshot.signupSeries} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
@@ -172,7 +176,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Join-application funnel */}
         <div className={CARD}>
-          <h2 className="font-bold text-slate-900 mb-1">{t('طلبات الانضمام حسب النوع والحالة', 'Join Applications by Type & Status')}</h2>
+          <h2 className="font-bold text-slate-900 mb-1">{t('applicationsByStatus')}</h2>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={snapshot.applicationFunnel} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
@@ -189,7 +193,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
 
         {/* Jobs pipeline */}
         <div className={CARD}>
-          <h2 className="font-bold text-slate-900 mb-1">{t('مسار طلبات التوظيف', 'Job Application Pipeline')}</h2>
+          <h2 className="font-bold text-slate-900 mb-1">{t('jobPipeline')}</h2>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={pipeline} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
@@ -207,7 +211,7 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
 
         {/* Community breakdown */}
         <div className={CARD}>
-          <h2 className="font-bold text-slate-900 mb-1">{t('منشورات المجتمع', 'Community Posts')}</h2>
+          <h2 className="font-bold text-slate-900 mb-1">{t('communityPosts')}</h2>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={community} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
@@ -223,8 +227,8 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
 
         {/* Geographic distribution */}
         <div className={CARD}>
-          <h2 className="font-bold text-slate-900 mb-1">{t('التوزيع الجغرافي (أعلى 8 محافظات)', 'Geographic Distribution (top 8)')}</h2>
-          <p className="text-xs text-slate-500 mb-2">{t('مؤسسات + أساتذة + وظائف', 'Institutions + tutors + jobs')}</p>
+          <h2 className="font-bold text-slate-900 mb-1">{t('geoTitle')}</h2>
+          <p className="text-xs text-slate-500 mb-2">{t('geoHint')}</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={snapshot.geoDistribution} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
@@ -240,30 +244,30 @@ export default function AnalyticsDashboard({ snapshot }: { snapshot: AnalyticsSn
       {/* Reviews summary */}
       <div className={CARD}>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-bold text-slate-900">{t('التقييمات والاستفسارات', 'Reviews & Inquiries')}</h2>
+          <h2 className="font-bold text-slate-900">{t('reviewsInquiries')}</h2>
           {snapshot.avgRating !== null && (
             <span className="inline-flex items-center gap-1 text-sm font-bold text-amber-600">
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              {snapshot.avgRating.toFixed(1)} {t('متوسط التقييم', 'avg rating')}
+              {snapshot.avgRating.toFixed(1)} {t('avgRating')}
             </span>
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           <div>
             <div className="text-2xl font-black text-slate-900">{snapshot.pending.reviews}</div>
-            <div className="text-xs text-slate-500">{t('تقييمات قيد المراجعة', 'Reviews pending')}</div>
+            <div className="text-xs text-slate-500">{t('reviewsPending')}</div>
           </div>
           <div>
             <div className="text-2xl font-black text-slate-900">{snapshot.totals.reviewsApproved}</div>
-            <div className="text-xs text-slate-500">{t('تقييمات منشورة', 'Reviews approved')}</div>
+            <div className="text-xs text-slate-500">{t('reviewsApproved')}</div>
           </div>
           <div>
             <div className="text-2xl font-black text-slate-900">{snapshot.pending.inquiries}</div>
-            <div className="text-xs text-slate-500">{t('استفسارات جديدة', 'New inquiries')}</div>
+            <div className="text-xs text-slate-500">{t('newInquiries')}</div>
           </div>
           <div>
             <div className="text-2xl font-black text-slate-900">{snapshot.totals.inquiriesClosed}</div>
-            <div className="text-xs text-slate-500">{t('استفسارات مغلقة', 'Inquiries closed')}</div>
+            <div className="text-xs text-slate-500">{t('inquiriesClosed')}</div>
           </div>
         </div>
       </div>

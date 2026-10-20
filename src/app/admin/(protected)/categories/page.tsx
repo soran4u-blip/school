@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { useLoadOnMount } from '@/lib/useLoadOnMount';
 import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { pickLocalized } from '@/lib/localized';
+import { CATEGORIES_COPY } from './Categories.i18n';
 import { getCategories, saveCategory } from '@/core/services/masterDataService';
 import { Category } from '@/core/types/masterData';
 import { 
@@ -21,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(CATEGORIES_COPY);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -47,7 +51,7 @@ export default function AdminCategoriesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.slug || !form.name?.ar || !form.name?.en) {
-      setMessage({ text: t('يرجى ملء جميع الحقول المطلوبة', 'Please fill all required fields'), type: 'error' });
+      setMessage({ text: t('fillRequired'), type: 'error' });
       return;
     }
 
@@ -69,7 +73,7 @@ export default function AdminCategoriesPage() {
     };
 
     await saveCategory(cat);
-    setMessage({ text: t('تم حفظ الفئة بنجاح في قاعدة البيانات', 'Category saved successfully'), type: 'success' });
+    setMessage({ text: t('saved'), type: 'success' });
     setIsAdding(false);
     setIsEditing(false);
     await loadCategories();
@@ -102,13 +106,10 @@ export default function AdminCategoriesPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
             <FolderTree className="w-6 h-6 text-amber-600" />
-            <span>{t('إدارة الفئات والتصنيفات التعليمية', 'Educational Categories Manager')}</span>
+            <span>{t('title')}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            {t(
-              'تحديد وتعديل الفئات المستهدفة في الدليل (جامعات، مدارس، معاهد، مراكز تدريب، منظمات، تدريس خصوصي).',
-              'Configure all educational categories, icons, and descriptions dynamically.'
-            )}
+            {t('intro')}
           </p>
         </div>
 
@@ -117,7 +118,7 @@ export default function AdminCategoriesPage() {
           className="flex items-center gap-2 px-4 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:bg-[#1E3E62] transition-colors shadow-xs self-start"
         >
           <Plus className="w-4 h-4 text-[#F1C40F]" />
-          <span>{t('+ إضافة فئة تعليمية جديدة', '+ Add New Category')}</span>
+          <span>{t('addNew')}</span>
         </button>
       </div>
 
@@ -138,7 +139,7 @@ export default function AdminCategoriesPage() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 className="font-bold text-sm text-slate-900">
-              {isAdding ? t('إضافة فئة تعليمية جديدة', 'Add Category') : t('تعديل الفئة', 'Edit Category')}
+              {isAdding ? t('formAdd') : t('formEdit')}
             </h2>
             <button onClick={() => { setIsAdding(false); setIsEditing(false); }} className="text-slate-400 hover:text-slate-700">
               <X className="w-4 h-4" />
@@ -148,7 +149,7 @@ export default function AdminCategoriesPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم بالعربية', 'Name (Arabic)')} *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('nameAr')} *</label>
                 <input
                   type="text"
                   required
@@ -158,7 +159,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الاسم بالإنجليزية', 'Name (English)')} *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('nameEn')} *</label>
                 <input
                   type="text"
                   required
@@ -171,7 +172,7 @@ export default function AdminCategoriesPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('المعرّف (Slug)', 'Slug')} *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('slugFull')} *</label>
                 <input
                   type="text"
                   required
@@ -183,22 +184,22 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('اسم الأيقونة', 'Icon')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('icon')}</label>
                 <select
                   value={form.iconName || 'GraduationCap'}
                   onChange={(e) => setForm({ ...form, iconName: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-blue-500 bg-white"
                 >
-                  <option value="GraduationCap">GraduationCap (جامعات)</option>
-                  <option value="School">School (مدارس)</option>
-                  <option value="BookOpen">BookOpen (معاهد)</option>
-                  <option value="Award">Award (مراكز تدريب)</option>
-                  <option value="HeartHandshake">HeartHandshake (منظمات)</option>
-                  <option value="UserCheck">UserCheck (أساتذة)</option>
+                  <option value="GraduationCap">{t('iconGraduationCap')}</option>
+                  <option value="School">{t('iconSchool')}</option>
+                  <option value="BookOpen">{t('iconBookOpen')}</option>
+                  <option value="Award">{t('iconAward')}</option>
+                  <option value="HeartHandshake">{t('iconHeartHandshake')}</option>
+                  <option value="UserCheck">{t('iconUserCheck')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('ترتيب العرض', 'Order')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('order')}</label>
                 <input
                   type="number"
                   value={form.displayOrder || 1}
@@ -210,7 +211,7 @@ export default function AdminCategoriesPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الوصف بالعربية', 'Description (AR)')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('descAr')}</label>
                 <textarea
                   rows={2}
                   value={form.description?.ar || ''}
@@ -219,7 +220,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('الوصف بالإنجليزية', 'Description (EN)')}</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('descEn')}</label>
                 <textarea
                   rows={2}
                   value={form.description?.en || ''}
@@ -235,14 +236,14 @@ export default function AdminCategoriesPage() {
                 onClick={() => { setIsAdding(false); setIsEditing(false); }}
                 className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
               >
-                {t('إلغاء', 'Cancel')}
+                {t('cancel')}
               </button>
               <button
                 type="submit"
                 className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700"
               >
                 <Save className="w-3.5 h-3.5" />
-                <span>{t('حفظ الفئة', 'Save Category')}</span>
+                <span>{t('saveCategory')}</span>
               </button>
             </div>
           </form>
@@ -268,7 +269,7 @@ export default function AdminCategoriesPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {t('مفعّل', 'Active')}
+                    {t('active')}
                   </span>
                   <button
                     onClick={() => startEdit(cat)}
@@ -280,19 +281,19 @@ export default function AdminCategoriesPage() {
               </div>
 
               <h3 className="font-extrabold text-base text-slate-900 mb-0.5">
-                {language === 'en' ? cat.name.en : cat.name.ar}
+                {pickLocalized(cat.name, language)}
               </h3>
               <p className="text-xs font-medium text-slate-400 mb-2">
                 {language === 'en' ? cat.name.ar : cat.name.en}
               </p>
               <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                {language === 'en' ? cat.description.en : cat.description.ar}
+                {pickLocalized(cat.description, language)}
               </p>
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
-              <span>{t('المعرّف:', 'Slug:')} <span className="font-mono text-slate-700">{cat.slug}</span></span>
-              <span className="text-[#0B192C] font-bold">{cat.institutionsCount || 0} {t('مؤسسة', 'listings')}</span>
+              <span>{t('slugLabel')} <span className="font-mono text-slate-700">{cat.slug}</span></span>
+              <span className="text-[#0B192C] font-bold">{cat.institutionsCount || 0} {t('listings')}</span>
             </div>
           </div>
         ))}

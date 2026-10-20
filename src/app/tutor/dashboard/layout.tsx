@@ -3,15 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { auth } from '@/core/firebase/config';
 import { signOut } from 'firebase/auth';
 import { UserCheck, LogOut, Home, MessageCircle } from 'lucide-react';
 import NotificationCenter from '@/components/shared/NotificationCenter';
+import { useT } from '@/lib/useT';
+import { TUTOR_DASHBOARD_COPY } from './TutorDashboard.i18n';
 
 export default function TutorDashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const t = useT(TUTOR_DASHBOARD_COPY);
 
   const handleLogout = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' });
@@ -29,17 +30,17 @@ export default function TutorDashboardLayout({ children }: { children: React.Rea
             </div>
             <div>
               <span className="font-extrabold text-sm">Eduraq</span>
-              <p className="text-[11px] text-emerald-300 font-semibold">{t('بوابة الأستاذ الخصوصي', 'Tutor Portal')}</p>
+              <p className="text-[11px] text-emerald-300 font-semibold">{t('portal')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/messages"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
-              title={t('الرسائل', 'Messages')}
+              title={t('messages')}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('الرسائل', 'Messages')}</span>
+              <span className="hidden sm:inline">{t('messages')}</span>
             </Link>
             <div className="bg-white rounded-xl text-slate-800">
               <NotificationCenter />
@@ -49,14 +50,14 @@ export default function TutorDashboardLayout({ children }: { children: React.Rea
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
             >
               <Home className="w-3.5 h-3.5" />
-              <span>{t('الموقع الرئيسي', 'Site')}</span>
+              <span>{t('site')}</span>
             </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-200 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t('تسجيل الخروج', 'Log Out')}</span>
+              <span>{t('logOut')}</span>
             </button>
           </div>
         </div>

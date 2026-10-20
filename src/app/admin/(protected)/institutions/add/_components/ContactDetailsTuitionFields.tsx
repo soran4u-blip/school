@@ -5,6 +5,9 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { Institution } from '@/core/types/institution';
 import { TaxonomyItem } from '@/core/types/masterData';
 import ChipMultiSelect from '@/components/shared/ChipMultiSelect';
+import { useT } from '@/lib/useT';
+import { INSTITUTION_FORM_COPY } from '../InstitutionForm.i18n';
+import { pickLocalized } from '@/lib/localized';
 
 // The add/edit institution form's contact, details, tuition, taxonomy, and facilities fields.
 // The parent (InstitutionForm) owns the form state.
@@ -21,14 +24,15 @@ export default function ContactDetailsTuitionFields({
   facilitiesText: string;
   setFacilitiesText: (value: string) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(INSTITUTION_FORM_COPY);
 
   return (
     <>
       {/* Contact */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم الهاتف', 'Phone')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('phone')}</label>
           <input
             type="text"
             value={form.contact?.phonePrimary || ''}
@@ -37,7 +41,7 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('رقم واتساب', 'WhatsApp Number')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('whatsapp')}</label>
           <input
             type="text"
             value={form.contact?.whatsappNumber || ''}
@@ -47,7 +51,7 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('البريد الإلكتروني', 'Email')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('email')}</label>
           <input
             type="email"
             value={form.contact?.email || ''}
@@ -56,7 +60,7 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الموقع الإلكتروني', 'Website')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('website')}</label>
           <input
             type="text"
             value={form.contact?.website || ''}
@@ -69,7 +73,7 @@ export default function ContactDetailsTuitionFields({
       {/* Details */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('سنة التأسيس', 'Established Year')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('establishedYear')}</label>
           <input
             type="number"
             value={form.establishedYear ?? ''}
@@ -78,28 +82,28 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('نظام الطلاب', 'Gender Policy')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('genderPolicy')}</label>
           <select
             value={form.genderPolicy || 'CO_ED'}
             onChange={(e) => setForm({ ...form, genderPolicy: e.target.value as Institution['genderPolicy'] })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
           >
-            <option value="CO_ED">{t('مختلط', 'Co-Educational')}</option>
-            <option value="BOYS_ONLY">{t('طلاب فقط', 'Boys Only')}</option>
-            <option value="GIRLS_ONLY">{t('طالبات فقط', 'Girls Only')}</option>
+            <option value="CO_ED">{t('coEd')}</option>
+            <option value="BOYS_ONLY">{t('boysOnly')}</option>
+            <option value="GIRLS_ONLY">{t('girlsOnly')}</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('حالة النشر', 'Status')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('status')}</label>
           <select
             value={form.status || 'DRAFT'}
             onChange={(e) => setForm({ ...form, status: e.target.value as Institution['status'] })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
           >
-            <option value="DRAFT">{t('مسودة', 'Draft')}</option>
-            <option value="ACTIVE">{t('نشط', 'Active')}</option>
-            <option value="PENDING">{t('قيد المراجعة', 'Pending')}</option>
-            <option value="SUSPENDED">{t('موقوف', 'Suspended')}</option>
+            <option value="DRAFT">{t('statusDraft')}</option>
+            <option value="ACTIVE">{t('statusActive')}</option>
+            <option value="PENDING">{t('statusPending')}</option>
+            <option value="SUSPENDED">{t('statusSuspended')}</option>
           </select>
         </div>
       </div>
@@ -107,7 +111,7 @@ export default function ContactDetailsTuitionFields({
       {/* Tuition */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الحد الأدنى للقسط', 'Tuition Min')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('tuitionMin')}</label>
           <input
             type="number"
             value={form.tuition?.min ?? 0}
@@ -116,7 +120,7 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الحد الأعلى للقسط', 'Tuition Max')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('tuitionMax')}</label>
           <input
             type="number"
             value={form.tuition?.max ?? 0}
@@ -125,7 +129,7 @@ export default function ContactDetailsTuitionFields({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('العملة', 'Currency')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('currency')}</label>
           <select
             value={form.tuition?.currency || 'USD'}
             onChange={(e) => setForm({ ...form, tuition: { ...form.tuition!, currency: e.target.value as 'IQD' | 'USD' } })}
@@ -136,29 +140,29 @@ export default function ContactDetailsTuitionFields({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">{t('الدورية', 'Period')}</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">{t('period')}</label>
           <select
             value={form.tuition?.period || 'YEAR'}
             onChange={(e) => setForm({ ...form, tuition: { ...form.tuition!, period: e.target.value as 'YEAR' | 'SEMESTER' | 'COURSE' } })}
             className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white"
           >
-            <option value="YEAR">{t('سنوي', 'Yearly')}</option>
-            <option value="SEMESTER">{t('فصلي', 'Semester')}</option>
-            <option value="COURSE">{t('دورة', 'Course')}</option>
+            <option value="YEAR">{t('periodYear')}</option>
+            <option value="SEMESTER">{t('periodSemester')}</option>
+            <option value="COURSE">{t('periodCourse')}</option>
           </select>
         </div>
       </div>
 
       {/* Taxonomy multi-select */}
       <ChipMultiSelect
-        label={t('الاعتمادات والمناهج', 'Accreditations & Curricula')}
-        options={taxonomies.map(tax => ({ id: tax.id, label: language === 'en' ? tax.name.en : tax.name.ar }))}
+        label={t('accreditationsCurricula')}
+        options={taxonomies.map(tax => ({ id: tax.id, label: pickLocalized(tax.name, language) }))}
         selected={form.taxonomyIds || []}
         onChange={(ids) => setForm({ ...form, taxonomyIds: ids })}
       />
 
       <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1">{t('المرافق (مفصولة بفاصلة)', 'Facilities (comma-separated)')}</label>
+        <label className="block text-xs font-bold text-slate-700 mb-1">{t('facilities')}</label>
         <input
           type="text"
           value={facilitiesText}

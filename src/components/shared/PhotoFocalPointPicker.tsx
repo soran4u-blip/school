@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { FOCAL_POINT_COPY } from './SharedPanels.i18n';
 
 // Lets a photo owner (tutor, institution, ...) click the point on their uploaded photo that
 // should stay centered wherever the photo is shown as a cropped square/avatar (object-cover).
@@ -17,7 +18,7 @@ export default function PhotoFocalPointPicker({
   focalPoint?: { x: number; y: number };
   onChange: (point: { x: number; y: number }) => void;
 }) {
-  const { t } = useLanguage();
+  const t = useT(FOCAL_POINT_COPY);
   const point = focalPoint ?? { x: 50, y: 50 };
 
   const handlePick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -30,10 +31,10 @@ export default function PhotoFocalPointPicker({
   return (
     <div>
       <label className="block text-xs font-bold text-slate-700 mb-1">
-        {t('نقطة تركيز الصورة', 'Photo focal point')}
+        {t('label')}
       </label>
       <p className="text-[11px] text-slate-500 mb-2">
-        {t('انقر على وجهك في الصورة لتحديد كيفية اقتصاصها في البطاقات المربعة.', 'Click your face in the photo to control how it gets cropped in square preview cards.')}
+        {t('hint')}
       </p>
       <div className="flex items-start gap-4">
         <div
@@ -48,7 +49,7 @@ export default function PhotoFocalPointPicker({
           />
         </div>
         <div className="shrink-0">
-          <p className="text-[10px] font-bold text-slate-500 mb-1">{t('معاينة', 'Preview')}</p>
+          <p className="text-[10px] font-bold text-slate-500 mb-1">{t('preview')}</p>
           <div className="w-20 h-20 overflow-hidden rounded-lg border border-slate-200">
             {/* eslint-disable-next-line @next/next/no-img-element -- live crop preview, needs the exact objectPosition applied to a plain <img> */}
             <img

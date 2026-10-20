@@ -7,6 +7,9 @@ import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { AdminListingType, eraseListing, restoreListing } from '@/core/services/adminListingService';
 import { DELETED_LISTING_RETENTION_DAYS, purgeDate } from '@/lib/listingLifecycle';
+import { useT } from '@/lib/useT';
+import { intlLocale } from '@/lib/locales';
+import { DELETED_LISTINGS_COPY } from './SharedPanels.i18n';
 
 // The recycle bin under each admin directory list (institutions, tutors, employers).
 //
@@ -29,7 +32,8 @@ export default function DeletedListingsPanel({
   items: DeletedListingRow[];
   onChanged: () => Promise<void>;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(DELETED_LISTINGS_COPY);
   const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -52,22 +56,19 @@ export default function DeletedListingsPanel({
       await action();
       await onChanged();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('تعذر تنفيذ الإجراء', 'The action could not be completed'));
+      setError(e instanceof Error ? e.message : t('actionFailed'));
     } finally {
       setBusyId(null);
     }
   };
 
   const handleErase = (row: DeletedListingRow) => {
-    if (!confirm(t(
-      `سيتم محو "${row.name}" نهائياً مع جميع وثائقه. لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟`,
-      `Permanently erase "${row.name}" and all its documents? This cannot be undone.`
-    ))) return;
+    if (!confirm(t('confirmErase', { name: row.name }))) return;
     run(row.id, () => eraseListing(type, row.id));
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'ar-IQ', { day: 'numeric', month: 'short', year: 'numeric' });
+    new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : intlLocale(language), { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs">
@@ -78,14 +79,11 @@ export default function DeletedListingsPanel({
       >
         <span className="flex items-center gap-2 text-sm font-bold text-slate-800">
           <Trash2 className="w-4 h-4 text-slate-400" />
-          {t('المحذوفات', 'Deleted')}
+          {t('deleted')}
           <span className="text-[11px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{items.length}</span>
         </span>
         <span className="flex items-center gap-2 text-[11px] text-slate-500">
-          {t(
-            `يمكن الاستعادة خلال ${DELETED_LISTING_RETENTION_DAYS} يوماً من الحذف`,
-            `Restorable for ${DELETED_LISTING_RETENTION_DAYS} days after deletion`
-          )}
+          {t('restorable', { days: DELETED_LISTING_RETENTION_DAYS })}
           <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </span>
       </button>
@@ -102,7 +100,7 @@ export default function DeletedListingsPanel({
                   <div className="text-xs font-bold text-slate-900 truncate">{row.name}</div>
                   {row.deletedAt && (
                     <div className="text-[11px] text-slate-500">
-                      {t('حُذف في', 'Deleted')} {formatDate(row.deletedAt)} · {t('يُمحى نهائياً في', 'erased on')} {formatDate(purgeDate(row.deletedAt).toISOString())}
+                      {t('deletedOn')} {formatDate(row.deletedAt)} · {t('erasedOn')} {formatDate(purgeDate(row.deletedAt).toISOString())}
                     </div>
                   )}
                 </div>
@@ -114,7 +112,7 @@ export default function DeletedListingsPanel({
                     className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    {t('استعادة', 'Restore')}
+                    {t('restore')}
                   </button>
                   {isSuperadmin && (
                     <button
@@ -124,7 +122,7 @@ export default function DeletedListingsPanel({
                       className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg text-rose-700 border border-rose-200 hover:bg-rose-50 disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      {t('محو نهائي', 'Erase now')}
+                      {t('eraseNow')}
                     </button>
                   )}
                 </div>

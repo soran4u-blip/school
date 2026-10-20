@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { AuditLogEntry, AuditAction } from '@/core/types/auditLog';
 import { ScrollText, User, Bot, ChevronDown } from 'lucide-react';
+import { intlLocale } from '@/lib/locales';
+import { useT } from '@/lib/useT';
+import { AUDIT_COPY } from './AuditLog.i18n';
 
 // Renders the audit trail. The first page is server-rendered; this only handles paging.
 
@@ -35,7 +38,8 @@ export default function AuditLogView({
   initialItems: AuditLogEntry[];
   initialCursor: string | null;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(AUDIT_COPY);
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
@@ -52,27 +56,24 @@ export default function AuditLogView({
       setItems((prev) => [...prev, ...body.items]);
       setCursor(body.nextCursor);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('تعذر تحميل المزيد', 'Could not load more'));
+      setError(e instanceof Error ? e.message : t('loadFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   const when = (iso: string) =>
-    new Date(iso).toLocaleString(language === 'en' ? 'en-GB' : 'ar', { dateStyle: 'medium', timeStyle: 'short' });
+    new Date(iso).toLocaleString(language === 'en' ? 'en-GB' : intlLocale(language), { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-2xl font-extrabold text-[#0B192C] flex items-center gap-2">
           <ScrollText className="w-6 h-6 text-slate-700" />
-          <span>{t('سجل الإجراءات', 'Audit Log')}</span>
+          <span>{t('title')}</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          {t(
-            'كل إجراء إداري حساس: الاعتماد، التوثيق، الإبراز، الإيقاف، والحذف — ومن نفّذه.',
-            'Every privileged action — approving, verifying, featuring, suspending, deleting — and who performed it.'
-          )}
+          {t('subtitle')}
         </p>
       </div>
 
@@ -82,7 +83,7 @@ export default function AuditLogView({
 
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-8 text-center text-xs text-slate-400">
-          {t('لا توجد إجراءات مسجلة بعد', 'No recorded actions yet')}
+          {t('empty')}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
@@ -104,7 +105,7 @@ export default function AuditLogView({
                 </div>
                 <p className="text-xs text-slate-800 font-medium break-words">{entry.summary}</p>
                 <p className="text-[11px] text-slate-400 break-all">
-                  {entry.actorUid === 'system' ? t('النظام (مهمة مجدولة)', 'System (scheduled task)') : entry.actorUid}
+                  {entry.actorUid === 'system' ? t('systemTask') : entry.actorUid}
                   {entry.ip ? ` · ${entry.ip}` : ''}
                   {entry.targetId ? ` · ${entry.targetType}/${entry.targetId}` : ''}
                 </p>
@@ -128,7 +129,7 @@ export default function AuditLogView({
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-60"
         >
           <ChevronDown className="w-3.5 h-3.5" />
-          <span>{loading ? t('جاري التحميل...', 'Loading...') : t('تحميل المزيد', 'Load more')}</span>
+          <span>{loading ? t('loading') : t('loadMore')}</span>
         </button>
       )}
     </div>

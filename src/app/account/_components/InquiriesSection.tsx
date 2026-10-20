@@ -6,7 +6,10 @@ import { useLanguage } from '@/core/context/LanguageContext';
 import { ThreadMessage } from '@/core/types/message';
 import { MessageCircle, MessageSquare } from 'lucide-react';
 import MessageThread from './MessageThread';
-import type { AccountInquiry } from '../page';
+import type { AccountInquiry } from '../accountTypes';
+import { pickLocalized } from '@/lib/localized';
+import { useT } from '@/lib/useT';
+import { ACCOUNT_COPY } from '../Account.i18n';
 
 // The account page's "My Inquiries" list — each card shows the inquiry summary, quick actions
 // (message institution, WhatsApp), and an expandable message thread. The parent owns all
@@ -32,13 +35,14 @@ export default function InquiriesSection({
   sendingInquiryThreadId: string | null;
   handleSendInquiryMessage: (inquiryId: string) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const t = useT(ACCOUNT_COPY);
 
   if (inquiries.length === 0) {
     return (
       <div className="text-center text-sm text-slate-400 py-12">
-        {t('لا توجد استفسارات بعد.', 'No inquiries yet.')}{' '}
-        <Link href="/institutions" className="text-emerald-700 font-bold hover:underline">{t('تصفّح المؤسسات', 'Browse institutions')}</Link>
+        {t('noInquiries')}{' '}
+        <Link href="/institutions" className="text-emerald-700 font-bold hover:underline">{t('browseInstitutions')}</Link>
       </div>
     );
   }
@@ -52,11 +56,11 @@ export default function InquiriesSection({
               <div className="flex items-center gap-2 flex-wrap">
                 {inq.institutionSlug ? (
                   <Link href={`/institutions/${inq.institutionSlug}`} className="font-bold text-sm text-slate-900 hover:text-blue-700">
-                    {inq.institutionName ? (language === 'en' ? inq.institutionName.en : inq.institutionName.ar) : inq.institutionId}
+                    {inq.institutionName ? pickLocalized(inq.institutionName, language) : inq.institutionId}
                   </Link>
                 ) : (
                   <span className="font-bold text-sm text-slate-900">
-                    {inq.institutionName ? (language === 'en' ? inq.institutionName.en : inq.institutionName.ar) : inq.institutionId}
+                    {inq.institutionName ? pickLocalized(inq.institutionName, language) : inq.institutionId}
                   </span>
                 )}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -73,7 +77,7 @@ export default function InquiriesSection({
               <button
                 onClick={() => toggleInquiryThread(inq.id)}
                 className={`p-2 rounded-lg ${expandedInquiryThreadId === inq.id ? 'bg-[#0B192C] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
-                title={t('مراسلة المؤسسة', 'Message institution')}
+                title={t('messageInstitution')}
               >
                 <MessageCircle className="w-4 h-4" />
               </button>
@@ -83,7 +87,7 @@ export default function InquiriesSection({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg"
-                  title={t('واتساب', 'WhatsApp')}
+                  title={t('whatsapp')}
                 >
                   <MessageSquare className="w-4 h-4" />
                 </a>

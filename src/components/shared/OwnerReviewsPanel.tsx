@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { Star, Send } from 'lucide-react';
-import { useLanguage } from '@/core/context/LanguageContext';
 import { Review } from '@/core/types/review';
 import { replyToReview } from '@/core/services/reviewService';
+import { useT } from '@/lib/useT';
+import { OWNER_REVIEWS_COPY } from './SharedPanels.i18n';
 
 // The "my approved reviews, with a public reply box" panel.
 //
@@ -23,7 +24,7 @@ export default function OwnerReviewsPanel({
   // Lets the parent keep its own copy of the list in step, since it owns the data.
   onReplied: (reviewId: string, reply: { text: string; createdAt: string }) => void;
 }) {
-  const { t } = useLanguage();
+  const t = useT(OWNER_REVIEWS_COPY);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [replyingId, setReplyingId] = useState<string | null>(null);
 
@@ -43,7 +44,7 @@ export default function OwnerReviewsPanel({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100">
       {reviews.length === 0 ? (
-        <div className="p-8 text-center text-xs text-slate-400">{t('لا توجد تقييمات معتمدة بعد', 'No approved reviews yet')}</div>
+        <div className="p-8 text-center text-xs text-slate-400">{t('none')}</div>
       ) : (
         reviews.map((review) => (
           <div key={review.id} className="p-4 space-y-3">
@@ -61,7 +62,7 @@ export default function OwnerReviewsPanel({
 
             {review.reply ? (
               <div className="ms-4 ps-3 border-s-2 border-emerald-200 space-y-1">
-                <span className="text-[10px] font-bold text-emerald-700">{t('ردّك', 'Your reply')}</span>
+                <span className="text-[10px] font-bold text-emerald-700">{t('yourReply')}</span>
                 <p className="text-xs text-slate-600">{review.reply.text}</p>
               </div>
             ) : (
@@ -71,14 +72,14 @@ export default function OwnerReviewsPanel({
                   value={drafts[review.id] || ''}
                   onChange={(e) => setDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleReply(review.id); }}
-                  placeholder={t('اكتب رداً علنياً...', 'Write a public reply...')}
+                  placeholder={t('writeReply')}
                   className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg"
                 />
                 <button
                   onClick={() => handleReply(review.id)}
                   disabled={replyingId === review.id || !drafts[review.id]?.trim()}
                   className="p-2 bg-[#0B192C] hover:bg-[#1E3E62] text-white rounded-lg disabled:opacity-50"
-                  title={t('نشر الرد', 'Post reply')}
+                  title={t('postReply')}
                 >
                   <Send className="w-4 h-4" />
                 </button>

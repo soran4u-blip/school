@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/core/context/LanguageContext';
+import { useT } from '@/lib/useT';
+import { LISTING_STATUS_COPY } from './SharedPanels.i18n';
 import { CheckCircle2, PauseCircle, PlayCircle, Clock } from 'lucide-react';
 
 export type ListingStatus = 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED';
@@ -17,35 +18,31 @@ export type ListingStatus = 'DRAFT' | 'ACTIVE' | 'PENDING' | 'SUSPENDED';
 // approving an unreviewed listing into the public directory shouldn't share an affordance with
 // pausing one.
 
-const NEXT_ACTION: Record<ListingStatus, { next: ListingStatus; ar: string; en: string }> = {
-  DRAFT: { next: 'PENDING', ar: 'إرسال للمراجعة', en: 'Submit for review' },
-  PENDING: { next: 'ACTIVE', ar: 'اعتماد', en: 'Approve' },
-  ACTIVE: { next: 'SUSPENDED', ar: 'إيقاف', en: 'Suspend' },
-  SUSPENDED: { next: 'ACTIVE', ar: 'تفعيل', en: 'Activate' },
+const NEXT_ACTION: Record<ListingStatus, { next: ListingStatus; key: keyof typeof LISTING_STATUS_COPY }> = {
+  DRAFT: { next: 'PENDING', key: 'submitForReview' },
+  PENDING: { next: 'ACTIVE', key: 'approve' },
+  ACTIVE: { next: 'SUSPENDED', key: 'suspend' },
+  SUSPENDED: { next: 'ACTIVE', key: 'activate' },
 };
 
-const LABEL: Record<ListingStatus, { ar: string; en: string; className: string; Icon: typeof Clock }> = {
+const LABEL: Record<ListingStatus, { key: keyof typeof LISTING_STATUS_COPY; className: string; Icon: typeof Clock }> = {
   DRAFT: {
-    ar: 'مسودة',
-    en: 'Draft',
+    key: 'draft',
     className: 'bg-slate-50 text-slate-600 border-slate-300',
     Icon: Clock,
   },
   PENDING: {
-    ar: 'قيد المراجعة',
-    en: 'Pending review',
+    key: 'pending',
     className: 'bg-amber-50 text-amber-800 border-amber-300',
     Icon: Clock,
   },
   ACTIVE: {
-    ar: 'نشط',
-    en: 'Active',
+    key: 'active',
     className: 'bg-emerald-50 text-emerald-800 border-emerald-300',
     Icon: CheckCircle2,
   },
   SUSPENDED: {
-    ar: 'متوقف',
-    en: 'Suspended',
+    key: 'suspended',
     className: 'bg-slate-100 text-slate-600 border-slate-300',
     Icon: PauseCircle,
   },
@@ -60,7 +57,7 @@ export default function ListingStatusControl({
   onChange: (next: ListingStatus) => void;
   disabled?: boolean;
 }) {
-  const { t } = useLanguage();
+  const t = useT(LISTING_STATUS_COPY);
   const label = LABEL[status] ?? LABEL.PENDING;
   const action = NEXT_ACTION[status] ?? NEXT_ACTION.PENDING;
   const ActionIcon = action.next === 'ACTIVE' ? PlayCircle : PauseCircle;
@@ -69,7 +66,7 @@ export default function ListingStatusControl({
     <div className="inline-flex items-center gap-1.5">
       <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${label.className}`}>
         <label.Icon className="w-3 h-3" />
-        <span>{t(label.ar, label.en)}</span>
+        <span>{t(label.key)}</span>
       </span>
       <button
         type="button"
@@ -78,7 +75,7 @@ export default function ListingStatusControl({
         className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
       >
         <ActionIcon className="w-3 h-3" />
-        <span>{t(action.ar, action.en)}</span>
+        <span>{t(action.key)}</span>
       </button>
     </div>
   );
