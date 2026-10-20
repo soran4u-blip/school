@@ -9,7 +9,7 @@ import SearchAutocomplete from '@/components/shared/SearchAutocomplete';
 import { Governorate, QuickSearchTag, TaxonomyItem } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
-import { ArrowRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, MapPin, Search } from 'lucide-react';
 
 const HERO_IMAGE_URL = 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85';
 
@@ -79,12 +79,6 @@ export default function HeroSearchSection({
               </button>
             </div>
           </form>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/90 bg-white/80 px-3 py-1.5 text-[11px] text-slate-600"><SlidersHorizontal className="h-3 w-3" />{t('المستوى التعليمي', 'Education level')}</span>
-            <span className="rounded-full border border-white/90 bg-white/80 px-3 py-1.5 text-[11px] text-slate-600">{t('الميزانية', 'Budget range')}⌄</span>
-            <span className="rounded-full border border-white/90 bg-white/80 px-3 py-1.5 text-[11px] text-slate-600">{t('اللغة', 'Language')}⌄</span>
-            <span className="rounded-full border border-white/90 bg-white/80 px-3 py-1.5 text-[11px] text-slate-600">{t('المنهج الدراسي', 'Curriculum')}⌄</span>
-          </div>
           {quickTags.length > 0 && <div className="mt-3 flex flex-wrap gap-2">
             {quickTags.slice(0, 4).map((tag) => <Link key={tag.id} href={`${localeHref('/explore', language)}?${tag.categoryId ? `category=${tag.categoryId}&` : ''}${tag.governorateId ? `governorate=${tag.governorateId}&` : ''}${tag.keyword ? `q=${encodeURIComponent(tag.keyword)}` : ''}`} className="text-[11px] font-semibold text-[#155c4d] underline-offset-4 hover:underline">{language === 'en' ? tag.label.en : tag.label.ar}</Link>)}
           </div>}
