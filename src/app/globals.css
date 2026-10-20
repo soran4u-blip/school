@@ -30,6 +30,12 @@ body {
   overflow-x: hidden;
 }
 
+/* Cairo has no glyphs for the Sorani letters ڕ ڵ ێ ۆ ە, so each fell through to a system font in
+   the middle of a word. Noto Sans Arabic covers them; Cairo stays as the fallback. */
+html[lang="ckb"] {
+  --font-arabic: 'Noto Sans Arabic', 'Cairo', system-ui, -apple-system, sans-serif;
+}
+
 [dir="rtl"] body,
 [dir="rtl"] * {
   font-family: var(--font-arabic), var(--font-sans);
