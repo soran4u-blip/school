@@ -7,6 +7,8 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { localeHref } from '@/lib/locale';
+import { matchesLocalized } from '@/lib/localized';
+import { normalizeSearchText } from '@/lib/textNormalize';
 import { Tutor } from '@/core/types/tutor';
 import { Institution } from '@/core/types/institution';
 import { Governorate, TaxonomyItem } from '@/core/types/masterData';
@@ -74,13 +76,8 @@ export default function TutorsList({
     .filter((t) => filterMode === 'all' || t.deliveryMode.includes(filterMode as Tutor['deliveryMode'][number]))
     .filter((t) => {
       if (!keyword.trim()) return true;
-      const kw = keyword.toLowerCase().trim();
-      return (
-        t.fullName.ar.toLowerCase().includes(kw) ||
-        t.fullName.en.toLowerCase().includes(kw) ||
-        t.title.ar.toLowerCase().includes(kw) ||
-        t.title.en.toLowerCase().includes(kw)
-      );
+      const kw = normalizeSearchText(keyword);
+      return matchesLocalized(t.fullName, kw) || matchesLocalized(t.title, kw);
     })
     .filter((t) => (minRating === 0 ? true : t.ratingAvg >= minRating))
     .filter((t) => (maxPrice ? t.hourlyRate[maxPriceCurrency] <= Number(maxPrice) : true))

@@ -24,6 +24,8 @@ import ShortlistTray from './_components/ShortlistTray';
 import DirectorySkeleton from './_components/DirectorySkeleton';
 import { EMPTY_SHORTLIST, readShortlist, subscribeToShortlist, writeShortlist } from '@/lib/shortlist';
 import { isInstitutionEvidenceFresh } from '@/lib/publishingGuardrails';
+import { matchesLocalized } from '@/lib/localized';
+import { normalizeSearchText } from '@/lib/textNormalize';
 
 interface ExploreDirectoryProps {
   institutions: Institution[];
@@ -115,10 +117,10 @@ function ExploreContent({ institutions, tutors, categories, governorates, accred
     if (selectedAccreditations.length > 0 && !selectedAccreditations.some((id) => inst.taxonomyIds?.includes(id))) return false;
     if (selectedCurricula.length > 0 && !selectedCurricula.some((id) => inst.taxonomyIds?.includes(id))) return false;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchName = inst.name.ar.toLowerCase().includes(q) || inst.name.en.toLowerCase().includes(q);
-      const matchDesc = inst.description.ar.toLowerCase().includes(q) || inst.description.en.toLowerCase().includes(q);
-      const matchTag = inst.tagline.ar.toLowerCase().includes(q) || inst.tagline.en.toLowerCase().includes(q);
+      const q = normalizeSearchText(searchQuery);
+      const matchName = matchesLocalized(inst.name, q);
+      const matchDesc = matchesLocalized(inst.description, q);
+      const matchTag = matchesLocalized(inst.tagline, q);
       if (!matchName && !matchDesc && !matchTag) return false;
     }
     if (minRating > 0 && inst.metrics.ratingAvg < minRating) return false;

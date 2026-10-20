@@ -8,12 +8,13 @@ import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { useMasterData } from '@/core/context/MasterDataContext';
 import { localeHref } from '@/lib/locale';
+import { stripLocalePrefix } from '@/lib/locales';
+import LanguageSwitcher from './LanguageSwitcher';
 import {
   GraduationCap,
   MapPin,
   Mail,
   Phone,
-  Languages,
   PlusCircle,
   Briefcase,
   CalendarDays,
@@ -31,7 +32,7 @@ import { useTotalUnreadMessages } from '@/lib/useTotalUnreadMessages';
 import { useAccountPath } from '@/lib/useAccountPath';
 
 export default function Navbar() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   // Provided by the root layout from one server-side read, rather than fetched here on every
@@ -61,15 +62,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleLanguage = () => {
-    const nextLanguage = language === 'ar' ? 'en' : 'ar';
-    setLanguage(nextLanguage);
-    const nextPath = nextLanguage === 'en' ? localeHref(publicPath, 'en') : publicPath;
-    router.push(`${nextPath}${window.location.search}`);
-    router.refresh();
-  };
-
-  const publicPath = pathname === '/en' ? '/' : pathname.startsWith('/en/') ? pathname.slice(3) : pathname;
+  const publicPath = stripLocalePrefix(pathname);
   const isExploreActive = publicPath === '/explore';
   const isJobsActive = publicPath === '/jobs';
   const isEventsActive = publicPath === '/events';
@@ -112,10 +105,7 @@ export default function Navbar() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={toggleLanguage} className="flex items-center gap-1 hover:text-white transition-colors">
-              <Languages className="w-3 h-3" />
-              {language === 'ar' ? 'English' : 'عربي'}
-            </button>
+            <LanguageSwitcher variant="bar" />
             {accountPath ? (
               <>
                 <Link href={accountPath} className="flex items-center gap-1 hover:text-white transition-colors">
@@ -282,9 +272,7 @@ export default function Navbar() {
                   <NotificationCenter />
                 </>
               )}
-              <button onClick={toggleLanguage} className="px-2.5 py-1 text-xs font-bold border border-slate-200 rounded">
-                {language === 'ar' ? 'EN' : 'عربي'}
-              </button>
+              <LanguageSwitcher variant="compact" />
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-slate-600 hover:text-slate-900">
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>

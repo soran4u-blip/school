@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/core/firebase/admin';
 import { SESSION_COOKIE_NAME } from '@/core/server/session';
 import { isAdminRole, hasPermission, permissionForPath } from '@/core/permissions';
+import { localeFromPathname } from '@/lib/locales';
 
 // Two kinds of gate live here.
 //
@@ -36,14 +37,23 @@ function isAdminArea(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // The root layout renders <html lang dir> on the server, before any client code can correct it,
+  // so tell it which language a /en or /ku URL pins. Forwarded as a request header; unprefixed
+  // (Arabic) paths set nothing and keep the default.
+  const pinnedLanguage = localeFromPathname(pathname);
+  const requestHeaders = new Headers(request.headers);
+  if (pinnedLanguage) requestHeaders.set('x-locale', pinnedLanguage);
+  else requestHeaders.delete('x-locale');
+  const proceed = () => NextResponse.next({ request: { headers: requestHeaders } });
+
   if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
-    return NextResponse.next();
+    return proceed();
   }
 
   const adminArea = isAdminArea(pathname);
   const accountRole = requiredAccountRole(pathname);
   if (!adminArea && !accountRole) {
-    return NextResponse.next();
+    return proceed();
   }
 
   const isApiRoute = pathname.startsWith('/api/');
@@ -66,11 +76,11 @@ export async function proxy(request: NextRequest) {
           ? NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
           : NextResponse.redirect(new URL('/admin', request.url));
       }
-      return NextResponse.next();
+      return proceed();
     }
 
     if (role !== accountRole) return denyAccess(request, isApiRoute, false);
-    return NextResponse.next();
+    return proceed();
   } catch {
     return denyAccess(request, isApiRoute, adminArea);
   }
@@ -96,5 +106,10 @@ export const config = {
     '/api/account/:path*',
     '/institution/:path*',
     '/employer/:path*',
+    // Locale route trees: only here to forward x-locale; none of them hit an auth gate above.
+    '/en',
+    '/en/:path*',
+    '/ku',
+    '/ku/:path*',
   ],
 };

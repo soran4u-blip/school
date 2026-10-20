@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import './globals.css';
 import { LanguageProvider } from '@/core/context/LanguageContext';
 import { MasterDataProvider } from '@/core/context/MasterDataContext';
@@ -7,6 +8,7 @@ import { getPublicCategories, getPublicGovernorates, getPublicSystemSettings } f
 import ErrorReporter from '@/components/shared/ErrorReporter';
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar';
 import { siteUrl } from '@/lib/siteUrl';
+import { DEFAULT_LANGUAGE, LOCALES, isSupportedLanguage } from '@/lib/locales';
 
 const title = 'Eduraq | دليل العراق التعليمي - المدارس، الجامعات، والأساتذة';
 const description = 'منصة العراق لاكتشاف التعليم واتخاذ القرار: قارن المدارس والجامعات، اقرأ التقييمات، واسأل مجتمعك — قبل أن تقرر.';
@@ -75,8 +77,14 @@ export default async function RootLayout({
     getPublicSystemSettings(),
   ]);
 
+  // src/proxy.ts forwards the language a /en or /ku URL pins; unprefixed routes carry none and
+  // render as Arabic until the client applies a saved preference. A client can send this header
+  // itself on unprefixed paths, which only changes <html lang> in its own response.
+  const requestedLocale = (await headers()).get('x-locale');
+  const { dir, htmlLang } = LOCALES[isSupportedLanguage(requestedLocale) ? requestedLocale : DEFAULT_LANGUAGE];
+
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang={htmlLang} dir={dir} suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         {/* Google tag (gtag.js) — loaded after hydration so it doesn't compete with page interactivity. */}

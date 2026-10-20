@@ -7,6 +7,7 @@ import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'fir
 import { auth } from '@/core/firebase/config';
 import { useLanguage } from '@/core/context/LanguageContext';
 import { UserCircle2, Loader2 } from 'lucide-react';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const DASHBOARD_BY_ROLE: Record<string, string> = {
   tutor: '/tutor/dashboard',
@@ -18,7 +19,7 @@ const DASHBOARD_BY_ROLE: Record<string, string> = {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -85,9 +86,7 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-[#123D35] px-4">
       <div className="fixed inset-x-4 top-4 flex items-center justify-between text-white">
         <Link href="/" className="font-extrabold tracking-tight hover:text-amber-300">Eduraq</Link>
-        <button type="button" onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-white/10">
-          {language === 'ar' ? 'English' : 'عربي'}
-        </button>
+        <LanguageSwitcher variant="dark" />
       </div>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 border border-[#E8E6DE]">
         <div className="flex flex-col items-center mb-6">

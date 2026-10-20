@@ -1,7 +1,9 @@
 import { Institution } from '../types/institution';
 import { Tutor } from '../types/tutor';
-import { TaxonomyItem } from '../types/masterData';
+import { SupportedLanguage, TaxonomyItem } from '../types/masterData';
 import { localeHref } from '@/lib/locale';
+import { matchesLocalized, pickLocalized } from '@/lib/localized';
+import { normalizeSearchText } from '@/lib/textNormalize';
 
 export interface SearchSuggestion {
   type: 'institution' | 'tutor' | 'subject';
@@ -19,21 +21,21 @@ const MAX_SUGGESTIONS = 8;
 export function getSearchSuggestions(
   query: string,
   data: { institutions: Institution[]; tutors: Tutor[]; subjects: TaxonomyItem[] },
-  language: 'ar' | 'en' | 'ku' = 'en'
+  language: SupportedLanguage = 'en'
 ): SearchSuggestion[] {
-  const q = query.toLowerCase().trim();
+  const q = normalizeSearchText(query);
   if (!q) return [];
 
   const results: SearchSuggestion[] = [];
 
   for (const inst of data.institutions) {
     if (results.length >= MAX_SUGGESTIONS) break;
-    if (inst.name.ar.toLowerCase().includes(q) || inst.name.en.toLowerCase().includes(q)) {
+    if (matchesLocalized(inst.name, q)) {
       results.push({
         type: 'institution',
         id: inst.id,
-        label: language === 'en' ? inst.name.en : inst.name.ar,
-        sublabel: language === 'en' ? inst.address.en : inst.address.ar,
+        label: pickLocalized(inst.name, language),
+        sublabel: pickLocalized(inst.address, language),
         href: localeHref(`/institutions/${inst.slug}`, language),
       });
     }
@@ -41,12 +43,12 @@ export function getSearchSuggestions(
 
   for (const tutor of data.tutors) {
     if (results.length >= MAX_SUGGESTIONS) break;
-    if (tutor.fullName.ar.toLowerCase().includes(q) || tutor.fullName.en.toLowerCase().includes(q)) {
+    if (matchesLocalized(tutor.fullName, q)) {
       results.push({
         type: 'tutor',
         id: tutor.id,
-        label: language === 'en' ? tutor.fullName.en : tutor.fullName.ar,
-        sublabel: language === 'en' ? tutor.title.en : tutor.title.ar,
+        label: pickLocalized(tutor.fullName, language),
+        sublabel: pickLocalized(tutor.title, language),
         href: localeHref(`/tutors/${tutor.slug || tutor.id}`, language),
       });
     }
@@ -54,11 +56,11 @@ export function getSearchSuggestions(
 
   for (const subject of data.subjects) {
     if (results.length >= MAX_SUGGESTIONS) break;
-    if (subject.name.ar.toLowerCase().includes(q) || subject.name.en.toLowerCase().includes(q)) {
+    if (matchesLocalized(subject.name, q)) {
       results.push({
         type: 'subject',
         id: subject.id,
-        label: language === 'en' ? subject.name.en : subject.name.ar,
+        label: pickLocalized(subject.name, language),
         href: `${localeHref('/explore', language)}?q=${encodeURIComponent(subject.name.en)}`,
       });
     }

@@ -3,6 +3,7 @@ import { twMerge } from 'tailwind-merge';
 import { LocalizedString } from '@/core/types/masterData';
 import { Institution } from '@/core/types/institution';
 import { Tutor } from '@/core/types/tutor';
+import { intlLocale } from '@/lib/locales';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,7 +26,7 @@ export function deriveVerificationBadge(isVerified: boolean, current: LocalizedS
 // digits (١٬٨٠٠٬٠٠٠ د.ع.) instead of "IQD 1,800,000". `language` is required rather than
 // defaulted so a new call site can't quietly reintroduce that.
 function currencyFormatter(language: string, currency: 'IQD' | 'USD'): Intl.NumberFormat {
-  return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'ar-IQ', {
+  return new Intl.NumberFormat(intlLocale(language), {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
@@ -63,7 +64,7 @@ export function todayLocalDate(): string {
  */
 export function formatDate(date: string, language: string, options?: Intl.DateTimeFormatOptions): string {
   const dayOnly = date.slice(0, 10);
-  return new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ' : 'en-US', {
+  return new Intl.DateTimeFormat(intlLocale(language), {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

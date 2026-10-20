@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { SupportedLanguage } from '../types/masterData';
+import { LOCALES, DEFAULT_LANGUAGE, isSupportedLanguage, localeFromPathname } from '@/lib/locales';
 
 interface LanguageContextType {
   language: SupportedLanguage;
@@ -14,10 +15,6 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'eduraq_lang';
-
-function isSupported(value: string | null): value is SupportedLanguage {
-  return value === 'ar' || value === 'en' || value === 'ku';
-}
 
 /* =========================================================
    The saved language preference, as an external store
@@ -43,7 +40,7 @@ function subscribe(onChange: () => void): () => void {
 function getStoredLanguage(): SupportedLanguage | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return isSupported(saved) ? saved : null;
+    return isSupportedLanguage(saved) ? saved : null;
   } catch {
     // Private mode / blocked site data — fall back to the default rather than crashing render.
     return null;
@@ -68,17 +65,17 @@ function storeLanguage(lang: SupportedLanguage): void {
 // for the /en route tree was tried and reverted: both instances' `document.documentElement`
 // sync effects would fire on mount (child effects before parent effects in React), so the outer
 // (Arabic) provider always won the race and silently overwrote the inner one's lang/dir. Instead,
-// this single provider derives its language from the URL itself: any route under /en pins English
-// (matching what a crawler sees, since /en is exactly the route tree that exists for that
-// purpose) and ignores the saved preference, which only applies to Arabic (unprefixed) routes.
+// this single provider derives its language from the URL itself: any route under /en or /ku pins
+// that language (matching what a crawler sees, since those are exactly the route trees that exist
+// for that purpose) and ignores the saved preference, which only applies to unprefixed routes.
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isEnglishRoute = pathname === '/en' || pathname.startsWith('/en/');
+  const pinnedLanguage = localeFromPathname(pathname);
   const stored = useSyncExternalStore(subscribe, getStoredLanguage, getServerLanguage);
 
   // Derived during render rather than mirrored into state, so crossing the /en boundary on a
   // client-side navigation needs no re-sync pass.
-  const language: SupportedLanguage = isEnglishRoute ? 'en' : (stored ?? 'ar');
+  const language: SupportedLanguage = pinnedLanguage ?? stored ?? DEFAULT_LANGUAGE;
 
   const setLanguage = useCallback((lang: SupportedLanguage) => {
     storeLanguage(lang);
@@ -86,15 +83,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   // Genuinely an external system: the <html> element is outside React's tree.
   useEffect(() => {
-    document.documentElement.dir = language === 'en' ? 'ltr' : 'rtl';
-    document.documentElement.lang = language;
+    document.documentElement.dir = LOCALES[language].dir;
+    document.documentElement.lang = LOCALES[language].htmlLang;
   }, [language]);
 
-  const dir = language === 'en' ? 'ltr' : 'rtl';
+  const dir = LOCALES[language].dir;
 
+  // Sorani falls back to Arabic (same script, mutually readable on a page of mixed copy) before
+  // English, so a string without a Kurdish translation yet never renders blank.
   const t = (arText: string, enText: string, kuText?: string): string => {
     if (language === 'en') return enText;
-    if (language === 'ku' && kuText) return kuText;
+    if (language === 'ku') return kuText || arText || enText;
     return arText;
   };
 

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -15,7 +15,7 @@
   --color-text-muted: #64766F;
   
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-arabic: 'Cairo', system-ui, -apple-system, sans-serif;
+  --font-arabic: 'Cairo', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
 }
 
 :root {
