@@ -1,96 +1,16 @@
 import type { Metadata } from 'next';
-import { getPublicInstitutionBySlug } from '@/core/server/data/institutions';
-import { breadcrumbJsonLd } from '@/lib/breadcrumb';
-import { siteUrl } from '@/lib/siteUrl';
+import { institutionMetadata, InstitutionSeoLayout } from '@/app/institutions/[slug]/seo';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const institution = await getPublicInstitutionBySlug(slug);
-
-  if (!institution) {
-    return { title: 'Institution Not Found' };
-  }
-
-  const title = institution.name.en;
-  const description = institution.tagline.en || institution.description.en;
-  const path = `/institutions/${institution.slug}`;
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: institution.coverImageUrl ? [institution.coverImageUrl] : undefined,
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: institution.coverImageUrl ? [institution.coverImageUrl] : undefined,
-    },
-    alternates: {
-      canonical: `/en${path}`,
-      languages: { 'ar-IQ': `${siteUrl}${path}`, en: `${siteUrl}/en${path}` },
-    },
-  };
+export function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  return institutionMetadata(params, 'en');
 }
 
-export default async function InstitutionEnLayout({
+export default function InstitutionEnLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const institution = await getPublicInstitutionBySlug(slug);
-
-  if (!institution) {
-    return children;
-  }
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'EducationalOrganization',
-    name: institution.name.en,
-    description: institution.description.en || institution.tagline.en,
-    logo: institution.logoUrl || undefined,
-    image: institution.coverImageUrl || undefined,
-    telephone: institution.contact.phonePrimary || undefined,
-    email: institution.contact.email || undefined,
-    url: institution.contact.website || undefined,
-    address: {
-      '@type': 'PostalAddress',
-      addressCountry: 'IQ',
-      addressRegion: institution.governorateId,
-      streetAddress: institution.address.en || undefined,
-    },
-    ...(institution.metrics.reviewCount > 0 && {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: institution.metrics.ratingAvg,
-        reviewCount: institution.metrics.reviewCount,
-      },
-    }),
-  };
-
-  const breadcrumb = breadcrumbJsonLd([
-    { name: 'Home', url: '/en' },
-    { name: 'Explore', url: '/en/explore' },
-    { name: institution.name.en, url: `/en/institutions/${institution.slug}` },
-  ]);
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
-      {children}
-    </>
-  );
+  return <InstitutionSeoLayout params={params} language="en">{children}</InstitutionSeoLayout>;
 }

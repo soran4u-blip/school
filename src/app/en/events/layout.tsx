@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { siteUrl } from '@/lib/siteUrl';
+import { buildLocaleMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Education Events in Iraq',
-  alternates: {
-    canonical: '/en/events',
-    languages: { 'ar-IQ': `${siteUrl}/events`, en: `${siteUrl}/en/events` },
-  },
-};
+export const metadata = buildLocaleMetadata('en', '/events', { title: 'Education Events in Iraq' });
 
 export default function EventsEnLayout({ children }: { children: React.ReactNode }) {
   return children;

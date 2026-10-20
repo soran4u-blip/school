@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import HomeContent from './HomeContent';
+import { localeAlternates } from '@/lib/seo';
 import { getActiveInstitutions } from '@/core/server/data/institutions';
 import { getActiveTutors } from '@/core/server/data/tutors';
 import { getActiveEvents } from '@/core/server/data/events';
@@ -16,6 +18,8 @@ import {
 // rather than prerendered, and ./core/server/data/cache.ts for why request-time rendering here
 // does not mean a Firestore read per visitor.
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { alternates: localeAlternates('/', 'ar') };
 
 export default async function HomePage() {
   const [categories, governorates, quickTags, institutions, tutors, settings, taxonomies, banners, events] = await Promise.all([

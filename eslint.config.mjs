@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent worktrees live under .claude/ and each carries its own .next build output; without this
+    // `npm run lint` walks their compiled chunks (thousands of bogus errors).
+    ".claude/**",
+    "**/.next/**",
   ]),
 ]);
 
