@@ -15,8 +15,9 @@ describe('locales', () => {
     expect(isSupportedLanguage('ku')).toBe(true);
     expect(isSupportedLanguage('fr')).toBe(false);
     expect(isSupportedLanguage('toString')).toBe(false);
-    expect(intlLocale('ku')).toBe('ckb-IQ');
-    expect(intlLocale('xx')).toBe('ar-IQ');
+    expect(intlLocale('ku')).toEqual(['ckb-IQ', 'ar-IQ']);
+    expect(intlLocale('en')).toEqual(['en-US']);
+    expect(intlLocale('xx')).toEqual(['ar-IQ']);
   });
 
   it('pins a language only on whole path segments', () => {
